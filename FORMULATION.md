@@ -76,24 +76,38 @@ Chebyshev expansion in `L` (M localized hops, O(M|E|) cost), recovering a proper
 message-passing layer; the exact spectral form is used only for the small-graph
 analysis and as the M -> infinity reference.
 
-## 4. Three pillars as falsifiable claims
+## 4. Pillars and what the kill-gates actually showed
 
-- **P1 — Ballistic reach.** At matched parameters and depth, QW resolves `phi` at
-  long range better than Heat and GCN, and the absolute hop-error gap over Heat
-  **grows with graph diameter**.
-  *Refutation test:* if QW does not beat Heat on far nodes, or the absolute gap does
-  not widen with scale, P1 is dead. **Smoke status: PASSED** (12/12 param-matched
-  cells, mean far-node error reduced ~52%, absolute gap slope +0.07 hop/hop on
-  synthetic tori). Must replicate on Hypatia.
-- **P2 — Proactive gain.** Conditioning on known future topology `G_{t+h}` yields
+Headline reframed after P1: QW is a SUPPORTING component (a consistent positive
+ablation), not the contribution. The paper is centered on P2 (proactive) and P3
+(inductive scaling), which are what justify a GNN over per-slot Dijkstra.
+
+- **P1 — Ballistic reach (DEMOTED).** At matched parameters and depth, QW resolves
+  `phi` at long range better than Heat and GCN.
+  - Synthetic-torus smoke: QW won 12/12, ~52% far-node error cut, and the absolute
+    gap appeared to widen with diameter (slope +0.07 hop/hop).
+  - Real LEO topology (sim, `experiments/p1_far_resolution.py`): QW still wins
+    **9/9** param-matched cells (~16-29% relative far-node improvement) BUT the
+    **widening-with-diameter claim does NOT hold** (gaps 0.029/0.011/0.021 over
+    diam 9/16/28, slope ~0).
+  - Root cause of the discrepancy: the smoke normalized the target by graph
+    diameter, which inflated Heat's error at scale and manufactured the widening.
+    Per-destination eccentricity normalization (correct) removes it. **Lesson kept
+    on record: the scaling form of P1 was a normalization artifact.**
+  - Honest standing claim: "QW propagation yields a small but consistent far-node
+    routing-potential improvement at matched parameters" -- reported as an ablation,
+    not a scaling law.
+- **P2 — Proactive gain (now primary).** Conditioning on known future topology `G_{t+h}` yields
   lower post-handover delay / loss than a reactive model seeing only `G_t`.
   *Refutation test:* no significant delay/loss reduction across seam events vs
   reactive at matched capacity.
-- **P3 — Scale invariance.** A model trained on a small shell generalizes
-  zero-shot to a mega-constellation (more planes / satellites-per-plane) better
-  than baselines, with the margin tracking the diameter increase.
-  *Refutation test:* OOD margin vanishes or QW's inductive transfer is no better
-  than GCN/Heat.
+- **P3 — Scale invariance (now primary, the "why a GNN at all").** A model trained
+  on a small shell generalizes zero-shot to a mega-constellation (more planes /
+  satellites-per-plane), avoiding per-slot all-pairs recomputation at 1584+ sats.
+  *Refutation test:* OOD routing quality collapses, or the inductive model is no
+  better / no cheaper than recomputing Dijkstra per slot.
+  This is the next kill-gate: train on iridium66/starlink_mini, zero-shot to
+  starlink_shell1.
 
 ## 5. Honest positioning vs prior art
 
