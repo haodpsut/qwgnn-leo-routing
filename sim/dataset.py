@@ -56,7 +56,8 @@ def build_routing_dataset(walker, t_s, n_dest, seed, seam=False):
         Dhop[k] = torch.from_numpy(hv)
         Y[k] = torch.from_numpy(dv / max(dv.max(), 1e-9))   # normalized potential
     A = torch.from_numpy(A_np.astype(np.float64))
-    return {"A": A, "X": X, "Y": Y, "Dhop": Dhop,
+    W = torch.from_numpy(W_np.astype(np.float64))
+    return {"A": A, "W": W, "X": X, "Y": Y, "Dhop": Dhop, "dests": torch.tensor(dests),
             "diameter": int(diameter), "n": n,
             "delay_scale": float(W_np.max())}
 
