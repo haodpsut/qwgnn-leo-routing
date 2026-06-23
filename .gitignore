@@ -21,3 +21,14 @@ Thumbs.db
 .idea/
 
 # keep: smoke_results.csv (small, documents the P0 kill-test)
+
+# latex build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/*.bbl
+paper/*.blg
+paper/pg-*.png

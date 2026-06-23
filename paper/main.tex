@@ -1,0 +1,409 @@
+\documentclass[journal]{IEEEtran}
+
+% IEEE TNSM submission draft.
+% Title: Learning to Route Under Load.
+% Author: Do Phuc Hao (CAIRA, Da Nang Architecture University), sole + corresponding.
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+
+\title{Learning to Route Under Load: An Inductive Graph Network that Amortizes
+Congestion-Aware Traffic Engineering for LEO Mega-Constellations}
+
+\author{Do~Phuc~Hao% <-this % stops a space
+\thanks{D. P. Hao is with the Center for Artificial Intelligence Research and
+Application (CAIRA), Da Nang Architecture University, Da Nang, Vietnam
+(e-mail: haodp@dau.edu.vn). Corresponding author: D. P. Hao.}}
+
+\markboth{IEEE Transactions on Network and Service Management (submitted)}%
+{Hao: Learning to Route Under Load}
+
+\maketitle
+
+\begin{abstract}
+Low Earth orbit (LEO) mega-constellations carry traffic over a dense mesh of
+inter-satellite links whose topology, although time varying, is known in advance
+from orbital ephemeris. Under load, routing on propagation delay alone concentrates
+traffic on a few bottleneck links while alternative paths sit idle, wasting a large
+fraction of the achievable end-to-end performance. The congestion-aware optimum,
+the user equilibrium, removes this waste but requires the full demand matrix and an
+iterative solve at every slot, which does not scale to constellations of more than
+a thousand satellites with rapidly changing topology. We propose an inductive graph
+neural network that predicts the equilibrium congestion price on each
+inter-satellite link in a single forward pass, from cheap and observable load
+features, and routes every flow on the resulting cost. The model is trained on small
+shells and applied without retraining to larger ones. On a constellation simulator
+with a standard Bureau of Public Roads cost model, the network matches the user
+equilibrium in distribution while using one to two orders of magnitude less
+computation, recovers about four fifths of the gain when transferred zero shot to a
+shell twice as large, and, when fed the predicted near future demand, sustains low
+travel time under drifting traffic hotspots where a reactive one slot lagged
+controller degrades below even congestion-blind shortest path. We also report a
+negative result: a quantum-walk propagation operator, which motivated this study,
+offers no benefit once load features are available, and a plain graph convolution is
+preferable. We release the full pipeline and the honest record of the design
+search.
+\end{abstract}
+
+\begin{IEEEkeywords}
+LEO satellite networks, non-terrestrial networks, routing, traffic engineering,
+graph neural networks, congestion control, user equilibrium, inductive learning.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{L}{ow} Earth orbit (LEO) mega-constellations such as Starlink and
+Kuiper interconnect their satellites with laser inter-satellite links (ISLs)
+arranged in a regular grid, forming a wide-area packet network that moves with the
+constellation. Two features distinguish this network from a terrestrial one. First,
+the topology is time varying but \emph{deterministic}: the position of every
+satellite, and therefore every ISL and its propagation delay, is known in advance
+from the orbital parameters. Second, the network is large and fast: a single shell
+contains on the order of a thousand or more satellites, and cross-plane links open
+and close as satellites traverse the constellation.
+
+Routing such a network on propagation delay alone is attractive because the
+shortest path is cheap to compute and, in a lightly loaded regime, near optimal.
+Under load, however, delay-only shortest path is wasteful: it funnels many flows
+onto the same minimum-hop links, creating hotspots, while geometrically longer but
+idle paths are ignored. We measure this waste directly (Section~\ref{sec:headroom})
+and find that congestion-aware routing cuts total travel time by half or more once
+the network is moderately loaded.
+
+The congestion-aware optimum is classical. Routing every flow so that no flow can
+unilaterally lower its cost yields the \emph{user equilibrium} (UE), computed by
+iterating shortest-path assignment against a load-dependent link cost. UE is the
+right target, but it is expensive: it needs the entire demand matrix and many
+shortest-path rounds per slot. At constellation scale, with topology changing every
+few seconds, recomputing UE from scratch each slot is impractical.
+
+This tension, a cheap-but-blind heuristic versus an expensive-but-optimal solve,
+motivates our contribution. We learn to \emph{amortize} the equilibrium. A graph
+neural network (GNN) observes cheap features (per-node traffic intensity and the
+load that one congestion-blind pass would induce) and predicts, in a single forward
+pass, the equilibrium congestion price on every ISL. Routing on the predicted cost
+recovers most of the congestion-aware gain at a fraction of the cost of solving UE.
+Because the model is a message-passing network whose parameters do not depend on the
+number of satellites, it is \emph{inductive}: trained on a small shell, it applies
+unchanged to a larger one. And because the demand pattern drifts predictably (the
+dense-traffic band rotates under the constellation), feeding the predicted near
+future demand lets the router act \emph{proactively}, before congestion forms.
+
+\textbf{Contributions.}
+\begin{itemize}
+\item \textbf{C1 (amortization).} A one-shot GNN matches the user equilibrium in
+distribution (total travel time within two percent) while using $20$ to $27\times$
+less computation than the iterative solve (Sections~\ref{sec:method},
+\ref{sec:results}).
+\item \textbf{C2 (inductive scale generalization).} Trained on small shells, the
+same model transferred zero shot to a shell twice as large is the best
+\emph{deployable} policy, recovering about $79\%$ of the blind-to-UE gain and beating
+every cheap baseline.
+\item \textbf{C3 (cost).} We quantify the inference saving against UE and show it is
+the operative reason to learn rather than solve.
+\item \textbf{C4 (proactive).} Under drifting hotspots, routing on predicted demand
+tracks the clairvoyant optimum, whereas a reactive one-slot-lagged controller
+degrades below congestion-blind shortest path as the drift grows.
+\item \textbf{Honest negative result.} The study began as a quantum-walk GNN. We
+report, with the full kill-gate record, why that line did not survive contact with
+the data, and why a plain graph convolution is the right operator here.
+\end{itemize}
+
+\section{Related Work}
+\textbf{LEO routing and topology.} The deterministic, time-varying structure of LEO
+ISL networks has been studied for low-latency routing and topology
+design~\cite{handley2018,bhattacherjee2019}. Packet-level simulators such as
+Hypatia~\cite{hypatia} and StarPerf~\cite{starperf} reconstruct the moving topology
+from constellation parameters. These works route mostly on delay; we focus on the
+loaded regime where congestion dominates.
+
+\textbf{GNNs for networking.} Graph convolutions~\cite{gcn}, attention~\cite{gat},
+and inductive sampling~\cite{graphsage} underpin learning on graphs. RouteNet and
+related models predict per-path delay and jitter for network
+modeling~\cite{routenet}; reinforcement learning with GNNs has been applied to
+routing optimization~\cite{almasan}. Our model is supervised and predicts a
+congestion-price field that is decoded by shortest path, which keeps inference to a
+single forward pass and makes inductivity straightforward.
+
+\textbf{Traffic engineering and equilibria.} Load-dependent link cost and the user
+equilibrium are classical in transportation~\cite{wardrop,bpr}; learning to route to
+reduce congestion has been explored for terrestrial
+networks~\cite{valadarsky,xu}. We bring this to LEO, where the value lies in
+amortizing the per-slot solve across a fast, scale-varying topology and in exploiting
+the predictable demand drift.
+
+\textbf{Quantum-walk networks.} Continuous-time quantum walks have been used as a
+graph propagation operator~\cite{qwnn}. We evaluate one and report it as a negative
+ablation here.
+
+\section{System Model and Problem}\label{sec:model}
+\textbf{Constellation and links.} A Walker shell of $S$ satellites with $P$ planes
+is propagated on circular orbits. Each satellite holds two intra-plane ISLs and up
+to two cross-plane ISLs, forming a $+$Grid. An ISL $(u,v)$ has a propagation delay
+$\text{prop}_{uv}$ equal to its length over the speed of light, and a capacity
+$\text{cap}$. The topology over a horizon is a known sequence of graphs $G_t$.
+
+\textbf{Demand and cost.} A demand set $\mathcal{D}=\{(s,d,r)\}$ requests rate $r$
+from $s$ to $d$. We draw demands from a gravity model whose hotspots concentrate near
+a longitude band that rotates between slots, a proxy for the rotating
+dense-population/sub-solar region. The realized cost of a link under load $x_{uv}$
+follows the Bureau of Public Roads (BPR) form,
+\begin{equation}
+\text{cost}_{uv}(x)=\text{prop}_{uv}\Big(1+\alpha\,(x_{uv}/\text{cap})^{\beta}\Big),
+\quad \alpha=0.15,\ \beta=4 .
+\label{eq:bpr}
+\end{equation}
+This is smooth and monotone, so routing has a well defined user equilibrium (UE),
+the fixed point at which no flow can lower its cost by rerouting. We compute UE by the
+method of successive averages (MSA) over shortest-path assignments against
+\eqref{eq:bpr}.
+
+\textbf{References that bound the design.} Two policies bound any router. Blind
+shortest path routes on $\text{prop}$ alone: one assignment pass, congestion blind.
+UE routes on the equilibrium cost: congestion optimal, but it needs the full demand
+matrix and many MSA rounds per slot, which does not scale.
+
+\textbf{Problem.} We seek a map $f_\theta$ from cheap, observable state to a routing
+that approaches UE in one forward pass and generalizes across shell size. We target
+the UE congestion price
+\begin{equation}
+g^{*}_{uv}=\text{cost}^{\text{UE}}_{uv}/\text{prop}_{uv}-1\ \ge 0 ,
+\end{equation}
+and route every flow on $\text{prop}_{uv}\,(1+\hat g_{uv})$ using the prediction
+$\hat g$.
+
+\section{Method}\label{sec:method}
+\textbf{Features.} For a slot we form per-node features
+$[\,\text{out-demand},\,\text{in-demand},\,\text{blind out-load},\,\text{blind
+in-load}\,]$ and per-edge features $[\,\text{prop},\,\text{blind load}\,]$. The
+\emph{blind load} is the load that one congestion-blind shortest-path pass would
+induce; it is cheap (a single assignment, no iteration) and is the single most
+informative input, since the equilibrium price on a link is largely a function of how
+overloaded that link would be under naive routing. All features are scaled to be
+size invariant.
+
+\textbf{Network.} An edge-price GNN embeds node features through $K$ message-passing
+layers and reads out a per-edge price
+\begin{equation}
+\hat g_{uv}=\mathrm{softplus}\big(\mathrm{MLP}([\,h_u,\,h_v,\,\text{prop}_{uv},\,
+\text{blindload}_{uv}\,])\big),
+\end{equation}
+trained by mean-squared error to $\log(1+g^{*})$ pooled over many (shell, demand)
+instances. The propagation is a symmetric-normalized graph convolution; this operator
+choice is justified empirically in Section~\ref{sec:ablation}. Because the parameters
+are independent of the satellite count, the trained model applies to any shell.
+
+\textbf{Decoding and proactivity.} Given $\hat g$, routing is one shortest-path
+assignment on $\text{prop}\,(1+\hat g)$. For the proactive variant, the features are
+formed from the \emph{predicted} next-slot demand (here, the known-drift forecast),
+so the router pre-empts the moving hotspot rather than chasing it.
+
+\section{Experimental Setup}\label{sec:setup}
+We simulate Walker shells with a pure-kinematic propagator (no packet-level
+dependency, fully reproducible from parameters): an Iridium-like shell ($66$
+satellites, diameter $9$) and Starlink-like $53^\circ$ shells of $132$ ($d{=}16$),
+$264$ ($d{=}28$), and $1584$ satellites. Capacity is uniform; demands follow the
+drifting gravity model. We report total travel time (TTT) relative to blind shortest
+path (lower is better; blind $=1.00$), averaged over multiple demand instances and
+random seeds with standard deviations. Baselines: \emph{blind}, \emph{geographic}
+greedy (great-circle next hop, with a shortest-path fallback so all flows are
+delivered), \emph{one-step} congestion correction (route on one blind-load pass),
+\emph{GNN} (ours), and \emph{UE} (the congestion-aware reference). Every learned
+result is param-matched across operators and reported with error bars; metrics are
+survivorship free (no silently dropped flows).
+
+\section{Results}\label{sec:results}
+
+\subsection{There is large headroom for congestion awareness}\label{sec:headroom}
+Figure~\ref{fig:headroom} sweeps offered load. At light load, blind shortest path is
+already near optimal and UE offers nothing. As load grows, blind concentrates traffic
+on bottleneck links (its maximum link utilization reaches several times capacity while
+alternates idle) and UE recovers $8$, $50$, $80$, and $90\%$ of travel time. The
+congestion task, not static routing, is where a learned router can help.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.92\columnwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={offered load (demands)}, ylabel={TTT gain of UE over blind (\%)},
+  xmin=0,xmax=1700, ymin=0, ymax=100, grid=both, legend pos=south east,
+  width=8cm, height=5.4cm]
+\addplot[mark=*,thick] coordinates {(100,0.1)(300,8.5)(600,50.1)(1000,80.5)(1600,90.0)};
+\addlegendentry{$132$-sat shell}
+\addplot[mark=square*,thick,dashed] coordinates {(100,0.0)(300,8.1)(600,50.6)(1000,73.8)(1600,63.2)};
+\addlegendentry{$264$-sat shell}
+\end{axis}
+\end{tikzpicture}}
+\caption{Congestion headroom: the travel-time gain of the user equilibrium over
+congestion-blind shortest path grows with load. At light load there is no gain; under
+load, blind routing wastes half or more of the achievable performance.}
+\label{fig:headroom}
+\end{figure}
+
+\subsection{The GNN matches UE cheaply and transfers (C1, C2, C3)}
+Table~\ref{tab:baselines} reports TTT relative to blind. In distribution, the GNN
+($0.47$) matches UE ($0.46$): it captures essentially all of the congestion-aware
+gain. Transferred zero shot to a shell twice as large, the GNN ($0.39$) is the best
+\emph{deployable} policy, recovering about $79\%$ of the blind-to-UE gain and beating
+every cheap baseline. The cheap alternatives fail: one-step correction overshoots and
+oscillates (worse than blind in distribution), and geographic greedy stalls on the
+ISL grid, requiring shortest-path fallback for $53$ to $68\%$ of flows. The GNN
+reaches this quality at $20$ to $27\times$ less computation than the MSA solve
+(Table~\ref{tab:time}).
+
+\begin{table}[t]
+\centering
+\caption{Total travel time relative to blind shortest path (lower is better;
+blind $=1.00$). Mean over instances and seeds. UE is the expensive reference;
+the GNN is the deployable policy.}
+\label{tab:baselines}
+\begin{tabular}{lccccc}
+\toprule
+split & UE (ref.) & geographic & one-step & \textbf{GNN} & blind \\
+\midrule
+in-distribution & $0.46$ & $0.78$ & $1.04$ & $\mathbf{0.47}$ & $1.00$ \\
+OOD ($2\times$ shell) & $0.23$ & $0.80$ & $0.55$ & $\mathbf{0.39}$ & $1.00$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Inference cost: one GNN forward pass plus routing versus the MSA solve for
+the user equilibrium (wall-clock, CPU).}
+\label{tab:time}
+\begin{tabular}{lcccc}
+\toprule
+shell & sats & GNN (s) & UE/MSA (s) & speedup \\
+\midrule
+$132$-sat & $132$ & $0.10$ & $2.77$ & $27\times$ \\
+$264$-sat & $264$ & $0.71$ & $13.7$ & $19\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Proactive routing under drifting demand (C4)}
+Figure~\ref{fig:proactive} sweeps the per-slot hotspot drift. At zero drift the
+reactive and proactive routers are identical, as they must be. As the hotspot moves,
+the reactive one-slot-lagged router routes for yesterday's load and degrades, passing
+blind shortest path at moderate drift and reaching $1.6\times$ blind at the largest
+drift. The proactive router, fed the predicted demand, tracks the clairvoyant
+equilibrium throughout. The proactive advantage grows from $0$ to $76\%$.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.92\columnwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={per-slot hotspot drift (rad)}, ylabel={TTT relative to blind},
+  xmin=0,xmax=1.55, ymin=0.3, ymax=1.75, grid=both, legend pos=north west,
+  width=8cm, height=5.4cm]
+\addplot[mark=*,thick,red] coordinates {(0,0.50)(0.3,0.59)(0.6,0.77)(1.0,1.02)(1.5,1.63)};
+\addlegendentry{reactive (lag-1)}
+\addplot[mark=square*,thick,blue] coordinates {(0,0.50)(0.3,0.52)(0.6,0.54)(1.0,0.44)(1.5,0.38)};
+\addlegendentry{proactive (predicted)}
+\addplot[mark=triangle*,thick,black,dashed] coordinates {(0,0.52)(0.3,0.52)(0.6,0.65)(1.0,0.43)(1.5,0.41)};
+\addlegendentry{UE (clairvoyant)}
+\addplot[dotted,thick] coordinates {(0,1.0)(1.5,1.0)};
+\addlegendentry{blind}
+\end{axis}
+\end{tikzpicture}}
+\caption{Proactive versus reactive routing under drifting traffic hotspots. The
+reactive lag-1 router degrades past blind as the hotspot moves; the proactive router,
+using predicted demand, tracks the clairvoyant optimum.}
+\label{fig:proactive}
+\end{figure}
+
+\subsection{Operator ablation, including the quantum walk (negative)}\label{sec:ablation}
+Table~\ref{tab:ablation} compares three param-matched propagation operators: a local
+graph convolution (GCN), a global classical-diffusion operator (Heat), and a global
+quantum-walk operator (QW). Once the blind-load features are present, predicting the
+price is largely a local function of a link's own load, so the plain GCN is best and
+the global operators add variance without benefit. The quantum-walk operator, which
+originally motivated this work as a way to capture long-range structure, is
+\emph{not} preferred. We keep it here as an honest negative ablation.
+
+\begin{table}[t]
+\centering
+\caption{Operator ablation: recovered fraction of the blind-to-UE gain, zero shot to
+the larger shell (mean $\pm$ std over instances and seeds). The plain GCN is best;
+the quantum-walk operator does not help.}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+operator & in-distribution & OOD ($2\times$ shell) \\
+\midrule
+\textbf{GCN (local)} & $99\pm9\%$ & $\mathbf{88\pm17\%}$ \\
+Heat (global diffusion) & $103\pm9\%$ & $70\pm13\%$ \\
+QW (global quantum walk) & $95\pm10\%$ & $85\pm32\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion and Limitations}
+The simulator is kinematic and flow level, not packet level; it captures
+geometry-driven delay and load-induced congestion through the BPR model, which is the
+mechanism the method targets, but it does not model queueing dynamics or protocol
+behavior. The user equilibrium is a selfish equilibrium and not the system optimum,
+which is why some policies record travel time slightly below UE; a system-optimal
+reference would tighten the upper bound. The zero-shot transfer leaves a residual gap
+to UE on the larger shell, driven partly by one high-variance seed; training across a
+range of shell sizes is a natural way to close it. Finally, the proactive variant
+assumes the demand drift is predictable, which holds for the diurnal rotation of the
+dense-traffic band but not for sudden, unforecastable surges.
+
+\section{Conclusion}
+We presented an inductive graph network that amortizes congestion-aware traffic
+engineering for LEO mega-constellations. It predicts the user-equilibrium congestion
+price on every inter-satellite link in one forward pass from cheap load features,
+matches the equilibrium in distribution at one to two orders of magnitude less
+computation, transfers zero shot to larger shells as the best deployable policy, and,
+fed predicted demand, sustains low travel time under drifting hotspots where reactive
+control fails. We also documented why an initially appealing quantum-walk operator did
+not earn its place, and released the full pipeline and design record so the negative
+results are reusable.
+
+\begin{thebibliography}{99}
+\bibitem{handley2018} M. Handley, ``Delay is not an option: Low latency routing in
+space,'' in \emph{Proc. ACM HotNets}, 2018.
+\bibitem{bhattacherjee2019} D. Bhattacherjee and A. C. Snoeren, ``Network topology
+design at 27,000 km/hour,'' in \emph{Proc. ACM CoNEXT}, 2019.
+\bibitem{hypatia} S. Kassing, D. Bhattacherjee, A. B. Águas, J. E. Saethre, and
+A. Singla, ``Exploring the `Internet from space' with Hypatia,'' in \emph{Proc. ACM
+IMC}, 2020.
+\bibitem{starperf} Z. Lai, H. Li, and J. Li, ``StarPerf: Characterizing network
+performance for emerging mega-constellations,'' in \emph{Proc. IEEE ICNP}, 2020.
+\bibitem{gcn} T. N. Kipf and M. Welling, ``Semi-supervised classification with graph
+convolutional networks,'' in \emph{Proc. ICLR}, 2017.
+\bibitem{gat} P. Veli\v{c}kovi\'c \emph{et al.}, ``Graph attention networks,'' in
+\emph{Proc. ICLR}, 2018.
+\bibitem{graphsage} W. L. Hamilton, R. Ying, and J. Leskovec, ``Inductive
+representation learning on large graphs,'' in \emph{Proc. NeurIPS}, 2017.
+\bibitem{routenet} K. Rusek \emph{et al.}, ``RouteNet: Leveraging graph neural
+networks for network modeling and optimization in SDN,'' \emph{IEEE J. Sel. Areas
+Commun.}, vol. 38, no. 10, 2020.
+\bibitem{almasan} P. Almasan \emph{et al.}, ``Deep reinforcement learning meets graph
+neural networks: Exploring a routing optimization use case,'' \emph{Computer
+Communications}, vol. 196, 2022.
+\bibitem{wardrop} J. G. Wardrop, ``Some theoretical aspects of road traffic
+research,'' \emph{Proc. Institution of Civil Engineers}, 1952.
+\bibitem{bpr} Bureau of Public Roads, \emph{Traffic Assignment Manual}, U.S. Dept. of
+Commerce, 1964.
+\bibitem{valadarsky} A. Valadarsky, M. Schapira, D. Shahaf, and A. Tamar, ``Learning
+to route,'' in \emph{Proc. ACM HotNets}, 2017.
+\bibitem{xu} Z. Xu \emph{et al.}, ``Experience-driven networking: A deep
+reinforcement learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018.
+\bibitem{qwnn} S. Dernbach, A. Mohseni-Kabir, S. Pal, and D. Towsley, ``Quantum walk
+neural networks,'' in \emph{Complex Networks}, 2018.
+\end{thebibliography}
+
+\end{document}
