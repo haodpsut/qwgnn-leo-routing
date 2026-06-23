@@ -1,137 +1,108 @@
-# FORMULATION — Quantum-Walk GNN for Proactive LEO Routing
+# FORMULATION — Inductive GNN for Amortized Congestion-Aware LEO Routing
 
-Working title: *Ephemeris-Informed Quantum-Walk Graph Networks for Proactive
-and Scale-Invariant Routing in LEO Mega-Constellations.*
+Working title: *Learning to Route Under Load: an Inductive Graph Network that
+Amortizes Congestion-Aware Traffic Engineering for LEO Mega-Constellations.*
 
-Target tier: IEEE Transactions (primary TNSM, stretch TWC). House style: hardened
-formulation, deep honest experiments, param-matched ablations, multi-seed.
+Target: IEEE TNSM (stretch TWC). House style: hardened formulation, deep honest
+experiments, param-matched ablations, multi-seed with error bars.
+
+> Framing note (2026-06-23): this project began as a quantum-walk GNN for static
+> routing. The kill-gates refuted that line (see sec 6). The evidenced contribution
+> is the one below: a plain GNN that predicts congestion-aware routing in one
+> forward pass. The quantum-walk operator is kept only as a reported negative
+> ablation.
 
 ---
 
 ## 1. System model
 
-A LEO constellation is a set of `S` satellites with inter-satellite links (ISLs).
-Because orbital motion is deterministic and known from ephemeris (TLE / Walker
-parameters), the network topology over a horizon is a **known sequence of graphs**
+LEO constellation = `S` satellites with +Grid ISLs; topology over a horizon is a
+known sequence of graphs `G_t=(V,E_t)` from ephemeris (Walker parameters). Each ISL
+`(u,v)` has a propagation delay `prop_{uv}` (distance / c) and a finite capacity
+`cap`. A traffic demand set `D_t = {(s,d,r)}` (gravity model with population-like,
+time-shifting hotspots) loads the network.
 
+Link cost under load follows the standard BPR function:
 ```
-G_t = (V, E_t, W_t),   t = 0, 1, ..., T-1
+cost_{uv}(x) = prop_{uv} * (1 + alpha * (x_{uv}/cap)^beta),   alpha=0.15, beta=4
 ```
+where `x_{uv}` is the load on the link. Routing all demands induces loads, which
+change costs: the consistent operating point is the user equilibrium (UE).
 
-- `V` : satellites (fixed set), |V| = S.
-- `E_t` : active ISLs at slot t (in-plane links stable; cross-plane links open and
-  close at known times as satellites cross polar/seam regions).
-- `W_t` : edge weights = propagation delay (distance / c) plus a congestion term;
-  both computable from geometry and a traffic model.
+## 2. The problem: amortize traffic engineering
 
-Crucially `{G_t}` for the whole horizon is available **a priori**, not revealed
-online. This is the structural fact terrestrial routing GNNs cannot assume and the
-lever for *proactive* decisions.
+Two reference policies bound the design:
+- **Blind shortest-path** (route on `prop` only): cheap (one all-or-nothing pass)
+  but congestion-blind; it concentrates traffic on bottleneck ISLs while alternates
+  idle. Wastes 8/50/80/90% of total travel time as load grows (measured, sec 6).
+- **User equilibrium** (UE, via MSA iteration on BPR cost): the congestion-aware
+  optimum, but needs the full demand matrix and many shortest-path rounds per slot,
+  which does not scale to 1584+ satellites under fast topology change.
 
-## 2. Task: routing potential field (and next hop)
+Goal: a model `f_theta` that maps the cheap, observable state to the congestion-
+aware routing in ONE forward pass, generalizing across constellation scale.
 
-For a destination `d in V` and slot `t`, define the **routing potential**
+Target: the UE congestion price `g*_{uv} = cost^{UE}_{uv}/prop_{uv} - 1`. The GNN
+predicts `g_hat`; we route every demand on `prop*(1+g_hat)`. Inputs are cheap and
+observable: per-node `[out-demand, in-demand]` plus the **blind first-pass load**
+(node and edge level). The blind load is the single most informative feature -- the
+GNN learns to turn a one-pass load snapshot into the equilibrium prices, replacing
+the MSA iteration.
 
-```
-phi_t^d(v) = shortest-path cost from v to d on (G_t, W_t)
-```
+## 3. Model
 
-The greedy next hop from v is `argmin_{u in N_t(v)} W_t(v,u) + phi_t^d(u)`. Learning
-`phi` (a per-node scalar field conditioned on a destination indicator) is therefore
-sufficient for routing and is the supervised target. We learn a single inductive
-model `f_theta` that maps `(G_t, one-hot(d))` to an estimate `hat phi_t^d`.
+`EdgePriceGNN`: node features -> K message-passing layers -> per-edge readout
+`g_hat_{uv} = softplus(MLP([h_u, h_v, prop_{uv}, blindload_{uv}]))`, trained by
+regression to `log1p(g*)` pooled over many (shell, demand) instances. The
+propagation operator is a plain normalized-adjacency GCN; this is the operator
+choice the evidence selected (sec 6).
 
-Proactive variant: predict `phi_{t+h}^d` from information available at t (the future
-topology `G_{t+h}` is known), enabling pre-computation of routes and link
-pre-establishment before a handover/seam event.
+## 4. Claims (falsifiable)
 
-## 3. Propagation operators (the contribution)
+- **C1 — Amortization quality.** One forward pass recovers most of the blind->UE
+  travel-time gain. *Status: PASS* -- in-distribution ~94-103% (matches/beats UE,
+  legitimate since UE != system-optimal), see sec 6.
+- **C2 — Inductive scale generalization.** A model trained on small shells recovers
+  the gain ZERO-SHOT on a larger shell. *Status: PASS* -- GCN 88+/-17% recovered on
+  a 2x shell, one forward pass. Confirm on the 1584 shell (server).
+- **C3 — Cheap inference.** GNN one-shot inference is far cheaper than MSA's
+  iterated all-pairs routing, and the gap grows with constellation size. *Status:
+  TO MEASURE* (next: wall-clock GNN vs MSA across shell sizes).
+- **C4 — Proactive gain.** Feeding predicted near-future demand (known topology +
+  drifting hotspots) lets the router pre-empt congestion vs a reactive (lag-1)
+  router. *Status: TO BUILD.*
 
-Let `L = I - D^{-1/2} A D^{-1/2}` be the symmetric normalized Laplacian of `G_t`,
-with eigendecomposition `L = V diag(lambda) V^T`.
+Baselines to add: reactive-congestion shortest-path (route on previous slot's
+load), geographic greedy, oblivious/ECMP-style; references blind (effort floor) and
+UE / system-optimal (quality ceiling).
 
-- **Local (GCN baseline):** `P_loc = D^{-1/2}(A+I)D^{-1/2}`. Depth-K stack has a
-  K-hop receptive field. Cannot represent `phi` beyond K hops.
-- **Classical diffusion (Heat baseline):** `P_heat(t) = exp(-t L) = V e^{-t lambda} V^T`.
-  Global but **diffusive**: a point source decays toward the stationary distribution;
-  far-field gradient vanishes, so large distances become unresolvable.
-- **Quantum walk (ours):** continuous-time quantum walk
-  `U(tau) = exp(-i tau L) = V e^{-i tau lambda} V^T`, applied to (complexified) node
-  states; the layer emits the amplitude magnitude `|U(tau) H|`. The walk spreads
-  **ballistically** (distance ~ tau, vs diffusion's ~ sqrt(tau)) and the phase
-  produces interference that preserves distinguishable structure at long range.
+## 5. Verification protocol (non-negotiable)
 
-A QW-GNN layer (param-matched to the baselines; only the scalar `tau` is extra):
+- Param-matched operator ablation (GCN vs Heat vs QW), multi-seed, multi-instance,
+  report mean +/- std. No single-seed/single-instance claims.
+- Recovered fraction = `(blind_ttt - gnn_ttt)/(blind_ttt - ue_ttt)`; also report
+  raw TTT and per-demand mean delay.
+- Inference-time measured as wall-clock and as shortest-path-call count.
+- Shortcut audit: scale-normalize features; confirm the model uses load+structure,
+  not absolute coordinates.
 
-```
-H^{(l+1)} = sigma( W^{(l)} * | U(tau_l) H^{(l)} | + b^{(l)} )
-```
+## 6. What the kill-gates showed (honest record)
 
-The decisive isolation is **QW vs Heat**: identical architecture, identical global
-reach, identical parameter budget; the sole difference is the imaginary exponent
-(ballistic + interfering) vs the real exponent (diffusive + decaying).
-
-Scalability note: `U(tau)` is dense. For deployment we approximate it with a degree-M
-Chebyshev expansion in `L` (M localized hops, O(M|E|) cost), recovering a proper
-message-passing layer; the exact spectral form is used only for the small-graph
-analysis and as the M -> infinity reference.
-
-## 4. Pillars and what the kill-gates actually showed
-
-Headline reframed after P1: QW is a SUPPORTING component (a consistent positive
-ablation), not the contribution. The paper is centered on P2 (proactive) and P3
-(inductive scaling), which are what justify a GNN over per-slot Dijkstra.
-
-- **P1 — Ballistic reach (DEMOTED).** At matched parameters and depth, QW resolves
-  `phi` at long range better than Heat and GCN.
-  - Synthetic-torus smoke: QW won 12/12, ~52% far-node error cut, and the absolute
-    gap appeared to widen with diameter (slope +0.07 hop/hop).
-  - Real LEO topology (sim, `experiments/p1_far_resolution.py`): QW still wins
-    **9/9** param-matched cells (~16-29% relative far-node improvement) BUT the
-    **widening-with-diameter claim does NOT hold** (gaps 0.029/0.011/0.021 over
-    diam 9/16/28, slope ~0).
-  - Root cause of the discrepancy: the smoke normalized the target by graph
-    diameter, which inflated Heat's error at scale and manufactured the widening.
-    Per-destination eccentricity normalization (correct) removes it. **Lesson kept
-    on record: the scaling form of P1 was a normalization artifact.**
-  - Honest standing claim: "QW propagation yields a small but consistent far-node
-    routing-potential improvement at matched parameters" -- reported as an ablation,
-    not a scaling law.
-- **P2 — Proactive gain (now primary).** Conditioning on known future topology `G_{t+h}` yields
-  lower post-handover delay / loss than a reactive model seeing only `G_t`.
-  *Refutation test:* no significant delay/loss reduction across seam events vs
-  reactive at matched capacity.
-- **P3 — Scale invariance (now primary, the "why a GNN at all").** A model trained
-  on a small shell generalizes zero-shot to a mega-constellation (more planes /
-  satellites-per-plane), avoiding per-slot all-pairs recomputation at 1584+ sats.
-  *Refutation test:* OOD routing quality collapses, or the inductive model is no
-  better / no cheaper than recomputing Dijkstra per slot.
-  This is the next kill-gate: train on iridium66/starlink_mini, zero-shot to
-  starlink_shell1.
-
-## 5. Honest positioning vs prior art
-
-- Quantum-walk neural networks exist in generic ML (Dernbach et al., 2018). We do
-  **not** claim to invent QW propagation. Our contribution is (i) adapting it to the
-  routing-potential task on **deterministic, ephemeris-known** time-varying LEO
-  graphs, (ii) the proactive formulation that exploits future topology, and (iii)
-  the scale-invariance result. Positioning will state this explicitly.
-- GNN-for-routing and DRL-routing exist; novelty is the operator + the NTN-specific
-  proactive/inductive story, validated against those baselines (param-matched).
-
-## 6. Param-matching and verification protocol (non-negotiable)
-
-- Every model: same hidden width, same depth, same readout; report exact param
-  counts (smoke: 3265 / 3268 / 3268). Any gap must be attributable to the operator.
-- Multi-seed; never report a single-seed win. Stratify error by true distance.
-- Controls that must be run on Hypatia before any P1 claim in the paper:
-  1. **complex-diffusion control** (global, complex weights, no ballistic phase) to
-     rule out "complex capacity" rather than quantum dynamics;
-  2. **abs-only control** (Heat followed by `|.|`) to confirm the magnitude
-     nonlinearity is inert without complex phase;
-  3. **depth-matched-to-diameter GCN** to show QW (shallow) matches deep GCN while
-     avoiding over-smoothing.
-- Shortcut audit: withhold absolute coordinates; verify the model uses structure,
-  not position.
-```
-```
+- **Static routing (potential regression).** QW propagation beat classical
+  diffusion on far-node potential, but the "advantage grows with diameter" claim was
+  a smoke-normalization artifact and FAILED on real topology. Inductive greedy
+  delivery stalled (~0.67) on local minima; a Bellman-consistency loss did not fix
+  it. Conclusion: on STATIC delay-only LEO, Dijkstra/geographic already route well,
+  so a GNN has no real job. (experiments/p1, p3, p3b.)
+- **Congestion headroom (no GNN).** With BPR + UE(MSA) + total-travel-time, blind
+  shortest-path wastes 8/50/80/90% of TTT as load grows (0% at light load). Genuine,
+  load-induced headroom -> the congestion task is where a GNN belongs. (p4.)
+- **The router (core).** A one-shot GNN with blind-load features recovers ~88% of
+  that gain zero-shot on a larger shell. (p5.)
+- **Operator choice.** Once load features are present, predicting the price is
+  largely LOCAL, so a plain GCN wins; the global quantum-walk operator gives no
+  benefit and higher variance. Quantum is dropped from the contribution and reported
+  as a negative ablation. (p5 hardened.)
+- **Verdict hygiene.** Automated pass/fail printouts were wrong three times
+  (relative-% slope; overload survivorship; filtering on blind max-util). Every
+  metric is sanity-checked by hand; printed verdicts are not trusted blindly.

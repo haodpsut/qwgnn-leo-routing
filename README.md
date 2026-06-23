@@ -1,17 +1,23 @@
-# ntn-paper-01 — Quantum-Walk GNN for Proactive LEO Routing
+# ntn-paper-01 — Inductive GNN for Amortized Congestion-Aware LEO Routing
 
-IEEE Transactions paper (primary: TNSM; stretch: TWC). Core idea: a
-quantum-walk (ballistic, interfering) graph propagation operator for learning the
-routing potential field on **ephemeris-known, time-varying** LEO constellation
-graphs, giving proactive and scale-invariant routing.
+IEEE Transactions paper (primary: TNSM; stretch: TWC). Core idea: a GNN that
+predicts congestion-aware routing (the user-equilibrium congestion prices) on LEO
+constellation graphs in **one forward pass**, from cheap observable load features,
+generalizing inductively across constellation scale -- amortizing the iterative
+traffic-engineering solve that does not scale to mega-constellations.
+
+> Pivoted from an original quantum-walk angle: the kill-gates refuted it (static
+> routing is already solved by Dijkstra/geographic; the quantum operator gives no
+> benefit once load features exist). Quantum-walk is kept only as a negative
+> ablation. See FORMULATION.md sec 6 for the full honest record.
 
 ## Status
-- **P0 smoke kill-test (Pillar 1): PASSED.** Quantum-walk propagation beats
-  classical diffusion on long-range routing-potential resolution in 12/12
-  param-matched cells (~52% mean far-node error reduction; absolute advantage
-  widens with diameter). See `smoke/`.
-- Next: `sim/` Hypatia pipeline to replicate Pillar 1 on real Starlink topology
-  (kill gate P1), then complex-diffusion control (kill gate P2).
+- **Core result (P5): solid.** A one-shot GNN with blind-load features recovers
+  ~88% (GCN) of the blind->user-equilibrium travel-time gain ZERO-SHOT on a 2x
+  larger shell; in-distribution ~100%. Headroom confirmed (P4): blind routing
+  wastes 8/50/80/90% of total travel time as load grows.
+- Next: baselines (reactive-SP, geographic) + inference-time vs MSA (scalability)
+  + proactive variant (predicted demand) + writing. See RESUME.md.
 
 ## Layout
 - `FORMULATION.md` — system model, operators, three falsifiable pillars, prior-art
