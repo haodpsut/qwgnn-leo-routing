@@ -47,17 +47,21 @@ def build_routing_dataset(walker, t_s, n_dest, seed, seam=False):
     X = torch.zeros((len(dests), n, 1), dtype=torch.float64)
     Y = torch.zeros((len(dests), n), dtype=torch.float64)
     Dhop = torch.zeros((len(dests), n), dtype=torch.float64)
+    ecc = torch.zeros(len(dests), dtype=torch.float64)        # per-dest delay scale
     for k, d in enumerate(dests):
         hop = nx.single_source_shortest_path_length(G, int(d))
         delay = nx.single_source_dijkstra_path_length(Gw, int(d), weight="weight")
         hv = np.array([hop[i] for i in range(n)], dtype=np.float64)
         dv = np.array([delay[i] for i in range(n)], dtype=np.float64)
+        scale = max(dv.max(), 1e-9)
         X[k, d, 0] = 1.0
         Dhop[k] = torch.from_numpy(hv)
-        Y[k] = torch.from_numpy(dv / max(dv.max(), 1e-9))   # normalized potential
+        Y[k] = torch.from_numpy(dv / scale)                   # normalized potential
+        ecc[k] = scale
     A = torch.from_numpy(A_np.astype(np.float64))
     W = torch.from_numpy(W_np.astype(np.float64))
-    return {"A": A, "W": W, "X": X, "Y": Y, "Dhop": Dhop, "dests": torch.tensor(dests),
+    return {"A": A, "W": W, "X": X, "Y": Y, "Dhop": Dhop, "ecc": ecc,
+            "dests": torch.tensor(dests),
             "diameter": int(diameter), "n": n,
             "delay_scale": float(W_np.max())}
 
