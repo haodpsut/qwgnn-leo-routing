@@ -167,6 +167,56 @@ def blind_loads(A, prop_W, demands):
     return edge_loads([(p, r) for p, r in paths if p is not None], n)
 
 
+def measure_paths(prop_W, cap, demands, paths):
+    """Realized TTT/mean-delay for externally supplied paths (e.g. geographic)."""
+    n = prop_W.shape[0]
+    load = edge_loads([(p, r) for p, r in paths if p is not None], n)
+    total, mean = _realized(prop_W, load, cap, demands, paths)
+    unmet = sum(1 for p, _ in paths if p is None)
+    return {"total_ttt": total, "mean_delay": mean,
+            "max_util": float((load / cap).max()), "unmet": unmet}
+
+
+def geographic_paths(A, pos, demands, prop_W, max_steps=None):
+    """
+    Greedy next-hop by reducing 3D distance to the destination (congestion-blind),
+    with a free-flow shortest-path FALLBACK for flows that get stuck in a local
+    minimum. The fallback guarantees delivery so the realized TTT is survivorship-
+    free (no silently dropped flows inflating the metric).
+    """
+    n = A.shape[0]
+    if max_steps is None:
+        max_steps = 4 * n
+    nbrs = [np.nonzero(A[i] > 0)[0] for i in range(n)]
+    paths, stuck = [], []
+    for k, (s, d, r) in enumerate(demands):
+        cur, seen, path = s, {s}, [s]
+        ok = True
+        for _ in range(max_steps):
+            if cur == d:
+                break
+            cand = nbrs[cur]
+            dist = np.linalg.norm(pos[cand] - pos[d], axis=1)
+            nxt = int(cand[int(np.argmin(dist))])
+            if nxt in seen:
+                ok = False
+                break
+            seen.add(nxt)
+            path.append(nxt)
+            cur = nxt
+        if ok and cur == d:
+            paths.append((path, r))
+        else:
+            paths.append(None)               # placeholder, fill via fallback
+            stuck.append((k, (s, d, r)))
+    if stuck:
+        free = link_cost(prop_W, np.zeros_like(prop_W), 1.0)
+        fb = _route_on_cost(A, free, [sd for _, sd in stuck])
+        for (k, _), p in zip(stuck, fb):
+            paths[k] = p
+    return paths, len(stuck)
+
+
 def demand_node_features(demands, n):
     """Per-node [outgoing rate, incoming rate] -- the observable traffic intensity."""
     out = np.zeros(n)

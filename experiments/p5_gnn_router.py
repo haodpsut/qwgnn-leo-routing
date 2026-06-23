@@ -116,7 +116,7 @@ def make_instance(walker, npairs, seed):
     ctx["eload"] = torch.from_numpy(el / (el.mean() + 1e-9))
     return {
         "A_np": A_np, "W_np": W_np, "dem": dem, "cap": cap, "n": n,
-        "X": torch.from_numpy(Xnp), "ctx": ctx,
+        "X": torch.from_numpy(Xnp), "ctx": ctx, "pos": pos, "bload": bload,
         "g_star": torch.from_numpy(g_star[rows, cols]),  # (E,)
         "tgt": torch.from_numpy(np.log1p(g_star[rows, cols])),
         "rows": rows, "cols": cols,
