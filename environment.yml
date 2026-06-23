@@ -1,0 +1,21 @@
+# Conda environment for the QW-GNN LEO routing experiments.
+#   conda env create -f environment.yml
+#   conda activate qwgnn
+# CUDA (RTX 4090) torch is installed via pip from the cu121 wheel index.
+name: qwgnn
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - networkx
+  - pandas
+  - matplotlib
+  - tqdm
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - torch
+      - skyfield
+      - sgp4
