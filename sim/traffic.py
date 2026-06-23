@@ -124,3 +124,41 @@ def evaluate(A, prop_W, demands, cap, policy="blind", iters=20):
     unmet = sum(1 for p, _ in paths if p is None)
     return {"total_ttt": total, "mean_delay": mean,
             "max_util": float((load / cap).max()), "unmet": unmet}
+
+
+def ue_loads(A, prop_W, demands, cap, iters=20):
+    """Equilibrium edge-load matrix and congestion multiplier g = cost/prop - 1."""
+    n = A.shape[0]
+    free = link_cost(prop_W, np.zeros_like(prop_W), cap)
+    paths = _route_on_cost(A, free, demands)
+    load = edge_loads([(p, r) for p, r in paths if p is not None], n)
+    for k in range(1, iters + 1):
+        cost = link_cost(prop_W, load, cap)
+        aon = _route_on_cost(A, cost, demands)
+        yload = edge_loads([(p, r) for p, r in aon if p is not None], n)
+        load = load + (yload - load) / (k + 1)
+    cost = link_cost(prop_W, load, cap)
+    g = np.zeros_like(prop_W)
+    m = prop_W > 0
+    g[m] = cost[m] / prop_W[m] - 1.0          # >= 0, the UE congestion price
+    return load, g
+
+
+def route_and_measure(A, prop_W, demands, cap, route_cost):
+    """Route every demand on route_cost, then measure realized TTT under BPR."""
+    n = A.shape[0]
+    paths = _route_on_cost(A, route_cost, demands)
+    load = edge_loads([(p, r) for p, r in paths if p is not None], n)
+    total, mean = _realized(prop_W, load, cap, demands, paths)
+    return {"total_ttt": total, "mean_delay": mean,
+            "max_util": float((load / cap).max())}
+
+
+def demand_node_features(demands, n):
+    """Per-node [outgoing rate, incoming rate] -- the observable traffic intensity."""
+    out = np.zeros(n)
+    inc = np.zeros(n)
+    for s, d, r in demands:
+        out[s] += r
+        inc[d] += r
+    return np.stack([out, inc], axis=1)        # (n, 2)
