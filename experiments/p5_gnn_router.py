@@ -89,24 +89,22 @@ class EdgePriceGNN(nn.Module):
         return self.edge(feat).squeeze(-1)              # (E,) = log1p(g) prediction
 
 
-# ---- instance construction -------------------------------------------------
-def make_instance(walker, npairs, seed):
-    A_np, W_np = grid_isl_graph(walker, 0.0, seam=False)
+# ---- features -------------------------------------------------------------
+def build_features(A_np, W_np, dem):
+    """Observable inputs: per-node [out,in] demand + blind-load, per-edge prop+load.
+
+    `dem` here is the demand the router OBSERVES (current slot for reactive, or
+    predicted next slot for proactive); it need not match the routed demand.
+    Returns (X, ctx, rows, cols, bload).
+    """
     n = A_np.shape[0]
-    rng = np.random.default_rng(seed)
-    pos = walker.positions(0.0)
-    dem = gravity_demands(pos, npairs, rng)
-    cap = CAP
-    _, g_star = ue_loads(A_np, W_np, dem, cap)          # target multiplier
-    bload = blind_loads(A_np, W_np, dem)                # cheap first-pass load
+    bload = blind_loads(A_np, W_np, dem)
 
     def _norm(col):
         return col / (col.mean() + 1e-9)
-    odf = demand_node_features(dem, n)                  # (n,2) out/in demand
-    node_out_load = bload.sum(1)                        # blind load leaving node
-    node_in_load = bload.sum(0)                         # blind load entering node
+    odf = demand_node_features(dem, n)
     Xnp = np.stack([_norm(odf[:, 0]), _norm(odf[:, 1]),
-                    _norm(node_out_load), _norm(node_in_load)], axis=1)
+                    _norm(bload.sum(1)), _norm(bload.sum(0))], axis=1)
     A = torch.from_numpy(A_np.astype(np.float64))
     ctx = build_ctx(A)
     rows, cols = np.nonzero(A_np)
@@ -114,9 +112,21 @@ def make_instance(walker, npairs, seed):
     ctx["eprop"] = torch.from_numpy(W_np[rows, cols] / (W_np[rows, cols].mean() + 1e-9))
     el = bload[rows, cols]
     ctx["eload"] = torch.from_numpy(el / (el.mean() + 1e-9))
+    return torch.from_numpy(Xnp), ctx, rows, cols, bload
+
+
+# ---- instance construction -------------------------------------------------
+def make_instance(walker, npairs, seed):
+    A_np, W_np = grid_isl_graph(walker, 0.0, seam=False)
+    rng = np.random.default_rng(seed)
+    pos = walker.positions(0.0)
+    dem = gravity_demands(pos, npairs, rng)
+    cap = CAP
+    _, g_star = ue_loads(A_np, W_np, dem, cap)          # target multiplier
+    X, ctx, rows, cols, bload = build_features(A_np, W_np, dem)
     return {
-        "A_np": A_np, "W_np": W_np, "dem": dem, "cap": cap, "n": n,
-        "X": torch.from_numpy(Xnp), "ctx": ctx, "pos": pos, "bload": bload,
+        "A_np": A_np, "W_np": W_np, "dem": dem, "cap": cap, "n": A_np.shape[0],
+        "X": X, "ctx": ctx, "pos": pos, "bload": bload,
         "g_star": torch.from_numpy(g_star[rows, cols]),  # (E,)
         "tgt": torch.from_numpy(np.log1p(g_star[rows, cols])),
         "rows": rows, "cols": cols,
