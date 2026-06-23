@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.join(ROOT, "sim"))
 from models import build_ctx                                   # smoke/ (ctx + ops)
 from constellation import Walker, grid_isl_graph              # sim/
 from traffic import (gravity_demands, ue_loads, route_and_measure,
-                     evaluate, demand_node_features, link_cost)
+                     evaluate, demand_node_features, blind_loads)
 
 DEPTH = 3
 HIDDEN = 32
@@ -64,7 +64,7 @@ PROPS = {"GCN": prop_gcn, "Heat": prop_heat, "QW": prop_qw}
 class EdgePriceGNN(nn.Module):
     """Node-feature -> per-edge UE congestion price (predicts log1p(g))."""
 
-    def __init__(self, prop_name, hidden=HIDDEN, layers=DEPTH, in_dim=2):
+    def __init__(self, prop_name, hidden=HIDDEN, layers=DEPTH, in_dim=4):
         super().__init__()
         self.prop = PROPS[prop_name]
         self.layers = layers
@@ -72,9 +72,9 @@ class EdgePriceGNN(nn.Module):
         self.mix = nn.ModuleList([nn.Linear(hidden, hidden).double()
                                   for _ in range(layers)])
         self.t = nn.Parameter(torch.ones(layers, dtype=torch.float64))
-        # edge readout: [h_u, h_v, prop_uv] -> scalar
+        # edge readout: [h_u, h_v, prop_uv, blind_load_uv] -> scalar
         self.edge = nn.Sequential(
-            nn.Linear(2 * hidden + 1, hidden).double(), nn.ReLU(),
+            nn.Linear(2 * hidden + 2, hidden).double(), nn.ReLU(),
             nn.Linear(hidden, 1).double())
         self.act = nn.ReLU()
 
@@ -84,7 +84,8 @@ class EdgePriceGNN(nn.Module):
             tl = torch.nn.functional.softplus(self.t[li]) + 1e-3
             H = self.act(self.mix[li](self.prop(H, ctx, tl)))
         src, dst = ctx["eidx"]                          # (E,)
-        feat = torch.cat([H[src], H[dst], ctx["eprop"].unsqueeze(1)], dim=1)
+        feat = torch.cat([H[src], H[dst],
+                          ctx["eprop"].unsqueeze(1), ctx["eload"].unsqueeze(1)], dim=1)
         return self.edge(feat).squeeze(-1)              # (E,) = log1p(g) prediction
 
 
@@ -97,13 +98,22 @@ def make_instance(walker, npairs, seed):
     dem = gravity_demands(pos, npairs, rng)
     cap = CAP
     _, g_star = ue_loads(A_np, W_np, dem, cap)          # target multiplier
-    Xnp = demand_node_features(dem, n)
-    Xnp = Xnp / (Xnp.mean() + 1e-9)                     # scale-free node features
+    bload = blind_loads(A_np, W_np, dem)                # cheap first-pass load
+
+    def _norm(col):
+        return col / (col.mean() + 1e-9)
+    odf = demand_node_features(dem, n)                  # (n,2) out/in demand
+    node_out_load = bload.sum(1)                        # blind load leaving node
+    node_in_load = bload.sum(0)                         # blind load entering node
+    Xnp = np.stack([_norm(odf[:, 0]), _norm(odf[:, 1]),
+                    _norm(node_out_load), _norm(node_in_load)], axis=1)
     A = torch.from_numpy(A_np.astype(np.float64))
     ctx = build_ctx(A)
     rows, cols = np.nonzero(A_np)
     ctx["eidx"] = (torch.from_numpy(rows), torch.from_numpy(cols))
-    ctx["eprop"] = torch.from_numpy(W_np[rows, cols])
+    ctx["eprop"] = torch.from_numpy(W_np[rows, cols] / (W_np[rows, cols].mean() + 1e-9))
+    el = bload[rows, cols]
+    ctx["eload"] = torch.from_numpy(el / (el.mean() + 1e-9))
     return {
         "A_np": A_np, "W_np": W_np, "dem": dem, "cap": cap, "n": n,
         "X": torch.from_numpy(Xnp), "ctx": ctx,
@@ -154,27 +164,36 @@ if os.environ.get("QWGNN_FULL") == "1":
     OOD_WALKER = Walker(1584, 72, 1, 53.0, 550.0)
     OOD_PAIRS = 7200
 SEEDS = [0, 1, 2]
+N_TRAIN_INST = 10
+N_EVAL_INST = 4
 OUT = os.path.join(ROOT, "results", "p5_router.csv")
 
 
 def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     rows = []
-    print(f"train: Walker132 @ {TRAIN_PAIRS} pairs   OOD: larger shell @ {OOD_PAIRS}\n")
-    print(f"{'prop':5s} {'seed':>4} {'split':14s} | {'blind':>9} {'ue':>9} "
-          f"{'gnn':>9} {'recovered%':>10}")
+    print(f"train: Walker132 @ {TRAIN_PAIRS} pairs   OOD: larger shell @ {OOD_PAIRS}")
+    print(f"{N_TRAIN_INST} train insts, {N_EVAL_INST} eval insts/split, {len(SEEDS)} seeds\n")
     for seed in SEEDS:
-        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 10 + i)
-                       for i in range(6)]
-        indist = make_instance(TRAIN_WALKER, TRAIN_PAIRS, 900 + seed)
-        ood = make_instance(OOD_WALKER, OOD_PAIRS, 700 + seed)
+        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i)
+                       for i in range(N_TRAIN_INST)]
+        indist = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 900 + seed * 10 + i)
+                  for i in range(N_EVAL_INST)]
+        ood = [make_instance(OOD_WALKER, OOD_PAIRS, 700 + seed * 10 + i)
+               for i in range(N_EVAL_INST)]
         for prop_name in PROPS:
             model = train(prop_name, train_insts, seed)
-            for split, ins in [("in-dist", indist), ("ood-largeshell", ood)]:
-                r = eval_instance(model, ins)
-                rows.append({"prop": prop_name, "seed": seed, "split": split, **r})
-                print(f"{prop_name:5s} {seed:>4} {split:14s} | {r['blind']:>9.1f} "
-                      f"{r['ue']:>9.1f} {r['gnn']:>9.1f} {100 * r['recovered']:>9.1f}%")
+            for split, insts in [("in-dist", indist), ("ood-largeshell", ood)]:
+                for j, ins in enumerate(insts):
+                    r = eval_instance(model, ins)
+                    rows.append({"prop": prop_name, "seed": seed, "split": split,
+                                 "inst": j, **r})
+            for split in ("in-dist", "ood-largeshell"):
+                rs = [r for r in rows if r["prop"] == prop_name and r["seed"] == seed
+                      and r["split"] == split]
+                recs = 100 * np.array([r["recovered"] for r in rs])
+                print(f"{prop_name:5s} seed{seed} {split:14s} | "
+                      f"recovered {recs.mean():>6.1f}% +/- {recs.std():>4.1f}")
     with open(OUT, "w", newline="") as f:
         wtr = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         wtr.writeheader()
@@ -184,23 +203,29 @@ def main():
 
 def verdict(rows):
     print("\n" + "=" * 72)
-    print(f"{'prop':5s} {'split':14s} | {'recovered% (mean)':>18}")
+    print(f"{'prop':5s} {'split':14s} | {'recovered% mean +/- std (n)':>30}")
     best = {}
     for prop_name in PROPS:
         for split in ("in-dist", "ood-largeshell"):
             rs = [r for r in rows if r["prop"] == prop_name and r["split"] == split]
-            rec = 100 * np.nanmean([r["recovered"] for r in rs])
-            best[(prop_name, split)] = rec
-            print(f"{prop_name:5s} {split:14s} | {rec:>17.1f}%")
+            recs = 100 * np.array([r["recovered"] for r in rs])
+            best[(prop_name, split)] = (float(recs.mean()), float(recs.std()), len(recs))
+            print(f"{prop_name:5s} {split:14s} | "
+                  f"{recs.mean():>10.1f}% +/- {recs.std():>4.1f}  (n={len(recs)})")
     print("\nP5 VERDICT")
-    ood_best = max(best[(p, "ood-largeshell")] for p in PROPS)
-    if ood_best >= 50.0:
-        print(f"  => PASS: a small-shell-trained GNN recovers {ood_best:.0f}% of the "
-              f"blind->UE gain ZERO-SHOT on a larger shell, in one forward pass.")
-        print("     This is the contribution. Next: proactive (predicted demand) + paper.")
+    ood = {p: best[(p, "ood-largeshell")] for p in PROPS}
+    bp = max(ood, key=lambda p: ood[p][0])
+    m, s, n = ood[bp]
+    solid = m - s >= 40.0           # mean minus one std clears a meaningful bar
+    if m >= 50.0 and solid:
+        print(f"  => PASS (solid): {bp} recovers {m:.0f}% +/-{s:.0f} of the blind->UE")
+        print(f"     gain ZERO-SHOT on a larger shell, one forward pass, low variance.")
+        print("     Next: proactive (predicted demand) + baselines + paper.")
+    elif m >= 50.0:
+        print(f"  => PASS (noisy): {bp} mean {m:.0f}% but std {s:.0f}; tighten variance")
+        print("     (more instances / features) before the final claim.")
     else:
-        print(f"  => best OOD recovery {ood_best:.0f}% (<50%). Improve features/model "
-              f"(edge features, deeper, attention) before claiming the contribution.")
+        print(f"  => best OOD {bp} {m:.0f}% (<50%). Strengthen features/model.")
     print("=" * 72)
 
 

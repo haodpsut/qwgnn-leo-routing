@@ -154,6 +154,19 @@ def route_and_measure(A, prop_W, demands, cap, route_cost):
             "max_util": float((load / cap).max())}
 
 
+def blind_loads(A, prop_W, demands):
+    """Edge load if every demand takes the free-flow (propagation) shortest path.
+
+    One all-or-nothing pass: cheap (no equilibration). This first-pass load is the
+    single most informative input for predicting the equilibrium congestion price,
+    and is exactly what the GNN is meant to correct in one shot instead of MSA.
+    """
+    n = A.shape[0]
+    free = link_cost(prop_W, np.zeros_like(prop_W), 1.0)   # cap irrelevant at zero load
+    paths = _route_on_cost(A, free, demands)
+    return edge_loads([(p, r) for p, r in paths if p is not None], n)
+
+
 def demand_node_features(demands, n):
     """Per-node [outgoing rate, incoming rate] -- the observable traffic intensity."""
     out = np.zeros(n)
