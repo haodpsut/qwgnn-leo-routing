@@ -55,8 +55,8 @@ for split in ("in-dist", "ood"):
     print(f"  {split:8s} | " + "  ".join(parts) + f"  geo_stuck {gm:.0%}")
 
 print("=" * 70)
-print("FIG ablation (P5, 264 OOD): recovered% mean+/-std, by operator x split")
-p5 = load("p5_router.csv")
+print("FIG ablation (p5_ablation.csv, 264 OOD, multipath): recovered% mean+/-std")
+p5 = load("p5_ablation.csv")
 for op in ("GCN", "Heat", "QW"):
     for split in ("in-dist", "ood-largeshell"):
         rs = [r for r in p5 if r["prop"] == op and r["split"] == split]

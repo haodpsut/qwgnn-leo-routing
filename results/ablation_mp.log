@@ -1,0 +1,36 @@
+train: Walker132 @ 600 pairs   OOD: larger shell @ 1200
+ops=['GCN', 'Heat', 'QW'] need_eig=True; 10 train, 4 eval/split, 3 seeds
+
+GCN   seed0 in-dist        | recovered   97.0% +/-  0.4
+GCN   seed0 ood-largeshell | recovered   93.7% +/-  1.2
+Heat  seed0 in-dist        | recovered   97.2% +/-  0.5
+Heat  seed0 ood-largeshell | recovered   93.5% +/-  1.1
+QW    seed0 in-dist        | recovered   94.4% +/-  2.1
+QW    seed0 ood-largeshell | recovered   96.1% +/-  0.5
+GCN   seed1 in-dist        | recovered   97.7% +/-  1.6
+GCN   seed1 ood-largeshell | recovered   93.8% +/-  0.5
+Heat  seed1 in-dist        | recovered   96.7% +/-  1.6
+Heat  seed1 ood-largeshell | recovered   90.2% +/-  1.4
+QW    seed1 in-dist        | recovered   91.8% +/-  4.2
+QW    seed1 ood-largeshell | recovered   82.7% +/-  1.7
+GCN   seed2 in-dist        | recovered   95.9% +/-  1.9
+GCN   seed2 ood-largeshell | recovered   94.4% +/-  0.7
+Heat  seed2 in-dist        | recovered   96.4% +/-  1.8
+Heat  seed2 ood-largeshell | recovered   92.5% +/-  0.7
+QW    seed2 in-dist        | recovered   95.5% +/-  3.6
+QW    seed2 ood-largeshell | recovered   91.0% +/-  1.6
+
+========================================================================
+prop  split          |    recovered% mean +/- std (n)
+GCN   in-dist        |       96.9% +/-  1.6  (n=12)
+GCN   ood-largeshell |       94.0% +/-  0.9  (n=12)
+Heat  in-dist        |       96.8% +/-  1.5  (n=12)
+Heat  ood-largeshell |       92.1% +/-  1.8  (n=12)
+QW    in-dist        |       93.9% +/-  3.7  (n=12)
+QW    ood-largeshell |       89.9% +/-  5.7  (n=12)
+
+P5 VERDICT
+  => PASS (solid): GCN recovers 94% +/-1 of the blind->UE
+     gain ZERO-SHOT on a larger shell, one forward pass, low variance.
+     Next: proactive (predicted demand) + baselines + paper.
+========================================================================

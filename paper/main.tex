@@ -1087,12 +1087,13 @@ blind load.
 \subsection{Operator ablation, including the quantum walk (negative)}\label{sec:ablation}
 Table~\ref{tab:ablation} compares three param-matched propagation operators: a local
 graph convolution (GCN), a global classical-diffusion operator (Heat), and a global
-quantum-walk operator (QW). Once the blind-load features are present, predicting the
-price is largely a local function of a link's own load, so the plain GCN is best out of
-distribution and the global operators add variance without benefit; the quantum-walk
-operator is the most variable ($\pm 20$). The quantum walk originally motivated this work
-as a way to capture long-range structure; the data did not support it, and we report it
-as an honest negative ablation rather than force it into the contribution.
+quantum-walk operator (QW). All three use the multipath decode. Once the blind-load
+features are present, predicting the price is largely a local function of a link's own
+load, so the plain GCN is best out of distribution ($94\pm1\%$) and the global operators
+add variance without benefit: the quantum walk is both the lowest and the most variable
+($90\pm6\%$). The quantum walk originally motivated this work as a way to capture long-range
+structure; the data did not support it, and we report it as an honest negative ablation
+rather than force it into the contribution.
 Figure~\ref{fig:ablation} shows the same comparison with error bars.
 
 \begin{figure}[t]
@@ -1105,10 +1106,10 @@ Figure~\ref{fig:ablation} shows the same comparison with error bars.
   error bars/y dir=both, error bars/y explicit,
   error bars/error bar style={black!65, line width=0.7pt}]
 \addplot[draw=cSteel!80!black, fill=cSteel!35] coordinates {
-  (GCN,86) +- (0,6) (Heat,89) +- (0,4) (QW,82) +- (0,8)};
+  (GCN,97) +- (0,2) (Heat,97) +- (0,2) (QW,94) +- (0,4)};
 \addplot[draw=cAmber!80!black, fill=cAmber!45, postaction={pattern=north east lines,
   pattern color=cAmber!80!black}] coordinates {
-  (GCN,65) +- (0,9) (Heat,52) +- (0,6) (QW,62) +- (0,20)};
+  (GCN,94) +- (0,1) (Heat,92) +- (0,2) (QW,90) +- (0,6)};
 \legend{in-distribution, OOD ($264$)}
 \end{axis}
 \end{tikzpicture}}
@@ -1128,9 +1129,9 @@ does not help and is the most variable.}
 \toprule
 operator & in-distribution & OOD ($264$) \\
 \midrule
-\textbf{GCN (local)} & $86\pm6$ & $\mathbf{65\pm9}$ \\
-Heat (global diffusion) & $89\pm4$ & $52\pm6$ \\
-QW (global quantum walk) & $82\pm8$ & $62\pm20$ \\
+\textbf{GCN (local)} & $97\pm2$ & $\mathbf{94\pm1}$ \\
+Heat (global diffusion) & $97\pm2$ & $92\pm2$ \\
+QW (global quantum walk) & $94\pm4$ & $90\pm6$ \\
 \bottomrule
 \end{tabular}
 \end{table}
