@@ -73,6 +73,29 @@ for drift in sorted({r["drift"] for r in p7}):
           f"  proact {g('r_proact'):.2f}  gain {gain:.0f}%")
 
 print("=" * 64)
+print("TABLE/FIG decoder (p8_decoder.csv): TTT/blind single vs multipath vs UE")
+try:
+    p8 = load("p8_decoder.csv")
+    for split in ("in-dist", "ood"):
+        rs = [r for r in p8 if r["split"] == split]
+        g = lambda k: np.mean([r[k] for r in rs])
+        rec = lambda v, ue: (1 - v) / (1 - ue)
+        sp, mp, ue = g("r_gnn_sp"), g("r_gnn_mp"), g("r_ue")
+        print(f"  {split:8s} single {sp:.2f} ({rec(sp,ue):.0%})  "
+              f"multi {mp:.2f} ({rec(mp,ue):.0%})  UE {ue:.2f}")
+except FileNotFoundError:
+    print("  (run experiments/p8_decoder.py)")
+
+print("=" * 64)
+print("FIG bound (p9_bound.csv): TTT gap to UE vs price error")
+try:
+    for r in load("p9_bound.csv"):
+        print(f"  eps {r['eps']:.2f} rel_err {r['rel_err']:.3f}  "
+              f"single {r['gap_sp_pct']:.1f}%  multi {r['gap_mp_pct']:.1f}%")
+except FileNotFoundError:
+    print("  (run experiments/p9_bound.py)")
+
+print("=" * 64)
 print("TABLE price of anarchy (poa.csv): UE/SO by load on the 132-shell")
 try:
     for r in load("poa.csv"):

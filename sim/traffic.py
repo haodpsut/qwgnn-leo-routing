@@ -176,6 +176,60 @@ def route_and_measure(A, prop_W, demands, cap, route_cost):
             "max_util": float((load / cap).max())}
 
 
+def multipath_route(A, prop_W, route_cost, demands, cap, tau=0.25):
+    """
+    One-shot MULTIPATH decode of a cost field (flow-splitting), to match the
+    multi-path nature of the user equilibrium that a single shortest path cannot.
+
+    For each destination we compute the cost-to-go under route_cost (one Dijkstra),
+    then push each demand's rate downhill, splitting at every node across the
+    distance-decreasing out-edges with a softmin weight exp(-slack/(tau*scale)),
+    where slack = c(u,v)+d(v)-d(u) >= 0 is how far an edge is from being on a
+    shortest path (slack 0 on the steepest path). tau -> 0 recovers single path;
+    larger tau spreads load. The downhill edges form a DAG, so flow is loop free and
+    computed in one decreasing-distance sweep. Cost is one Dijkstra per destination,
+    the same class as the single-path decode, not the T-iteration equilibrium solve.
+    """
+    n = A.shape[0]
+    G = nx.DiGraph()
+    rows, cols = np.nonzero(A)
+    for a, b in zip(rows.tolist(), cols.tolist()):
+        G.add_edge(a, b, weight=float(route_cost[a, b]))
+    Grev = G.reverse(copy=False)
+    scale = float(route_cost[rows, cols].mean()) + 1e-9
+
+    by_dst = {}
+    for s, d, r in demands:
+        by_dst.setdefault(int(d), []).append((int(s), r))
+
+    load = np.zeros((n, n))
+    for d, srcs in by_dst.items():
+        dist = nx.single_source_dijkstra_path_length(Grev, d, weight="weight")
+        inflow = np.zeros(n)
+        for s, r in srcs:
+            if s in dist:
+                inflow[s] += r
+        order = sorted((u for u in dist if u != d), key=lambda u: -dist[u])
+        for u in order:
+            f = inflow[u]
+            if f <= 0:
+                continue
+            nbrs = [v for v in G.successors(u) if v in dist and dist[v] < dist[u]]
+            if not nbrs:
+                continue
+            slack = np.array([route_cost[u, v] + dist[v] - dist[u] for v in nbrs])
+            w = np.exp(-slack / (tau * scale))
+            w /= w.sum()
+            for v, wi in zip(nbrs, w):
+                load[u, v] += f * wi
+                inflow[v] += f * wi
+    cost = link_cost(prop_W, load, cap)
+    total = float((load * cost).sum())
+    dem_total = sum(r for _, _, r in demands)
+    return {"total_ttt": total, "mean_delay": total / dem_total if dem_total else float("nan"),
+            "max_util": float((load / cap).max())}
+
+
 def blind_loads(A, prop_W, demands):
     """Edge load if every demand takes the free-flow (propagation) shortest path.
 

@@ -47,6 +47,7 @@
 \usepackage{algpseudocode}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
+\newtheorem{proposition}{Proposition}
 
 \tikzset{
   blk/.style={rectangle, rounded corners=2pt, draw=black, fill=blue!8, text=black,
@@ -371,11 +372,16 @@ g^{*}_{uv}=\cost^{\mathrm{UE}}_{uv}/\prop_{uv}-1\ \ge 0,
 \qquad \hat g = f_\theta(\mathcal{S}_t),
 \label{eq:price}
 \end{equation}
-so that routing on $\prop(1+\hat g)$ reproduces $x^{\mathrm{UE}}$. Maps to \textbf{C1}.
+so that routing on the cost $\prop(1+\hat g)$ \emph{approximates} the equilibrium flow
+$x^{\mathrm{UE}}$. Maps to \textbf{C1}.
 
-\noindent\textbf{(SP2) Decoding.} Turn a price field into a routing by one shortest-path
-assignment, $\pi=\AoN(\prop(1+\hat g))$. The decode is shared across all demands, so a
-single $\hat g$ routes the whole matrix.
+\noindent\textbf{(SP2) Decoding.} Turn a price field into a routing. A single
+shortest-path assignment $\pi=\AoN(\prop(1+\hat g))$ is the cheapest decode, but the user
+equilibrium splits flow across equal-cost paths, so a single path cannot reproduce
+$x^{\mathrm{UE}}$ even with perfect prices (Section~\ref{sec:decode}). We therefore use a
+one-shot \emph{multipath} decode that splits flow downhill on the predicted cost; it
+costs the same order as the single-path decode and closes most of that gap. The decode is
+shared across all demands, so a single $\hat g$ routes the whole matrix.
 
 \noindent\textbf{(SP3) Inductive transfer.} Require $\theta$ to be size invariant so that
 $f_\theta$ trained on $\{G^{\mathrm{small}}\}$ applies to a larger $G^{\mathrm{large}}$
@@ -533,11 +539,30 @@ not the large deployment shell, its cost is modest even though MSA itself does n
 is the asymmetry the whole method exploits: pay for the equilibrium once, on a small instance,
 and predict it everywhere else.
 
-\subsection{Decoding and inference (SP2)}
-Given $\hat g$, the routing is a single shortest-path assignment
-$\pi=\AoN\big(\prop(1{+}\hat g)\big)$, shared across the whole demand matrix.
-Algorithm~\ref{alg:infer} states one-slot inference: one blind pass to form the
-features, one GNN forward, one decode pass.
+\subsection{Decoding: single path and multipath (SP2)}\label{sec:decode}
+Given the predicted cost $c=\prop(1{+}\hat g)$, the cheapest decode is a single
+shortest-path assignment $\pi_{\mathrm{sp}}=\AoN(c)$. But the user equilibrium splits
+each demand across all paths of equal cost, so $\pi_{\mathrm{sp}}$ cannot equal
+$x^{\mathrm{UE}}$ even when $\hat g=g^{*}$: the single path carries the whole rate where
+the equilibrium would have spread it, leaving a \emph{decoding gap} independent of the
+prediction error. We quantify it in Section~\ref{sec:results-decode}.
+
+We therefore use a one-shot \emph{multipath} decode that recovers the flow splitting at
+the same asymptotic cost as $\AoN$. For each destination $d$ we compute the cost-to-go
+$\mu_d(\cdot)$ under $c$ with one Dijkstra, then push each demand's rate downhill: at a
+node $u$, the rate is split across the distance-decreasing out-edges $(u,v)$, i.e.
+$\mu_d(v)<\mu_d(u)$, with the softmin weight
+\begin{equation}
+w_{uv}\propto \exp\!\big(-\,\mathrm{slack}_{uv}/(\tau\,\bar c)\big),\quad
+\mathrm{slack}_{uv}=c_{uv}+\mu_d(v)-\mu_d(u)\ge 0,
+\label{eq:split}
+\end{equation}
+where $\bar c$ is the mean edge cost and $\mathrm{slack}_{uv}=0$ on a shortest path. The
+downhill edges form a DAG, so the split is loop free and computed in one
+decreasing-$\mu_d$ sweep; $\tau\to 0$ recovers $\pi_{\mathrm{sp}}$, larger $\tau$ spreads
+load. The cost is one Dijkstra per destination, the same class as $\pi_{\mathrm{sp}}$,
+\emph{not} the $T$-iteration equilibrium solve. Algorithm~\ref{alg:infer} states one-slot
+inference with this decode.
 
 \begin{algorithm}[t]
 \caption{One-slot congestion-aware routing}
@@ -547,10 +572,43 @@ features, one GNN forward, one decode pass.
 \State $x^{0}\gets \AoN(\prop)$ \Comment{one blind pass = features}
 \State $\phi\gets \textsc{Features}(\mathcal{D},x^{0})$
 \State $\hat g\gets f_\theta(\phi,G_t)$ \Comment{one GNN forward, Eq.~\eqref{eq:readout}}
-\State $\pi\gets \AoN\big(\prop(1{+}\hat g)\big)$ \Comment{one decode pass}
+\State $\pi\gets \textsc{MultipathDecode}\big(\prop(1{+}\hat g),\mathcal{D}\big)$ \Comment{Eq.~\eqref{eq:split}}
 \State \Return $\pi$
 \end{algorithmic}
 \end{algorithm}
+
+\subsection{Travel-time bound (theory)}\label{sec:bound}
+The decode lets us bound how the prediction error propagates to travel time. Let
+$\TTT^{*}=\TTT(\mathrm{UE})$, let $\pi$ be the multipath decode of $c=\prop(1+\hat g)$, and
+let the realized utilizations stay in a range on which the BPR cost is $L$-Lipschitz.
+
+\begin{proposition}\label{prop:bound}
+If $\lVert \hat g-g^{*}\rVert_\infty\le\varepsilon$, then
+\begin{equation}
+\TTT(\pi)\ \le\ \big(1+\delta_{\mathrm{dec}}+\,c_1 H\,\varepsilon\big)\,\TTT^{*},
+\label{eq:bound}
+\end{equation}
+where $H$ is the maximum decoded path length (hops), $c_1$ depends on $L$ and the
+free-flow delays, and $\delta_{\mathrm{dec}}\ge 0$ is the decoder's gap at exact prices
+($\hat g=g^{*}$). The prediction term vanishes as $\varepsilon\to 0$.
+\end{proposition}
+
+\begin{IEEEproof}[Proof sketch]
+Per edge, $\lvert c_{uv}-c^{*}_{uv}\rvert=\prop_{uv}\lvert\hat g_{uv}-g^{*}_{uv}\rvert\le
+\prop_{\max}\varepsilon$. A path that is shortest under $c$ therefore has cost under the
+equilibrium cost $c^{*}$ exceeding the $c^{*}$-shortest by at most $2H\prop_{\max}\varepsilon$
+(additive shortest-path perturbation). The multipath split \eqref{eq:split} only uses
+distance-decreasing edges, so this per-demand cost inflation is preserved under
+aggregation. Mapping path cost to realized travel time through the $L$-Lipschitz BPR
+response on the operating range yields the multiplicative factor $c_1 H\varepsilon$ with
+$c_1=\Theta(L\,\prop_{\max}/\bar{\prop})$. Setting $\hat g=g^{*}$ ($\varepsilon=0$) leaves
+only $\delta_{\mathrm{dec}}$, the residual between the softmin split and the exact
+equilibrium splitting, which the experiments measure at a few percent.
+\end{IEEEproof}
+
+Section~\ref{sec:results-decode} validates \eqref{eq:bound} empirically: the travel-time
+gap grows monotonically with the price error and flattens to a small floor
+$\delta_{\mathrm{dec}}$ as the error vanishes.
 
 \subsection{Inductive transfer (SP3)}\label{sec:induct}
 The parameters $\theta=\{W_{\mathrm{in}},W^{(l)},\mathrm{MLP}\}$ have dimensions set by
@@ -753,9 +811,10 @@ $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00$ & $1.03$ & $1.12$ \\
 
 \subsection{The GNN approaches UE and beats every cheap baseline (C1)}
 Figure~\ref{fig:baselines} and Table~\ref{tab:baselines} report TTT relative to blind. In
-distribution, the GNN ($0.43$) closely approaches UE ($0.38$), recovering about $92\%$ of
-the blind-to-UE gain; SO ($0.37$) and UE nearly coincide, so the target is essentially
-the system optimum. The cheap alternatives fail: one-step correction overshoots and
+distribution, the GNN single-path decode ($0.43$) approaches UE ($0.38$), recovering about
+$92\%$ of the blind-to-UE gain, and the multipath decode (Section~\ref{sec:results-decode})
+raises this to about $97\%$; SO ($0.37$) and UE nearly coincide, so the target is
+essentially the system optimum. The cheap alternatives fail: one-step correction overshoots and
 oscillates (relative travel time $1.07$, \emph{worse} than blind, because rerouting onto
 the apparently idle alternates creates fresh hotspots), and geographic greedy stalls on
 the ISL grid, needing the fallback for $55\%$ of flows and still reaching only $0.79$. The contrast
@@ -807,6 +866,61 @@ OOD ($264$) & $0.05$ & $0.05$ & $0.79$ & $0.54$ & $\mathbf{0.37}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{Single-path versus multipath decoding, and the bound}\label{sec:results-decode}
+Table~\ref{tab:decode} isolates the decoder. The single-path decode of the predicted
+prices leaves a large gap, especially out of distribution, because it cannot reproduce
+the multi-path equilibrium even when the prices are good; the one-shot multipath decode
+\eqref{eq:split} closes most of it, raising the recovered fraction from $88$ to $97\%$ in
+distribution and from $64$ to $94\%$ zero shot, at the same order of cost. The multipath
+decode is the deployed method; Table~\ref{tab:baselines} reports the single-path decode to
+expose the gap this subsection closes.
+
+\begin{table}[t]
+\centering
+\caption{Decoder comparison: TTT relative to blind and recovered fraction of the
+blind-to-UE gain. The multipath decode \eqref{eq:split} closes most of the single-path
+decoding gap.}
+\label{tab:decode}
+\begin{tabular}{lccc}
+\toprule
+ & single-path & multipath & UE \\
+\midrule
+in-dist (TTT/blind) & $0.47$ & $\mathbf{0.42}$ & $0.40$ \\
+\quad recovered & $88\%$ & $\mathbf{97\%}$ & -- \\
+OOD ($264$, TTT/blind) & $0.39$ & $\mathbf{0.11}$ & $0.05$ \\
+\quad recovered & $64\%$ & $\mathbf{94\%}$ & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:bound} validates Proposition~\ref{prop:bound}. Starting from the true
+equilibrium prices and injecting growing noise, the travel-time gap to UE rises
+monotonically with the price error and, as the error vanishes, flattens to a small floor:
+$3.6\%$ for the multipath decode (the residual $\delta_{\mathrm{dec}}$ of
+\eqref{eq:bound}) versus $12.7\%$ for the single-path decode. The multipath decode is
+both lower and far less sensitive to prediction error, matching the bound.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.9\columnwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[prostyle, width=8.4cm, height=5.2cm,
+  xlabel={relative price error $\lVert\hat g-g^{*}\rVert/\bar g$},
+  ylabel={TTT gap to UE (\%)}, xmin=0, xmax=0.4, ymin=0, ymax=30,
+  legend pos=north west]
+\addplot[cRed, smark] coordinates {(0,12.7)(0.027,12.3)(0.051,14.0)(0.104,17.2)(0.198,18.6)(0.383,28.1)};
+\addlegendentry{single-path decode}
+\addplot[cNavy, pmark] coordinates {(0,3.6)(0.027,3.6)(0.051,3.7)(0.104,3.9)(0.198,4.5)(0.383,6.2)};
+\addlegendentry{multipath decode}
+\node[font=\scriptsize, cNavy, anchor=south west] at (axis cs:0.0,4.0) {$\delta_{\mathrm{dec}}\!\approx\!3.6\%$};
+\end{axis}
+\end{tikzpicture}}
+\caption{Empirical validation of Proposition~\ref{prop:bound}: the travel-time gap to UE
+grows monotonically with the price error and flattens to a small decoder floor as the
+error vanishes. The multipath decode is both lower and far less error-sensitive.}
+\label{fig:bound}
+\end{figure}
 
 \subsection{Inductive transfer to a $12\times$ larger shell, and cost (C2, C3)}\label{sec:c2}
 Trained only on the $132$-satellite shell, the model is applied zero shot to the

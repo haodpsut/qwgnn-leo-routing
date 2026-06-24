@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.join(ROOT, "sim"))
 
 from models import build_ctx                                   # smoke/ (ctx + ops)
 from constellation import Walker, grid_isl_graph              # sim/
-from traffic import (gravity_demands, ue_loads, route_and_measure,
+from traffic import (gravity_demands, ue_loads, route_and_measure, multipath_route,
                      evaluate, demand_node_features, blind_loads)
 
 DEPTH = 3
@@ -155,13 +155,22 @@ def train(prop_name, train_insts, seed):
     return model
 
 
-def eval_instance(model, ins):
+# decoder: 'multipath' (default, matches the multi-path UE) or 'single' (ablation)
+DECODE = os.environ.get("QWGNN_DECODE", "multipath")
+TAU = float(os.environ.get("QWGNN_TAU", "0.2"))
+
+
+def eval_instance(model, ins, decode=None):
+    decode = decode or DECODE
     with torch.no_grad():
         g_pred = torch.expm1(model(ins["X"], ins["ctx"])).clamp(min=0).numpy()
     A_np, W_np, dem, cap = ins["A_np"], ins["W_np"], ins["dem"], ins["cap"]
     route_cost = W_np.copy()
     route_cost[ins["rows"], ins["cols"]] = W_np[ins["rows"], ins["cols"]] * (1 + g_pred)
-    gnn = route_and_measure(A_np, W_np, dem, cap, route_cost)
+    if decode == "multipath":
+        gnn = multipath_route(A_np, W_np, route_cost, dem, cap, tau=TAU)
+    else:
+        gnn = route_and_measure(A_np, W_np, dem, cap, route_cost)
     blind = route_and_measure(A_np, W_np, dem, cap, W_np)
     ue = evaluate(A_np, W_np, dem, cap, policy="ue")
     denom = blind["total_ttt"] - ue["total_ttt"]
