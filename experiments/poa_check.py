@@ -31,15 +31,17 @@ def main():
     rows = []
     print(f"{'load':>5} {'UE':>10} {'SO':>10} {'PoA=UE/SO':>10}")
     for L in LOADS:
-        ues, sos = [], []
+        ues, sos, poas = [], [], []
         for s in SEEDS:
             dem = gravity_demands(pos, L, np.random.default_rng(s))
-            ues.append(evaluate(A, W, dem, CAP, policy="ue")["total_ttt"])
-            sos.append(evaluate(A, W, dem, CAP, policy="so")["total_ttt"])
+            u = evaluate(A, W, dem, CAP, policy="ue")["total_ttt"]
+            o = evaluate(A, W, dem, CAP, policy="so")["total_ttt"]
+            ues.append(u); sos.append(o); poas.append(u / o)
         ue, so = float(np.mean(ues)), float(np.mean(sos))
-        poa = ue / so
-        rows.append({"load": L, "ue_ttt": ue, "so_ttt": so, "poa": poa})
-        print(f"{L:>5} {ue:>10.2f} {so:>10.2f} {poa:>10.3f}")
+        poa, poa_std = float(np.mean(poas)), float(np.std(poas))
+        rows.append({"load": L, "ue_ttt": ue, "so_ttt": so, "poa": poa,
+                     "poa_std": poa_std, "n": len(poas)})
+        print(f"{L:>5} {ue:>10.2f} {so:>10.2f} {poa:>8.3f}+/-{poa_std:.3f}")
     with open(OUT, "w", newline="") as f:
         wtr = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         wtr.writeheader()

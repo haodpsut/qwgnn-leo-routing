@@ -55,8 +55,11 @@ def main():
                 gsp.append(100 * (sp - ue) / ue)
                 gmp.append(100 * (mp - ue) / ue)
         re, s, m = np.mean(rerr), np.mean(gsp), np.mean(gmp)
-        rows.append({"eps": eps, "rel_err": re, "gap_sp_pct": s, "gap_mp_pct": m})
-        print(f"{eps:>5.2f} {re:>8.3f} {s:>8.1f} {m:>8.1f}")
+        rows.append({"eps": eps, "rel_err": re, "gap_sp_pct": s, "gap_mp_pct": m,
+                     "gap_sp_std": float(np.std(gsp)), "gap_mp_std": float(np.std(gmp)),
+                     "n": len(gsp)})
+        print(f"{eps:>5.2f} {re:>8.3f} {s:>7.1f}+/-{np.std(gsp):>4.1f} "
+              f"{m:>7.1f}+/-{np.std(gmp):>4.1f}")
     with open(OUT, "w", newline="") as f:
         wtr = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         wtr.writeheader()

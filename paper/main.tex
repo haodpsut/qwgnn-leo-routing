@@ -754,9 +754,11 @@ The congestion task, not static routing, is where a learned router helps.
   at (axis cs:1660,30) {congested regime};
 \node[font=\scriptsize\itshape, cGray, anchor=south west, rotate=90]
   at (axis cs:150,4) {light load};
-\addplot[cNavy, pmark] coordinates {(100,0.1)(300,9.4)(600,55.4)(1000,89.9)(1600,97.6)};
+\addplot[cNavy, pmark, error bars/.cd, y dir=both, y explicit] coordinates {
+  (100,0.1)+-(0,0.1) (300,9.4)+-(0,1.3) (600,55.4)+-(0,1.2) (1000,89.9)+-(0,1.0) (1600,97.6)+-(0,0.1)};
 \addlegendentry{$132$-sat shell}
-\addplot[cRed, densely dashed, smark] coordinates {(100,0.0)(300,10.5)(600,61.9)(1000,92.0)(1600,97.9)};
+\addplot[cRed, densely dashed, smark, error bars/.cd, y dir=both, y explicit] coordinates {
+  (100,0.0)+-(0,0.0) (300,10.5)+-(0,2.3) (600,61.9)+-(0,2.0) (1000,92.0)+-(0,0.4) (1600,97.9)+-(0,0.2)};
 \addlegendentry{$264$-sat shell}
 \node[font=\scriptsize, cNavy, anchor=south] at (axis cs:1600,97.6) {$98\%$};
 \end{axis}
@@ -809,7 +811,7 @@ $\ge 1$ at every load confirms the corrected estimator (Section~\ref{sec:pitfall
 \toprule
 demands & $300$ & $600$ & $1000$ \\
 \midrule
-$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00$ & $1.03$ & $1.12$ \\
+$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00{\scriptstyle\pm.00}$ & $1.03{\scriptstyle\pm.00}$ & $1.12{\scriptstyle\pm.01}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -862,12 +864,15 @@ than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 \caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean over
 instances and seeds. SO/UE are references; the GNN is the deployable policy.}
 \label{tab:baselines}
+\setlength{\tabcolsep}{4pt}\footnotesize
 \begin{tabular}{lccccc}
 \toprule
 split & SO & UE & geographic & one-step & \textbf{GNN} \\
 \midrule
-in-distribution & $0.37$ & $0.38$ & $0.79$ & $1.07$ & $\mathbf{0.43}$ \\
-OOD ($264$) & $0.05$ & $0.05$ & $0.79$ & $0.54$ & $\mathbf{0.37}$ \\
+in-distribution & $0.37{\scriptstyle\pm.01}$ & $0.38{\scriptstyle\pm.01}$ &
+ $0.79{\scriptstyle\pm.05}$ & $1.07{\scriptstyle\pm.17}$ & $\mathbf{0.43{\scriptstyle\pm.03}}$ \\
+OOD ($264$) & $0.05{\scriptstyle\pm.01}$ & $0.05{\scriptstyle\pm.01}$ &
+ $0.79{\scriptstyle\pm.03}$ & $0.54{\scriptstyle\pm.05}$ & $\mathbf{0.37{\scriptstyle\pm.10}}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -876,8 +881,9 @@ OOD ($264$) & $0.05$ & $0.05$ & $0.79$ & $0.54$ & $\mathbf{0.37}$ \\
 Table~\ref{tab:decode} isolates the decoder. The single-path decode of the predicted
 prices leaves a large gap, especially out of distribution, because it cannot reproduce
 the multi-path equilibrium even when the prices are good; the one-shot multipath decode
-\eqref{eq:split} closes most of it, raising the recovered fraction from $88$ to $97\%$ in
-distribution and from $64$ to $94\%$ zero shot, at the same order of cost. The multipath
+\eqref{eq:split} closes most of it, raising the recovered fraction from $90$ to $97\%$ in
+distribution and from $64$ to $94\%$ zero shot, at the same order of cost (all entries
+are mean $\pm$ std over seeds and instances). The multipath
 decode is the deployed method; Table~\ref{tab:baselines} reports the single-path decode to
 expose the gap this subsection closes.
 
@@ -891,10 +897,10 @@ decoding gap.}
 \toprule
  & single-path & multipath & UE \\
 \midrule
-in-dist (TTT/blind) & $0.47$ & $\mathbf{0.42}$ & $0.40$ \\
-\quad recovered & $88\%$ & $\mathbf{97\%}$ & -- \\
-OOD ($264$, TTT/blind) & $0.39$ & $\mathbf{0.11}$ & $0.05$ \\
-\quad recovered & $64\%$ & $\mathbf{94\%}$ & -- \\
+in-dist (TTT/blind) & $0.47{\scriptstyle\pm.03}$ & $\mathbf{0.42{\scriptstyle\pm.03}}$ & $0.40$ \\
+\quad recovered & $90{\scriptstyle\pm5}\%$ & $\mathbf{97{\scriptstyle\pm1}\%}$ & -- \\
+OOD ($264$, TTT/blind) & $0.39{\scriptstyle\pm.13}$ & $\mathbf{0.11{\scriptstyle\pm.01}}$ & $0.05$ \\
+\quad recovered & $64{\scriptstyle\pm14}\%$ & $\mathbf{94{\scriptstyle\pm1}\%}$ & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -914,9 +920,11 @@ both lower and far less sensitive to prediction error, matching the bound.
   xlabel={relative price error $\lVert\hat g-g^{*}\rVert/\bar g$},
   ylabel={TTT gap to UE (\%)}, xmin=0, xmax=0.4, ymin=0, ymax=30,
   legend pos=north west]
-\addplot[cRed, smark] coordinates {(0,12.7)(0.027,12.3)(0.051,14.0)(0.104,17.2)(0.198,18.6)(0.383,28.1)};
+\addplot[cRed, smark, error bars/.cd, y dir=both, y explicit] coordinates {
+  (0,12.7)+-(0,5.5) (0.027,12.3)+-(0,5.8) (0.051,14.0)+-(0,6.1) (0.104,17.2)+-(0,12.4) (0.198,18.6)+-(0,7.9) (0.383,28.1)+-(0,15.8)};
 \addlegendentry{single-path decode}
-\addplot[cNavy, pmark] coordinates {(0,3.6)(0.027,3.6)(0.051,3.7)(0.104,3.9)(0.198,4.5)(0.383,6.2)};
+\addplot[cNavy, pmark, error bars/.cd, y dir=both, y explicit] coordinates {
+  (0,3.6)+-(0,0.5) (0.027,3.6)+-(0,0.5) (0.051,3.7)+-(0,0.5) (0.104,3.9)+-(0,0.6) (0.198,4.5)+-(0,0.8) (0.383,6.2)+-(0,2.4)};
 \addlegendentry{multipath decode}
 \node[font=\scriptsize, cNavy, anchor=south west] at (axis cs:0.0,4.0) {$\delta_{\mathrm{dec}}\!\approx\!3.6\%$};
 \end{axis}
@@ -1011,9 +1019,11 @@ instead of the last slot.
 % blind reference at 1.0
 \addplot[cGray, dotted, line width=1.4pt, forget plot] coordinates {(0,1.0)(1.5,1.0)};
 % reactive and proactive, with the advantage shaded between them
-\addplot[name path=R, cRed, pmark] coordinates {(0,0.50)(0.3,0.59)(0.6,0.77)(1.0,1.02)(1.5,1.63)};
+\addplot[name path=R, cRed, pmark, error bars/.cd, y dir=both, y explicit] coordinates {
+  (0,0.50)+-(0,0.04) (0.3,0.59)+-(0,0.10) (0.6,0.77)+-(0,0.12) (1.0,1.02)+-(0,0.16) (1.5,1.63)+-(0,0.03)};
 \addlegendentry{reactive (lag-1)}
-\addplot[name path=P, cNavy, smark] coordinates {(0,0.50)(0.3,0.52)(0.6,0.54)(1.0,0.44)(1.5,0.38)};
+\addplot[name path=P, cNavy, smark, error bars/.cd, y dir=both, y explicit] coordinates {
+  (0,0.50)+-(0,0.04) (0.3,0.52)+-(0,0.04) (0.6,0.54)+-(0,0.02) (1.0,0.44)+-(0,0.05) (1.5,0.38)+-(0,0.04)};
 \addlegendentry{proactive (ours)}
 \addplot[cNavy!12, forget plot] fill between[of=R and P];
 \addplot[cGreen, densely dashed, tmark] coordinates {(0,0.44)(0.3,0.44)(0.6,0.44)(1.0,0.39)(1.5,0.35)};
