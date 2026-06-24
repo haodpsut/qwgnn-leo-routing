@@ -1,0 +1,85 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlist[itemize]{leftmargin=1.4em, topsep=2pt, itemsep=1pt}
+\pagestyle{empty}
+
+\begin{document}
+
+\noindent\today
+
+\noindent To the Editor-in-Chief and the Editorial Board,\\
+\textit{IEEE Transactions on Network and Service Management}
+
+\bigskip
+\noindent\textbf{Subject:} Submission of an original manuscript for consideration as a
+regular paper.
+
+\bigskip
+\noindent Dear Editor,
+
+We are pleased to submit our manuscript, ``\textbf{Learning to Route Under Load: An
+Inductive Graph Network that Amortizes Congestion-Aware Traffic Engineering for LEO
+Mega-Constellations},'' for consideration for publication in the \emph{IEEE Transactions
+on Network and Service Management}.
+
+\textbf{Problem and contribution.} Low Earth orbit (LEO) mega-constellations route traffic
+over a large, fast-changing mesh of inter-satellite links whose topology is known in
+advance from ephemeris. Under load, routing on propagation delay alone overloads a few
+bottleneck links while alternatives sit idle, inflating end-to-end travel time by up to a
+factor of forty in our study. The congestion-aware optimum, the user equilibrium (UE),
+removes this waste but requires the full demand matrix and an iterative solve every slot,
+which does not scale to constellations of more than a thousand satellites with
+seconds-scale topology change. We formalize routing under load as the \emph{amortization}
+of a traffic-assignment equilibrium and solve it with an inductive graph neural network
+that predicts the equilibrium congestion price on every link in a single forward pass from
+cheap, observable load features, decoded by a one-shot multipath router. The method:
+\begin{itemize}
+  \item closely approaches UE in distribution (recovering about $97\%$ of the gain over
+        blind routing);
+  \item transfers \emph{zero shot} to a shell twelve times larger, still recovering
+        $94\pm2\%$ of the gain, as the best deployable policy;
+  \item runs $21$ to $29\times$ faster than the iterative solve, with the saving growing
+        with constellation size;
+  \item supports proactive routing under drifting traffic hotspots, where a reactive
+        controller degrades below congestion-blind routing.
+\end{itemize}
+We additionally contribute a proposition bounding the travel-time suboptimality of the
+decoded routing by the price-prediction error (validated empirically), and a documented set
+of evaluation pitfalls specific to learned traffic engineering, with a protocol to avoid
+them. We also report, transparently, a negative result: a quantum-walk propagation operator
+that motivated the study offers no benefit once load features are available.
+
+\textbf{Fit to the journal.} The work lies squarely within the scope of \emph{IEEE TNSM}:
+it concerns network and service management for non-terrestrial networks, specifically
+congestion-aware traffic engineering, learning-based network control, and resource
+management at scale. It pairs a management-oriented problem formulation with a deployable,
+inexpensive control mechanism and an honest, reproducible evaluation methodology.
+
+\textbf{Reproducibility.} The complete simulator, models, experiments, and
+figure-generation scripts are publicly released; every reported number is regenerated from
+result files by an included script. All results follow from constellation parameters with
+no external data dependency.
+
+\textbf{Declarations.} This manuscript is original, has not been published previously, and
+is not under consideration for publication elsewhere, in whole or in part. All authors have
+read and approved the submission and agree to its content. The authors declare no conflict
+of interest. This research is funded by the Science and Technology Development Fund of The
+University of Danang under project number B2025-DN02-26.
+
+Thank you for considering our submission. We look forward to the reviewers' feedback.
+
+\bigskip
+\noindent Sincerely,\\
+Phuc Hao Do, Nang Hung Van Nguyen, and Minh Tuan Pham
+
+\bigskip
+\noindent\textbf{Corresponding author:}\\
+Minh Tuan Pham\\
+Faculty of Information Technology,\\
+The University of Danang -- University of Science and Technology, Da Nang, Viet Nam\\
+E-mail: \href{mailto:pmtuan@dut.udn.vn}{pmtuan@dut.udn.vn}
+
+\end{document}
