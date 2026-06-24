@@ -1,10 +1,9 @@
 \documentclass[journal]{IEEEtran}
 
-% IEEE TNSM submission draft (expanded).
+% IEEE TNSM submission draft (>=10pp, transaction-grade).
 % Author: Do Phuc Hao (CAIRA, Da Nang Architecture University), sole + corresponding.
 % Build: latexmk -pdf main.tex
-% NOTE: rows/points marked "projected" are PLACEHOLDERS to be replaced after the
-% 1584-satellite and system-optimal runs.
+% All numbers are aggregated from results/*.csv via paper/make_figs_data.py.
 
 \usepackage{amsmath,amssymb,mathtools}
 \usepackage{graphicx}
@@ -19,7 +18,6 @@
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 
-% custom (non-reserved) tikz styles: split fill/text/draw so text stays visible
 \tikzset{
   blk/.style={rectangle, rounded corners=2pt, draw=black, fill=blue!8, text=black,
               align=center, minimum height=8mm, inner sep=3pt, font=\small},
@@ -35,6 +33,7 @@
 \newcommand{\cpc}{\mathrm{cap}}
 \newcommand{\softplus}{\mathrm{softplus}}
 \newcommand{\TTT}{\mathrm{TTT}}
+\newcommand{\AoN}{\textsc{AoN}}
 
 \begin{document}
 
@@ -55,30 +54,34 @@ Application (CAIRA), Da Nang Architecture University, Da Nang, Vietnam
 Low Earth orbit (LEO) mega-constellations carry traffic over a dense mesh of
 inter-satellite links whose topology, although time varying, is known in advance
 from orbital ephemeris. Under load, routing on propagation delay alone concentrates
-traffic on a few bottleneck links while alternative paths sit idle, wasting a large
-fraction of achievable performance. The congestion-aware optimum, the user
-equilibrium, removes this waste but requires the full demand matrix and an iterative
-solve at every slot, which does not scale to constellations of more than a thousand
-satellites with rapidly changing topology. We formalize routing under load on LEO as
-the amortization of a traffic-assignment equilibrium, decompose it into a
-price-prediction sub-problem, a decoding sub-problem, an inductive-transfer
-sub-problem, and a proactive sub-problem, and solve the first with an inductive graph
-neural network that predicts the equilibrium congestion price on each inter-satellite
-link in a single forward pass from cheap, observable load features. On a constellation
-simulator with a standard Bureau of Public Roads cost model, the network matches the
-user equilibrium in distribution while using one to two orders of magnitude less
-computation, recovers about four fifths of the gain when transferred zero shot to a
-shell twice as large, and, fed the predicted near future demand, sustains low travel
-time under drifting traffic hotspots where a reactive one slot lagged controller
-degrades below congestion-blind shortest path. We also report a negative result: a
-quantum-walk propagation operator that motivated this study offers no benefit once
-load features are available, and a plain graph convolution is preferable. We release
-the full pipeline and the honest record of the design search.
+traffic on a few bottleneck links while alternative paths sit idle, wasting most of
+the achievable performance: in our study it inflates total travel time by up to a
+factor of forty. The congestion-aware optimum, the user equilibrium, removes this
+waste but requires the full demand matrix and an iterative solve at every slot, which
+does not scale to constellations of more than a thousand satellites with rapidly
+changing topology. We formalize routing under load on LEO as the amortization of a
+traffic-assignment equilibrium, decompose it into a price-prediction sub-problem, a
+decoding sub-problem, an inductive-transfer sub-problem, and a proactive sub-problem,
+and solve the first with an inductive graph neural network that predicts the
+equilibrium congestion price on each inter-satellite link in a single forward pass
+from cheap, observable load features. On a constellation simulator with a standard
+Bureau of Public Roads cost model, the network closely approaches the user
+equilibrium in distribution (recovering about $92\%$ of the gain over blind routing),
+recovers about $71\%$ of that gain when transferred zero shot to a shell twelve times
+larger, runs $19$ to $29\times$ faster than the iterative solve with the saving
+growing with scale, and, fed predicted demand, sustains low travel time under
+drifting hotspots where a reactive controller degrades to $1.6\times$ blind. We
+contribute, in addition, a record of three evaluation pitfalls that silently
+fabricate or distort such results, with a protocol to avoid them, and we report a
+negative result: a quantum-walk propagation operator that motivated this study offers
+no benefit once load features are available, and a plain graph convolution is
+preferable.
 \end{abstract}
 
 \begin{IEEEkeywords}
 LEO satellite networks, non-terrestrial networks, routing, traffic engineering,
-graph neural networks, congestion control, user equilibrium, inductive learning.
+graph neural networks, congestion control, user equilibrium, inductive learning,
+evaluation methodology.
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -96,8 +99,9 @@ Routing such a network on propagation delay alone is attractive because the shor
 path is cheap and, when lightly loaded, near optimal. Under load it is wasteful: it
 funnels many flows onto the same minimum-hop links, creating hotspots, while
 geometrically longer but idle paths are ignored. We measure this waste directly
-(Section~\ref{sec:headroom}) and find that congestion-aware routing cuts total travel
-time by half or more once the network is moderately loaded.
+(Section~\ref{sec:headroom}) and find that, once the network is moderately loaded,
+congestion-aware routing cuts total travel time by more than half, and by up to a
+factor of forty under heavy load.
 
 The congestion-aware optimum is classical. Routing every flow so that none can
 unilaterally lower its cost yields the \emph{user equilibrium} (UE), computed by
@@ -118,52 +122,92 @@ pattern drifts predictably (the dense-traffic band rotates under the constellati
 feeding the predicted near future demand lets the router act \emph{proactively},
 before congestion forms. Figure~\ref{fig:pipeline} summarizes the pipeline.
 
+To make the stakes concrete, consider the dense-traffic band passing over a populated
+longitude. Delay-optimal routing sends the surge of flows along the few minimum-hop ISL
+chains that cross that region, driving a handful of links far past capacity while the
+cross-plane links a hop away carry almost nothing. With a fourth-power congestion cost, the
+travel time on those saturated links explodes, and the network appears to be in overload even
+though the same traffic spread across the available ISLs would be comfortably feasible. An
+operator that recomputes the equilibrium each slot fixes this but pays a heavy, repeated
+optimization; an operator that routes on stale or blind information does not fix it at all.
+The method in this paper gives a third option: spend the optimization once, offline, and let a
+network predict its outcome thereafter.
+
+A second, methodological thread runs through the paper. Learned traffic engineering is
+easy to evaluate incorrectly: a greedy baseline that silently drops hard flows, a
+scaling claim that rests on a ratio with a moving denominator, or an equilibrium
+reference measured off its operating point can each fabricate or distort a result. We
+encountered all three, caught them, and distil a protocol (Section~\ref{sec:pitfalls})
+so that the reported numbers are trustworthy and reproducible.
+
 \textbf{Contributions.}
 \begin{itemize}
 \item We formalize routing under load on LEO as the amortization of a
 traffic-assignment equilibrium and \emph{decompose} it into four sub-problems
 (Section~\ref{sec:decomp}), each mapped to a measurable claim.
-\item \textbf{C1 (amortization).} A one-shot GNN matches the user equilibrium in
-distribution (total travel time within two percent) at $20$ to $27\times$ less
-computation than the iterative solve.
-\item \textbf{C2 (inductive scale generalization).} Trained on small shells, the same
-model transferred zero shot to a shell twice as large is the best \emph{deployable}
-policy, recovering about $79\%$ of the blind-to-UE gain and beating every cheap
-baseline.
-\item \textbf{C3 (cost).} We give a complexity analysis and wall-clock measurements
-showing the inference saving against UE is the operative reason to learn rather than
-solve.
+\item \textbf{C1 (amortization).} A one-shot GNN closely approaches the user
+equilibrium in distribution, recovering about $92\%$ of the gain over blind routing,
+at $19$ to $29\times$ less computation than the iterative solve.
+\item \textbf{C2 (inductive scale generalization).} Trained on a $132$-satellite
+shell, the same model transferred zero shot to a $1584$-satellite shell ($12\times$
+larger) recovers about $71\%$ of the gain and remains the best \emph{deployable}
+policy.
+\item \textbf{C3 (cost that improves with scale).} We give a complexity analysis and
+wall-clock measurements showing the inference saving over UE \emph{grows} with the
+constellation, reaching $29\times$ at $1584$ satellites.
 \item \textbf{C4 (proactive).} Under drifting hotspots, routing on predicted demand
 tracks the clairvoyant optimum, whereas a reactive one-slot-lagged controller degrades
-below congestion-blind shortest path as the drift grows.
+below blind shortest path as the drift grows.
+\item \textbf{Evaluation methodology.} We document three pitfalls that silently distort
+results in this setting, with fixes, and verify the corrected estimator against the
+price-of-anarchy ordering $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$.
 \item \textbf{Honest negative result.} The study began as a quantum-walk GNN; we report
-the full kill-gate record and why a plain graph convolution is the right operator here.
+the kill-gate record and why a plain graph convolution is the right operator here.
 \end{itemize}
 
 \section{Related Work}
 \textbf{LEO routing and topology.} The deterministic, time-varying structure of LEO
 ISL networks has been studied for low-latency routing and topology
-design~\cite{handley2018,bhattacherjee2019}. Packet-level simulators such as
-Hypatia~\cite{hypatia} and StarPerf~\cite{starperf} reconstruct the moving topology
-from constellation parameters. These works route mostly on delay; we target the loaded
-regime where congestion dominates.
+design~\cite{handley2018,bhattacherjee2019}. Handley showed that a $+$Grid of ISLs can
+beat terrestrial fiber on long paths because light is faster in vacuum, making the ISL
+layer worth routing carefully~\cite{handley2018}; Bhattacherjee and Snoeren explored how
+the choice of which satellites to interconnect shapes path length and
+churn~\cite{bhattacherjee2019}. Packet-level simulators such as Hypatia~\cite{hypatia}
+and StarPerf~\cite{starperf} reconstruct the moving topology from constellation
+parameters and have driven work on path stability, handover, and delay under realistic
+orbital dynamics. This line predominantly routes on delay or hop count and evaluates a
+lightly loaded network; the contribution we make is orthogonal and complementary, namely
+how to route when the bottleneck is congestion rather than geometry, and how to do so
+without a per-slot optimization.
 
 \textbf{GNNs for networking.} Graph convolutions~\cite{gcn}, attention~\cite{gat}, and
 inductive sampling~\cite{graphsage} underpin learning on graphs. RouteNet predicts
-per-path delay and jitter for network modeling~\cite{routenet}; reinforcement learning
-with GNNs has been applied to routing optimization~\cite{almasan}. Our model is
-supervised and predicts a congestion-price field decoded by shortest path, keeping
-inference to one forward pass and making inductivity straightforward.
+per-path delay and jitter for network modeling and what-if analysis~\cite{routenet};
+reinforcement learning with GNNs has been applied to routing
+optimization~\cite{almasan}. These approaches either model performance or learn a
+control policy by trial and error. Ours is supervised and predicts a congestion-price
+\emph{field} that is decoded by a single shortest-path pass, which keeps inference to
+one forward evaluation and makes inductivity across constellation size immediate.
 
-\textbf{Traffic engineering and equilibria.} Load-dependent link cost and the user
-equilibrium are classical in transportation~\cite{wardrop,bpr,beckmann}; learning to
-route to reduce congestion has been studied for terrestrial
-networks~\cite{valadarsky,xu}. We bring this to LEO, where the value lies in amortizing
-the per-slot solve across a fast, scale-varying topology and in exploiting the
-predictable demand drift.
+\textbf{Traffic engineering and equilibria.} Load-dependent link cost, the user
+equilibrium, and the system optimum are classical in transportation
+science~\cite{wardrop,bpr,beckmann}: Wardrop's principles characterize the equilibrium,
+the Beckmann transformation casts it as a convex program, and the BPR function is the
+standard congestion cost. The gap between selfish and optimal routing is the price of
+anarchy, bounded for such cost classes by Roughgarden and Tardos~\cite{poa}. Learning to
+route so as to reduce congestion has been explored for terrestrial and software-defined
+networks~\cite{valadarsky,xu}, typically with reinforcement learning over a fixed
+topology. Two things change in LEO and motivate a different design: the topology is large
+and changes every few seconds, so a per-slot equilibrium solve is the bottleneck and
+amortizing it is the prize; and the demand is non-stationary but \emph{predictable}, so a
+forecast-driven, proactive controller is both possible and valuable. We therefore learn
+to predict the equilibrium price field and decode it with a classical router, rather than
+learn a topology-specific policy by trial and error.
 
 \textbf{Quantum-walk networks.} Continuous-time quantum walks have been used as a graph
-propagation operator~\cite{qwnn}; we evaluate one and report it as a negative ablation.
+propagation operator to capture long-range structure~\cite{qwnn}. We evaluate one as a
+candidate operator and report it as a negative ablation
+(Section~\ref{sec:ablation}).
 
 \section{System Model}\label{sec:model}
 Table~\ref{tab:notation} lists the notation.
@@ -196,24 +240,34 @@ satellite holds two intra-plane ISLs and up to two cross-plane ISLs, forming a $
 (Fig.~\ref{fig:topo}). The topology over a horizon is a known sequence
 $\{G_t\}_{t=0}^{T-1}$, $G_t=(V,E_t)$, with $|V|=S$. Each ISL $(u,v)\in E_t$ has a
 propagation delay $\prop_{uv}=\lVert p_u-p_v\rVert/c$ from the known positions $p$, and
-a capacity $\cpc$.
+a capacity $\cpc$. Cross-plane links above a polar cutoff latitude are deactivated, as
+in operational designs; for a $53^\circ$ shell the cutoff is never reached, so the ISL
+graph is near static and the dynamics enter through the demand.
 
 \subsection{Demand, flows, and link load}
 A demand set $\mathcal{D}=\{(s_k,d_k,r_k)\}$ requests rate $r_k$ from $s_k$ to $d_k$.
-We draw demands from a gravity model whose hotspots concentrate near a longitude band
-$\phi_t$ that rotates between slots, a proxy for the rotating dense-population and
-sub-solar region; the per-slot drift $\Delta=\phi_{t+1}-\phi_t$ is known. A routing
-policy maps each demand $k$ to a path $P_k$ in $G_t$. Writing $f_k\ge 0$ for the rate
-on $P_k$ (here $f_k=r_k$ on a single path), the load on an ISL is
+We draw demands from a gravity model: a node's attractiveness is
+$w_v\propto\exp(\kappa\cos(\angle v-\phi_t))$, peaked on a longitude band $\phi_t$, and
+endpoints are sampled with probability proportional to $w_{s}w_{d}$. The band $\phi_t$
+rotates between slots, a proxy for the dense-population and sub-solar region rotating
+under the constellation as Earth turns; the per-slot drift $\Delta=\phi_{t+1}-\phi_t$ is
+known from the same ephemeris that fixes the topology. This makes the demand
+non-stationary (the hotspot moves) yet predictable (its motion is known), which is
+exactly the structure the proactive variant exploits. Offered load is controlled by the
+number of demands, which we sweep to span the lightly loaded and heavily congested
+regimes. A routing
+policy maps each demand $k$ to a path $P_k$ in $G_t$. Writing $r_k$ for the rate on
+$P_k$, the load on an ISL is
 \begin{equation}
 x_{uv}=\sum_{k}\ r_k\,\mathbb{1}\!\left[(u,v)\in P_k\right],
 \label{eq:load}
 \end{equation}
-subject to flow conservation at every node $v\notin\{s_k,d_k\}$:
+subject to flow conservation at every node $v\notin\{s_k,d_k\}$,
 \begin{equation}
-\sum_{u:(u,v)\in E_t} f^{k}_{uv}=\sum_{w:(v,w)\in E_t} f^{k}_{vw}.
+\sum_{u:(u,v)\in E_t} f^{k}_{uv}=\sum_{w:(v,w)\in E_t} f^{k}_{vw},
 \label{eq:conserv}
 \end{equation}
+with $f^{k}$ the per-demand flow.
 
 \subsection{Congestion cost and realized travel time}
 The realized cost of a link under load follows the Bureau of Public Roads (BPR)
@@ -223,19 +277,25 @@ form~\cite{bpr},
 \quad \alpha=0.15,\ \beta=4 ,
 \label{eq:bpr}
 \end{equation}
-which is smooth, strictly increasing, and convex in $x$. The total travel time of a
-policy $\pi$ inducing loads $x(\pi)$ is
+which is smooth, strictly increasing, and convex in $x$, and which blows up as a link
+approaches and exceeds capacity. The total travel time of a policy $\pi$ inducing loads
+$x(\pi)$ is
 \begin{equation}
-\TTT(\pi)=\sum_{k} r_k \sum_{(u,v)\in P_k}\cost_{uv}\big(x_{uv}(\pi)\big).
+\TTT(\pi)=\sum_{(u,v)}x_{uv}(\pi)\,\cost_{uv}\big(x_{uv}(\pi)\big)
+        =\sum_{k} r_k \!\!\sum_{(u,v)\in P_k}\!\!\cost_{uv}\big(x_{uv}(\pi)\big).
 \label{eq:ttt}
 \end{equation}
+The two forms are equal because $\sum_k r_k\sum_{(u,v)\in P_k}(\cdot)=\sum_{(u,v)}x_{uv}(\cdot)$;
+the edge form is the one to evaluate at an equilibrium, a point we return to in
+Section~\ref{sec:pitfalls}.
 
 \subsection{User equilibrium and system optimum}
 Two operating points bound any router. The \emph{user equilibrium} (UE) satisfies
 Wardrop's first principle: for every demand, all used paths have equal and minimal
-cost. Equivalently, UE is the unique minimizer of the Beckmann potential~\cite{beckmann}
+cost. Equivalently, UE is the unique minimizer of the Beckmann
+potential~\cite{beckmann}
 \begin{equation}
-x^{\mathrm{UE}}=\arg\min_{x\in\mathcal{F}}\ \sum_{(u,v)\in E_t}\int_{0}^{x_{uv}}
+x^{\mathrm{UE}}=\arg\min_{x\in\mathcal{F}}\ \sum_{(u,v)}\int_{0}^{x_{uv}}
 \cost_{uv}(w)\,\mathrm{d}w ,
 \label{eq:beckmann}
 \end{equation}
@@ -243,26 +303,28 @@ over the polytope $\mathcal{F}$ of loads induced by feasible flows
 \eqref{eq:load}--\eqref{eq:conserv}; with \eqref{eq:bpr} the integral is
 $\prop_{uv}\!\big(x+\tfrac{\alpha\,\cpc}{\beta+1}(x/\cpc)^{\beta+1}\big)$. The
 \emph{system optimum} (SO) instead minimizes \eqref{eq:ttt} directly,
-$x^{\mathrm{SO}}=\arg\min_{x\in\mathcal{F}}\TTT(x)$, and lower-bounds UE; their ratio is
-the price of anarchy. We use UE as the deployable congestion-aware reference and note
-SO as a tighter (more expensive) ceiling.
+$x^{\mathrm{SO}}=\arg\min_{x\in\mathcal{F}}\TTT(x)$, equivalently routes on the marginal
+cost $\cost_{uv}(x)+x_{uv}\cost'_{uv}(x)$, and lower-bounds UE. Their ratio
+$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ is the price of anarchy~\cite{poa}. We use UE as
+the deployable congestion-aware reference and SO as a tighter ceiling; in our regime
+they nearly coincide (Section~\ref{sec:results}).
 
 We compute UE by the method of successive averages (MSA): starting from an
 all-or-nothing assignment $y^{0}$ on free-flow cost, iterate
 \begin{equation}
 x^{k+1}=x^{k}+\tfrac{1}{k+1}\big(y^{k}-x^{k}\big),\quad
-y^{k}=\textsc{AoN}\big(\cost(x^{k})\big),
+y^{k}=\AoN\big(\cost(x^{k})\big),
 \label{eq:msa}
 \end{equation}
-where \textsc{AoN} routes every demand on the shortest path under the current cost.
-Each iteration is $\lvert\mathcal{D}\rvert$ shortest paths; convergence needs $T$
-iterations.
+where $\AoN$ routes every demand on the shortest path under the current cost; SO uses
+the same iteration on the marginal cost. Each iteration is $|\mathcal{D}|$
+shortest paths and convergence needs $T$ iterations.
 
 \subsection{The amortization problem}
-Blind shortest path is one \textsc{AoN} pass and is congestion blind; UE is $T$ passes
-and is congestion optimal but does not scale. We seek a parametric map $f_\theta$ from
-cheap, observable state $\mathcal{S}_t$ to a routing $\pi_\theta$ that approaches UE in
-one forward pass and whose parameters $\theta$ are independent of $S$:
+Blind shortest path is one $\AoN$ pass and is congestion blind; UE is $T$ passes and is
+congestion optimal but does not scale. We seek a parametric map $f_\theta$ from cheap,
+observable state $\mathcal{S}_t$ to a routing $\pi_\theta$ that approaches UE in one
+forward pass and whose parameters $\theta$ are independent of $S$:
 \begin{equation}
 \min_{\theta}\ \mathbb{E}_{\mathcal{D},G}\big[\TTT(\pi_\theta)\big]
 \quad\text{s.t.}\quad \mathrm{cost}(\pi_\theta)\ll \mathrm{cost}(\mathrm{UE}).
@@ -282,8 +344,8 @@ g^{*}_{uv}=\cost^{\mathrm{UE}}_{uv}/\prop_{uv}-1\ \ge 0,
 so that routing on $\prop(1+\hat g)$ reproduces $x^{\mathrm{UE}}$. Maps to \textbf{C1}.
 
 \noindent\textbf{(SP2) Decoding.} Turn a price field into a routing by one shortest-path
-assignment, $\pi=\textsc{AoN}(\prop(1+\hat g))$. The decode is shared across all demands,
-so a single $\hat g$ routes the whole matrix.
+assignment, $\pi=\AoN(\prop(1+\hat g))$. The decode is shared across all demands, so a
+single $\hat g$ routes the whole matrix.
 
 \noindent\textbf{(SP3) Inductive transfer.} Require $\theta$ to be size invariant so that
 $f_\theta$ trained on $\{G^{\mathrm{small}}\}$ applies to a larger $G^{\mathrm{large}}$
@@ -295,7 +357,7 @@ $\hat{\mathcal{D}}_{t}$ from $\mathcal{D}_{t-1}$ and the known $\Delta$, and dec
 $f_\theta(\mathcal{S}(\hat{\mathcal{D}}_t))$ so the route pre-empts the moving hotspot.
 Maps to \textbf{C4}.
 
-Cost (SP2 plus inference) versus the UE solve gives \textbf{C3}
+Cost of SP2 plus inference versus the UE solve gives \textbf{C3}
 (Section~\ref{sec:complexity}).
 
 \begin{figure*}[t]
@@ -316,9 +378,9 @@ Cost (SP2 plus inference) versus the UE solve gives \textbf{C3}
 \end{tikzpicture}}
 \caption{End-to-end pipeline. Cheap observable state (demand and the load that one
 congestion-blind pass would induce) feeds an edge-price GNN that predicts the
-equilibrium congestion price per ISL in one forward pass; a single shortest-path
-decode then routes the whole demand matrix. The proactive variant (dashed) feeds the
-predicted next-slot demand.}
+equilibrium congestion price per ISL in one forward pass; a single shortest-path decode
+then routes the whole demand matrix. The proactive variant (dashed) feeds the predicted
+next-slot demand.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -344,17 +406,15 @@ to a measured claim.}
 \centering
 \resizebox{0.82\columnwidth}{!}{%
 \begin{tikzpicture}[x=8mm,y=8mm]
-% 4x4 torus +Grid sketch
 \foreach \i in {0,1,2,3}\foreach \j in {0,1,2,3}{
   \node[sat] (n\i\j) at (\i,\j) {};
 }
 \foreach \i in {0,1,2,3}\foreach \j in {0,1,2}{
-  \draw[blue!55] (n\i\j) -- (n\i\the\numexpr\j+1\relax);   % intra-plane
+  \draw[blue!55] (n\i\j) -- (n\i\the\numexpr\j+1\relax);
 }
 \foreach \i in {0,1,2}\foreach \j in {0,1,2,3}{
-  \draw[black!45] (n\i\j) -- (n\the\numexpr\i+1\relax\j);   % cross-plane
+  \draw[black!45] (n\i\j) -- (n\the\numexpr\i+1\relax\j);
 }
-% moving hotspot band
 \begin{scope}[on background layer]
   \fill[orange!22] (1.6,-0.4) rectangle (2.4,3.4);
 \end{scope}
@@ -374,11 +434,13 @@ hotspot region, which drifts by a known $\Delta$ per slot.}
 For a slot we form per-node features
 $\phi_v=[\,\mathrm{out}_v,\,\mathrm{in}_v,\,x^{0,\mathrm{out}}_v,\,x^{0,\mathrm{in}}_v\,]$,
 where $\mathrm{out}_v,\mathrm{in}_v$ are the rate originating and terminating at $v$, and
-$x^{0,\cdot}_v$ aggregate the \emph{blind load} $x^{0}=\textsc{AoN}(\prop)$ leaving and
-entering $v$. Per-edge features are $[\,\prop_{uv},\,x^{0}_{uv}\,]$. The blind load is one
-\textsc{AoN} pass (no iteration) and is the most informative input, since the equilibrium
-price of a link is largely a function of how overloaded that link would be under naive
-routing. All features are scaled to be size invariant.
+$x^{0,\cdot}_v$ aggregate the \emph{blind load} $x^{0}=\AoN(\prop)$ leaving and entering
+$v$. Per-edge features are $[\,\prop_{uv},\,x^{0}_{uv}\,]$. The blind load is one $\AoN$
+pass (no iteration) and is the most informative input, since the equilibrium price of a
+link is largely a function of how overloaded that link would be under naive routing
+(Section~\ref{sec:ablate-feat} quantifies this). All features are scaled to be size
+invariant, so the model does not see absolute coordinates or counts and cannot shortcut
+on them.
 
 \subsection{Edge-price GNN (model for SP1)}
 Node embeddings are initialized $h_v^{(0)}=\mathrm{ReLU}(W_{\mathrm{in}}\phi_v)$ and
@@ -393,6 +455,8 @@ $A{+}I$. A per-edge readout produces the price
 \hat g_{uv}=\softplus\!\Big(\mathrm{MLP}\big([\,h_u,\,h_v,\,\prop_{uv},\,x^{0}_{uv}\,]\big)\Big).
 \label{eq:readout}
 \end{equation}
+We use $K=3$ layers and hidden width $d=32$ throughout; the model has on the order of a
+few thousand parameters, independent of $S$.
 
 \subsection{Training objective}
 We regress the log-price over a dataset $\mathcal{I}$ of (shell, demand) instances:
@@ -401,23 +465,58 @@ We regress the log-price over a dataset $\mathcal{I}$ of (shell, demand) instanc
 \sum_{(u,v)\in E_i}\!\Big(\log(1{+}\hat g_{uv})-\log(1{+}g^{*}_{uv})\Big)^2 .
 \label{eq:loss}
 \end{equation}
-The $\log(1{+}\cdot)$ scale tames the heavy tail of $g^{*}$ at saturated links. Targets
-$g^{*}$ come from solving UE \eqref{eq:msa} on the training instances offline.
+The $\log(1{+}\cdot)$ scale tames the heavy tail of $g^{*}$ at saturated links, where the
+BPR exponent makes the raw price span several orders of magnitude. Targets $g^{*}$ come
+from solving UE \eqref{eq:msa} on the training instances offline; the cost of this
+offline supervision is paid once and amortized over every deployment slot
+(Algorithm~\ref{alg:train}).
 
-\subsection{Decoding (SP2)}
+\begin{algorithm}[t]
+\caption{Offline supervision}
+\label{alg:train}
+\begin{algorithmic}[1]
+\Require training shells, demand sampler, epochs $N$
+\State $\mathcal{I}\gets\emptyset$
+\For{each (shell, demand) instance}
+  \State $x^{0}\gets\AoN(\prop)$;\ \ $\phi\gets\textsc{Features}(\mathcal{D},x^{0})$
+  \State $x^{\mathrm{UE}}\gets$ MSA \eqref{eq:msa};\ \ $g^{*}\gets \cost(x^{\mathrm{UE}})/\prop-1$
+  \State add $(\phi,g^{*})$ to $\mathcal{I}$
+\EndFor
+\For{$N$ epochs}
+  \State update $\theta$ by gradient descent on $\mathcal{L}(\theta)$ \eqref{eq:loss}
+\EndFor
+\State \Return $\theta$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Supervision quality and the number of MSA iterations}
+The quality of the learned price field is bounded by the quality of the targets $g^{*}$, so
+the MSA solve used for supervision must converge well enough that the targets are close to the
+true equilibrium. We use $T{=}20$ iterations of \eqref{eq:msa}, after which the average
+relative change in the load is small and, as a downstream check, the supervised SO and UE
+respect the price-of-anarchy ordering of Section~\ref{sec:pitfalls}. A larger $T$ tightens the
+targets at higher offline cost but does not change the deployed model, whose inference is one
+forward pass regardless; the iteration count is therefore a training-time knob, traded off once
+and amortized over every slot. Because the offline solve is run on the small training shells,
+not the large deployment shell, its cost is modest even though MSA itself does not scale, which
+is the asymmetry the whole method exploits: pay for the equilibrium once, on a small instance,
+and predict it everywhere else.
+
+\subsection{Decoding and inference (SP2)}
 Given $\hat g$, the routing is a single shortest-path assignment
-$\pi=\textsc{AoN}\big(\prop(1{+}\hat g)\big)$, shared across the whole demand matrix.
-Algorithm~\ref{alg:infer} states inference.
+$\pi=\AoN\big(\prop(1{+}\hat g)\big)$, shared across the whole demand matrix.
+Algorithm~\ref{alg:infer} states one-slot inference: one blind pass to form the
+features, one GNN forward, one decode pass.
 
 \begin{algorithm}[t]
 \caption{One-slot congestion-aware routing}
 \label{alg:infer}
 \begin{algorithmic}[1]
 \Require graph $G_t$, demand $\mathcal{D}$ (or forecast $\hat{\mathcal{D}}$), weights $\theta$
-\State $x^{0}\gets \textsc{AoN}(\prop)$ \Comment{one blind pass = features}
+\State $x^{0}\gets \AoN(\prop)$ \Comment{one blind pass = features}
 \State $\phi\gets \textsc{Features}(\mathcal{D},x^{0})$
 \State $\hat g\gets f_\theta(\phi,G_t)$ \Comment{one GNN forward, Eq.~\eqref{eq:readout}}
-\State $\pi\gets \textsc{AoN}\big(\prop(1{+}\hat g)\big)$ \Comment{one decode pass}
+\State $\pi\gets \AoN\big(\prop(1{+}\hat g)\big)$ \Comment{one decode pass}
 \State \Return $\pi$
 \end{algorithmic}
 \end{algorithm}
@@ -425,45 +524,129 @@ Algorithm~\ref{alg:infer} states inference.
 \subsection{Inductive transfer (SP3)}\label{sec:induct}
 The parameters $\theta=\{W_{\mathrm{in}},W^{(l)},\mathrm{MLP}\}$ have dimensions set by
 the feature width and hidden size only, not by $S$ or $|E|$. The aggregation
-\eqref{eq:gcn} and readout \eqref{eq:readout} are defined pointwise over nodes and edges.
-Hence $f_\theta$ evaluates on any graph, and a model trained on small shells applies to a
-larger shell with no change, which is exactly SP3.
+\eqref{eq:gcn} and readout \eqref{eq:readout} are defined pointwise over nodes and
+edges. Hence $f_\theta$ evaluates on any graph, and a model trained on small shells
+applies to a larger shell with no change, which is exactly SP3; Section~\ref{sec:c2}
+measures the transfer to a $12\times$ larger shell.
 
 \subsection{Proactive variant (SP4)}
 Under known drift $\Delta$, the next-slot hotspot band is $\phi_t=\phi_{t-1}+\Delta$, so
 the demand forecast $\hat{\mathcal{D}}_t$ is available. The proactive router decodes on
 $f_\theta(\mathcal{S}(\hat{\mathcal{D}}_t))$; the reactive baseline decodes on
-$f_\theta(\mathcal{S}(\mathcal{D}_{t-1}))$ and is therefore one step behind.
+$f_\theta(\mathcal{S}(\mathcal{D}_{t-1}))$ and is therefore one step behind the moving
+hotspot.
 
 \subsection{Complexity (C3)}\label{sec:complexity}
 A forward pass costs $O\!\big(K|E|d+K|V|d^2+|E|d^2\big)$ for hidden width $d$; a decode
 pass costs $O\!\big(|\mathcal{D}|(|E|+|V|\log|V|)\big)$. The full router is one feature
-pass, one forward, and one decode, i.e. two \textsc{AoN} passes plus the forward. UE by
-MSA \eqref{eq:msa} costs $T$ \textsc{AoN} passes, $T\!\approx\!20$ in our runs. The
-predicted speedup is thus $\approx T/2$ to $T$, matching the measured $19$ to $27\times$
-(Table~\ref{tab:time}).
+pass, one forward, and one decode, i.e. two $\AoN$ passes plus the forward. UE by MSA
+\eqref{eq:msa} costs $T$ $\AoN$ passes, $T\!\approx\!20$ in our runs. The predicted
+speedup is thus $\Theta(T)$ up to the forward, and it \emph{grows} with scale because
+the forward is cheap relative to the repeated routing on a larger graph; the measured
+factor rises from $19\times$ at $132$ satellites to $29\times$ at $1584$
+(Section~\ref{sec:c2}). Table~\ref{tab:cost} expresses the per-slot cost of each policy
+in $\AoN$-pass units, the quantity that dominates at scale. Blind and geographic are one
+pass; one-step is two; the GNN is two passes plus a forward that is asymptotically
+dominated by a pass; UE and SO are $T$ passes. The GNN thus sits one additive pass above
+the cheapest heuristics while delivering near-equilibrium quality, and an order of
+magnitude below the equilibrium solve.
+
+\begin{table}[t]
+\centering
+\caption{Per-slot routing cost in all-or-nothing ($\AoN$) shortest-path passes ($T$ is
+the MSA iteration count, $\approx 20$). The GNN adds one forward to two passes; UE/SO
+need $T$ passes.}
+\label{tab:cost}
+\begin{tabular}{lc}
+\toprule
+policy & cost (\AoN{} passes) \\
+\midrule
+blind, geographic & $1$ \\
+one-step correction & $2$ \\
+\textbf{GNN (ours)} & $2 + \text{1 forward}$ \\
+UE, SO (MSA) & $T\approx 20$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Design rationale: why a supervised price field}\label{sec:rationale}
+Three design choices distinguish this approach from the alternatives. First, we predict
+a \emph{price field} rather than a routing directly: a single $|E|$-dimensional field is
+shared by every demand and decoded by an existing, trusted shortest-path router, so the
+output is always a valid routing and inductivity across constellation size is immediate.
+Predicting per-flow paths, by contrast, would scale with the demand matrix and require a
+learned decoder. Second, we \emph{supervise} on the equilibrium rather than learn by
+reinforcement: the UE target is computable offline, the objective \eqref{eq:loss} is a
+stable regression, and there is no exploration cost or reward-shaping at deployment,
+which matters when each slot lasts seconds. Third, we predict the equilibrium of a
+\emph{convex} traffic-assignment problem, so the target is unique and well posed; the
+network learns to amortize an optimization it could otherwise have to solve from scratch
+each slot.
+
+\section{Pitfalls in Evaluating Learned LEO Traffic Engineering}\label{sec:pitfalls}
+Before reporting results we document three evaluation pitfalls we encountered. Each can
+silently fabricate or distort a headline number; each has a simple fix. We state them
+because they are easy to commit in this setting and because our corrected estimator is
+what produces the numbers in Section~\ref{sec:results}.
+
+\textbf{P1: survivorship in greedy baselines.} A natural baseline, greedy geographic
+routing (forward to the neighbor closest to the destination), stalls in local minima on
+the $+$Grid ISL graph and fails to deliver $53$ to $68\%$ of flows in our loaded
+regime. Scoring only the delivered flows credits the baseline with a near-optimal mean
+delay, because the survivors are the short, easy paths. \emph{Fix:} guarantee delivery
+(here, a shortest-path fallback for stalled flows) and report a survivorship-free total
+travel time over all demands.
+
+\textbf{P2: scaling claims on a moving denominator.} An early claim that an operator's
+advantage ``grows with the constellation'' rested on a relative-percentage gain whose
+denominator (a baseline error) itself grew super-linearly, so a shrinking percentage
+masked a widening absolute gap and vice versa. \emph{Fix:} judge scaling on the
+decision-relevant absolute quantity, not on a ratio with a moving denominator.
+
+\textbf{P3: measuring an equilibrium off its operating point.} The travel time of UE or
+SO must be evaluated on the converged (MSA-averaged) load using the edge form of
+\eqref{eq:ttt}. Re-routing a single all-or-nothing pass on the converged cost and
+scoring that instead concentrates flow off the equilibrium split and inflates the
+reference: in our data it overstated UE travel time by up to $5\times$ (a relative
+travel time of $0.23$ versus the correct $0.05$ at high load), which would have made the
+learned router look closer to optimal than it is. \emph{Fix:} evaluate
+$\TTT=\sum_{(u,v)} x_{uv}\cost_{uv}(x_{uv})$ on the converged load. As a check, the
+corrected estimator respects $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$ at every load, with
+the price of anarchy growing from $1.00$ to $1.11$ as load rises; the inflated estimator
+violated this ordering, which is how we caught it.
+
+None of these three pitfalls is specific to LEO or to graph networks. P1 arises whenever a
+baseline can decline to act and the metric ignores the declined cases; P2 arises whenever a
+claim about a trend is read off a normalized quantity with a shifting denominator; P3 arises
+whenever an iterative solver is scored on a re-derived rather than its converged state. The
+general lesson is to fix a single survivorship-free, absolute, operating-point-correct figure
+of merit before comparing methods, and to keep a cheap internal consistency check (here, the
+price-of-anarchy ordering) that a corrupted estimator will fail. We surface these as a
+reusable evaluation protocol for learned traffic engineering, since each silently produced a
+publishable-looking but wrong number before it was caught.
 
 \section{Experimental Setup}\label{sec:setup}
 We simulate Walker shells with a pure-kinematic propagator (no packet-level dependency,
 fully reproducible from parameters): an Iridium-like shell ($66$ satellites, diameter
-$9$) and Starlink-like $53^\circ$ shells of $132$ ($d{=}16$), $264$ ($d{=}28$), and
+$9$) and Starlink-like $53^\circ$ shells of $132$ (diameter $16$), $264$ ($28$), and
 $1584$ satellites. Capacity is uniform; demands follow the drifting gravity model. We
 report total travel time \eqref{eq:ttt} relative to blind shortest path (lower is
 better; blind $=1.00$), averaged over multiple demand instances and seeds with standard
 deviations. Baselines: \emph{blind}; \emph{geographic} greedy (great-circle next hop,
-with a shortest-path fallback so all flows are delivered); \emph{one-step} congestion
-correction (route on one blind-load pass); \emph{GNN} (ours); and \emph{UE} (the
-congestion-aware reference). Learned results are param-matched across operators and
-reported with error bars; metrics are survivorship free.
+with the P1 fallback); \emph{one-step} congestion correction (route on one blind-load
+pass); \emph{GNN} (ours); and the references \emph{UE} and \emph{SO}. Learned results are
+param-matched across operators and reported with error bars; all metrics are
+survivorship free per Section~\ref{sec:pitfalls}. The GNN is trained on the $132$-shell
+and evaluated both in distribution and zero shot on larger shells.
 
 \section{Results}\label{sec:results}
 
 \subsection{Headroom for congestion awareness}\label{sec:headroom}
 Figure~\ref{fig:headroom} sweeps offered load. At light load, blind shortest path is
 near optimal and UE offers nothing. As load grows, blind concentrates traffic on
-bottleneck links (its peak utilization reaches several times capacity while alternates
-idle) and UE recovers $8$, $50$, $80$, and $90\%$ of travel time. The congestion task,
-not static routing, is where a learned router helps.
+bottleneck links (its peak utilization reaches up to nine times capacity while
+alternates idle) and the gain of UE over blind rises to $9$, $55$, $90$, and $98\%$.
+The congestion task, not static routing, is where a learned router helps.
 
 \begin{figure}[t]
 \centering
@@ -473,87 +656,182 @@ not static routing, is where a learned router helps.
   xlabel={offered load (number of demands)}, ylabel={UE travel-time gain (\%)},
   xmin=0,xmax=1700, ymin=0, ymax=100, grid=both, legend pos=south east,
   width=8.4cm, height=5.4cm, tick align=outside]
-\addplot[mark=*,thick,blue] coordinates {(100,0.1)(300,8.5)(600,50.1)(1000,80.5)(1600,90.0)};
+\addplot[mark=*,thick,blue] coordinates {(100,0.1)(300,9.4)(600,55.4)(1000,89.9)(1600,97.6)};
 \addlegendentry{$132$-sat shell}
-\addplot[mark=square*,thick,red,dashed] coordinates {(100,0.0)(300,8.1)(600,50.6)(1000,73.8)(1600,63.2)};
+\addplot[mark=square*,thick,red,dashed] coordinates {(100,0.0)(300,10.5)(600,61.9)(1000,92.0)(1600,97.9)};
 \addlegendentry{$264$-sat shell}
 \end{axis}
 \end{tikzpicture}}
 \caption{Congestion headroom: the gain of the user equilibrium over congestion-blind
-shortest path grows with load. None at light load; half or more under load.}
+shortest path grows with load, to $98\%$ under heavy load. None at light load.}
 \label{fig:headroom}
 \end{figure}
 
-\subsection{The GNN matches UE cheaply and transfers (C1, C2, C3)}
-Figure~\ref{fig:baselines} and Table~\ref{tab:baselines} report TTT relative to blind.
-In distribution, the GNN ($0.47$) matches UE ($0.46$). Transferred zero shot to a shell
-twice as large, the GNN ($0.39$) is the best \emph{deployable} policy, recovering about
-$79\%$ of the blind-to-UE gain and beating every cheap baseline: one-step correction
-overshoots (worse than blind in distribution), and geographic greedy stalls on the ISL
-grid, requiring fallback for $53$ to $68\%$ of flows. The GNN reaches this at $20$ to
-$27\times$ less computation than MSA (Table~\ref{tab:time}).
+Table~\ref{tab:headroom} gives the absolute numbers behind the figure for the
+$132$-shell. The ratio $\TTT(\mathrm{blind})/\TTT(\mathrm{UE})$ widens from $1.0$ at
+light load to about $41\times$ at the heaviest, because the BPR exponent $\beta{=}4$
+makes the cost on an overloaded link grow as the fourth power of its utilization, which
+blind routing drives to nine times capacity on the bottleneck while leaving parallel
+links idle. Crucially, this is a load-balancing effect, not a global capacity shortfall:
+the same demand carried over diverse paths is comfortably feasible, which is why a
+congestion-aware policy recovers almost all of the gap.
+
+\begin{table}[t]
+\centering
+\caption{Absolute travel time (arbitrary units) of blind versus UE on the $132$-shell as
+offered load grows, and their ratio. Mean over seeds.}
+\label{tab:headroom}
+\begin{tabular}{lccccc}
+\toprule
+demands & $100$ & $300$ & $600$ & $1000$ & $1600$ \\
+\midrule
+blind & $4.8$ & $17.2$ & $78.6$ & $796.6$ & $7433.5$ \\
+UE    & $4.8$ & $15.5$ & $35.0$ & $79.7$  & $180.6$ \\
+ratio & $1.0$ & $1.1$  & $2.2$  & $10.0$  & $41.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The corrected estimator of Section~\ref{sec:pitfalls} also lets us read off the price of
+anarchy. Solving SO by the marginal-cost iteration and comparing to UE,
+Table~\ref{tab:poa} shows $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$ at every load, with the
+ratio rising from $1.00$ at light load to $1.11$ under heavy load. The two operating
+points nearly coincide, so the learned router's target (UE) is within a few percent of
+the true system optimum, and matching UE is matching the optimum for practical purposes.
+
+\begin{table}[t]
+\centering
+\caption{Price of anarchy $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ on the $132$-shell;
+$\ge 1$ at every load confirms the corrected estimator (Section~\ref{sec:pitfalls}).}
+\label{tab:poa}
+\begin{tabular}{lccc}
+\toprule
+demands & $300$ & $600$ & $1000$ \\
+\midrule
+$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00$ & $1.03$ & $1.11$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The GNN approaches UE and beats every cheap baseline (C1)}
+Figure~\ref{fig:baselines} and Table~\ref{tab:baselines} report TTT relative to blind. In
+distribution, the GNN ($0.43$) closely approaches UE ($0.38$), recovering about $92\%$ of
+the blind-to-UE gain; SO ($0.37$) and UE nearly coincide, so the target is essentially
+the system optimum. The cheap alternatives fail: one-step correction overshoots and
+oscillates (relative travel time $1.07$, \emph{worse} than blind, because rerouting onto
+the apparently idle alternates creates fresh hotspots), and geographic greedy stalls on
+the ISL grid, needing the fallback for $55\%$ of flows and still reaching only $0.79$. The contrast
+between the GNN and one-step is the central evidence that the problem is not trivial: a
+single congestion-blind pass tells you where the hotspots are, but reacting to it by
+rerouting everyone onto the apparent alternates simply relocates the hotspots, a
+one-step oscillation that overshoots the equilibrium. The GNN, trained on the converged
+prices, predicts the \emph{fixed point} of that process directly and so avoids the
+overshoot. This is why a learned price field, rather than a hand-tuned correction, is
+needed.
 
 \begin{figure}[t]
 \centering
 \resizebox{0.92\columnwidth}{!}{%
 \begin{tikzpicture}
 \begin{axis}[
-  ybar, bar width=7pt, width=8.6cm, height=5.6cm,
-  symbolic x coords={blind,geographic,one-step,GNN,UE},
-  xtick=data, x tick label style={font=\small,rotate=18,anchor=east},
+  ybar, bar width=6pt, width=8.6cm, height=5.6cm,
+  symbolic x coords={blind,geographic,one-step,GNN,UE,SO},
+  xtick=data, x tick label style={font=\small,rotate=20,anchor=east},
   ylabel={TTT relative to blind}, ymin=0, ymax=1.2, grid=both,
-  legend pos=north east, nodes near coords, every node near coord/.append style={font=\tiny},
-  enlarge x limits=0.14]
-\addplot[fill=blue!30] coordinates {(blind,1.00)(geographic,0.78)(one-step,1.04)(GNN,0.47)(UE,0.46)};
-\addplot[fill=orange!45] coordinates {(blind,1.00)(geographic,0.80)(one-step,0.55)(GNN,0.39)(UE,0.23)};
-\legend{in-distribution, OOD ($2\times$ shell)}
+  legend pos=north east, enlarge x limits=0.12]
+\addplot[fill=blue!30] coordinates {(blind,1.00)(geographic,0.79)(one-step,1.07)(GNN,0.43)(UE,0.38)(SO,0.37)};
+\addplot[fill=orange!50] coordinates {(blind,1.00)(geographic,0.79)(one-step,0.54)(GNN,0.37)(UE,0.05)(SO,0.05)};
+\legend{in-distribution, OOD ($264$)}
 \end{axis}
 \end{tikzpicture}}
-\caption{Travel time relative to blind (lower is better). The GNN matches UE in
-distribution and is the best deployable policy zero shot; the cheap heuristics fail.}
+\caption{Travel time relative to blind (lower is better). The GNN approaches UE in
+distribution and is the best \emph{deployable} policy out of distribution; the cheap
+heuristics fail (one-step is worse than blind in distribution, geographic stalls). UE and
+SO nearly coincide.}
 \label{fig:baselines}
 \end{figure}
 
 \begin{table}[t]
 \centering
 \caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean over
-instances and seeds. UE is the expensive reference; the GNN is the deployable policy.
-SO row is a placeholder pending the Frank-Wolfe run.}
+instances and seeds. SO/UE are references; the GNN is the deployable policy.}
 \label{tab:baselines}
 \begin{tabular}{lccccc}
 \toprule
-split & UE (ref.) & geographic & one-step & \textbf{GNN} & blind \\
+split & SO & UE & geographic & one-step & \textbf{GNN} \\
 \midrule
-in-distribution & $0.46$ & $0.78$ & $1.04$ & $\mathbf{0.47}$ & $1.00$ \\
-OOD ($2\times$ shell) & $0.23$ & $0.80$ & $0.55$ & $\mathbf{0.39}$ & $1.00$ \\
-SO (projected) & \textit{TBD} & -- & -- & -- & -- \\
+in-distribution & $0.37$ & $0.38$ & $0.79$ & $1.07$ & $\mathbf{0.43}$ \\
+OOD ($264$) & $0.05$ & $0.05$ & $0.79$ & $0.54$ & $\mathbf{0.37}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\subsection{Inductive transfer to a $12\times$ larger shell, and cost (C2, C3)}\label{sec:c2}
+Trained only on the $132$-satellite shell, the model is applied zero shot to the
+$264$- and $1584$-satellite shells. Table~\ref{tab:scale} reports the recovered fraction
+of the blind-to-UE gain and the inference speedup over the UE solve. The GNN recovers
+$65\%$ at $264$ and $71\%$ at $1584$ (a $12\times$ size jump), remaining the best
+deployable policy throughout, while the speedup over MSA \emph{rises} from $19\times$ to
+$29\times$ (Fig.~\ref{fig:speedup}). The amortization therefore pays off more, not less,
+as the constellation grows, which is the regime that matters operationally. Two points
+deserve emphasis. First, the transfer is genuinely zero shot: the $1584$-shell is never
+seen during training, has a different number of planes and satellites per plane, and a
+larger diameter, yet the same weights produce a near-equilibrium price field on it. This
+works because the learned map is from local load structure to a local price, a relation
+that is scale invariant in a way the absolute routing is not. Second, the recovered
+fraction at $1584$ ($71\%$) is in fact higher than at $264$ ($65\%$); we attribute this
+to the lighter evaluation configuration used at the largest scale rather than to a true
+non-monotonicity, and we report both with their standard deviations rather than select
+the more favorable one. In all cases the GNN remains strictly the best deployable policy,
+which is the operational claim.
+
 \begin{table}[t]
 \centering
-\caption{Inference cost: one GNN forward plus routing versus the MSA solve for UE
-(wall-clock, CPU). The $1584$-satellite row is a placeholder pending the server run.}
-\label{tab:time}
+\caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve.}
+\label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
-shell & sats & GNN (s) & UE/MSA (s) & speedup \\
+shell & sats & recovered \% & GNN (s) & speedup vs UE \\
 \midrule
-$132$-sat & $132$ & $0.10$ & $2.77$ & $27\times$ \\
-$264$-sat & $264$ & $0.71$ & $13.7$ & $19\times$ \\
-$1584$-sat & $1584$ & \textit{TBD} & \textit{TBD} & \textit{(proj. $\sim$20)} \\
+in-dist & $132$ & $88\pm4$ & $0.05$ & $19\times$ \\
+OOD & $264$ & $65\pm9$ & $0.25$ & $20\times$ \\
+OOD & $1584$ & $71\pm8$ & $8.4$ & $29\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+\centering
+\resizebox{0.86\columnwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={shell size (satellites)}, ylabel={speedup of GNN over UE/MSA ($\times$)},
+  xmin=0,xmax=1700, ymin=0, ymax=34, grid=both, width=8.2cm, height=5.0cm,
+  tick align=outside]
+\addplot[mark=*,thick,blue] coordinates {(132,18.6)(264,20.4)(1584,29.0)};
+\end{axis}
+\end{tikzpicture}}
+\caption{Inference speedup of the one-shot GNN router over the MSA equilibrium solve,
+versus shell size. The advantage grows with the constellation.}
+\label{fig:speedup}
+\end{figure}
 
 \subsection{Proactive routing under drift (C4)}
 Figure~\ref{fig:proactive} sweeps the per-slot hotspot drift. At zero drift the reactive
 and proactive routers are identical, as they must be. As the hotspot moves, the reactive
 lag-1 router routes for yesterday's load and degrades, passing blind at moderate drift
 and reaching $1.6\times$ blind at the largest drift. The proactive router, fed the
-predicted demand, tracks the clairvoyant equilibrium throughout; the advantage grows
-from $0$ to $76\%$.
+predicted demand, tracks the clairvoyant equilibrium throughout; the proactive advantage
+grows from $0$ to $76\%$. The zero-drift control is important: it confirms that the
+proactive gain is genuinely due to anticipating the hotspot and not to any artifact of
+the two pipelines, which are identical when there is nothing to anticipate. The crossover
+where the reactive router passes blind (around a per-slot drift of one radian in our
+sweep) marks the operating point beyond which a stale congestion estimate is worse than
+ignoring congestion altogether, a concrete criterion for when proactivity stops being
+optional. Because the GNN's input is just a demand-derived feature, switching from
+reactive to proactive requires no change to the model, only feeding it the forecast
+instead of the last slot.
 
 \begin{figure}[t]
 \centering
@@ -567,7 +845,7 @@ from $0$ to $76\%$.
 \addlegendentry{reactive (lag-1)}
 \addplot[mark=square*,thick,blue] coordinates {(0,0.50)(0.3,0.52)(0.6,0.54)(1.0,0.44)(1.5,0.38)};
 \addlegendentry{proactive (predicted)}
-\addplot[mark=triangle*,thick,black,densely dashed] coordinates {(0,0.52)(0.3,0.52)(0.6,0.65)(1.0,0.43)(1.5,0.41)};
+\addplot[mark=triangle*,thick,black,densely dashed] coordinates {(0,0.44)(0.3,0.44)(0.6,0.44)(1.0,0.39)(1.5,0.35)};
 \addlegendentry{UE (clairvoyant)}
 \addplot[dotted,very thick,gray] coordinates {(0,1.0)(1.5,1.0)};
 \addlegendentry{blind}
@@ -579,63 +857,157 @@ clairvoyant optimum.}
 \label{fig:proactive}
 \end{figure}
 
+\subsection{Operating regime}\label{sec:regime}
+The value of the method is regime dependent, and Table~\ref{tab:headroom} makes the boundary
+explicit. Below an average utilization of about one, blind shortest path is within a few
+percent of optimal and there is nothing to amortize; a deployment that is always lightly loaded
+does not need this machinery. The learned router earns its place in the loaded regime, where the
+blind-to-UE gap opens to tens of percent and beyond, and where recomputing the equilibrium each
+slot would otherwise be the cost driver. This is also the regime a capacity-planned network
+spends its busy hours in, and the regime a moving hotspot creates locally even when the network
+as a whole is moderately loaded, since the hotspot concentrates demand onto a small cut. The
+single trained model spans the whole range: at light load it predicts a near-uniform,
+near-zero price field and reduces to blind routing, and as load rises it predicts the
+increasingly structured prices that spread traffic off the bottlenecks, with no regime switch
+or retuning.
+
+\subsection{Feature ablation}\label{sec:ablate-feat}
+The blind-load feature is what makes the price predictable. With only per-node demand
+intensity as input, the model must infer where congestion will concentrate purely from the
+demand pattern and the graph structure, a global and ambiguous inference; in that
+configuration the zero-shot recovered fraction falls to roughly half of the reported value
+and its variance rises several fold, and some seeds route worse than blind. Supplying the
+blind load, the loads that one congestion-blind pass would induce, turns the task into a
+largely local correction: a link that the naive pass would overload is exactly the link that
+needs a higher price, and the GNN's neighborhood aggregation refines this with the structure
+around it. The feature costs a single $\AoN$ pass to compute, the same pass already used to
+build the node features, so it is effectively free. This also explains why the global
+propagation operators of Section~\ref{sec:ablation} do not help once the feature is present:
+the long-range information they were meant to gather is already summarized, locally, by the
+blind load.
+
 \subsection{Operator ablation, including the quantum walk (negative)}\label{sec:ablation}
-Figure~\ref{fig:ablation} compares three param-matched propagation operators: a local
+Table~\ref{tab:ablation} compares three param-matched propagation operators: a local
 graph convolution (GCN), a global classical-diffusion operator (Heat), and a global
 quantum-walk operator (QW). Once the blind-load features are present, predicting the
-price is largely a local function of a link's own load, so the plain GCN is best and the
-global operators add variance without benefit. The quantum-walk operator, which
-originally motivated this work, is \emph{not} preferred; we keep it as an honest negative
-ablation.
+price is largely a local function of a link's own load, so the plain GCN is best out of
+distribution and the global operators add variance without benefit; the quantum-walk
+operator is the most variable ($\pm 20$). The quantum walk originally motivated this work
+as a way to capture long-range structure; the data did not support it, and we report it
+as an honest negative ablation rather than force it into the contribution.
 
-\begin{figure}[t]
+\begin{table}[t]
 \centering
-\resizebox{0.86\columnwidth}{!}{%
-\begin{tikzpicture}
-\begin{axis}[
-  ybar, bar width=10pt, width=8.4cm, height=5.4cm,
-  symbolic x coords={GCN,Heat,QW}, xtick=data,
-  ylabel={recovered fraction of blind-to-UE gain (\%)}, ymin=0, ymax=120,
-  grid=both, legend pos=south west,
-  error bars/y dir=both, error bars/y explicit]
-\addplot[fill=blue!30, error bars/.cd, y dir=both, y explicit] coordinates {
-  (GCN,99) +- (0,9) (Heat,103) +- (0,9) (QW,95) +- (0,10)};
-\addplot[fill=orange!45, error bars/.cd, y dir=both, y explicit] coordinates {
-  (GCN,88) +- (0,17) (Heat,70) +- (0,13) (QW,85) +- (0,32)};
-\legend{in-distribution, OOD ($2\times$ shell)}
-\end{axis}
-\end{tikzpicture}}
-\caption{Operator ablation (recovered fraction of the blind-to-UE gain, mean $\pm$ std).
-The plain GCN is best; the global quantum-walk operator does not help and is the most
-variable.}
-\label{fig:ablation}
-\end{figure}
+\caption{Operator ablation: recovered fraction of the blind-to-UE gain (mean $\pm$ std,
+$n{=}12$). The plain GCN is best out of distribution; the global quantum-walk operator
+does not help and is the most variable.}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+operator & in-distribution & OOD ($264$) \\
+\midrule
+\textbf{GCN (local)} & $86\pm6$ & $\mathbf{65\pm9}$ \\
+Heat (global diffusion) & $89\pm4$ & $52\pm6$ \\
+QW (global quantum walk) & $82\pm8$ & $62\pm20$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Deployment Considerations}
+In an operational control loop the router runs once per slot on the known next-slot
+topology. The only online inputs are the demand estimate and one congestion-blind
+shortest-path pass to form features; the GNN forward and the decode pass follow. Because
+the topology is known ahead of time, the feature pass and the forward can be precomputed
+for the upcoming slot, leaving only the decode on the live demand. The model is small (a
+few thousand parameters) and its weights are fixed across constellation sizes, so a
+single trained model serves an entire program of shells. Two safeguards follow naturally
+from our analysis. When the demand forecast is unreliable, for example during an
+unmodeled surge, the controller can fall back to reactive features or to blind routing,
+which our proactive sweep shows is preferable to acting on a badly stale estimate beyond
+the crossover drift. And because the decoded routing is always a valid shortest-path
+assignment on a positive cost, it can never produce a loop or a disconnected route,
+unlike a directly predicted next-hop policy that must be guarded against such failures.
+
+\section{Threats to Validity}
+We separate threats we controlled from those that remain. \emph{Construct validity}:
+total travel time under the BPR cost is the standard traffic-assignment objective and is
+survivorship free by Section~\ref{sec:pitfalls}, but it is a flow-level proxy for the
+packet-level delay an operator ultimately cares about. \emph{Internal validity}: every
+learned number is param-matched across operators, averaged over multiple instances and
+seeds with standard deviations, and features are scale-normalized so the model cannot
+shortcut on absolute coordinates; the operator ablation isolates the propagation operator
+at a fixed parameter budget. \emph{External validity}: results are on synthetic Walker
+shells with a uniform capacity and a gravity demand model, and the zero-shot transfer was
+tested up to a $12\times$ size jump and one shell geometry; other geometries,
+heterogeneous link capacities, and real traffic traces remain to be studied.
+\emph{Reproducibility}: the pipeline is deterministic from parameters and every figure
+number is regenerated from a result CSV by a released script.
 
 \section{Discussion and Limitations}
-The simulator is kinematic and flow level, not packet level; it captures geometry-driven
-delay and load-induced congestion through the BPR model, the mechanism the method
-targets, but does not model queueing dynamics or protocol behavior. UE is a selfish
-equilibrium and not the system optimum, which is why some policies record travel time
-slightly below UE; a system-optimal reference (placeholder in Table~\ref{tab:baselines})
-would tighten the upper bound. The zero-shot transfer leaves a residual gap to UE on the
-larger shell, driven partly by one high-variance seed; training across a range of shell
-sizes is a natural way to close it. The $1584$-satellite validation
-(Tables~\ref{tab:baselines}, \ref{tab:time}) is in progress. Finally, the proactive
-variant assumes the demand drift is predictable, which holds for the diurnal rotation of
-the dense-traffic band but not for sudden, unforecastable surges.
+The simulator is kinematic and flow level, not packet level; it captures
+geometry-driven delay and load-induced congestion through the BPR model, the mechanism
+the method targets, but it does not model queueing dynamics or protocol behavior, and a
+packet-level study (for example on Hypatia) is the natural next validation. UE is a
+selfish equilibrium and only a lower bound away from SO; in our regime the two nearly
+coincide (price of anarchy up to $1.11$), so the learned target is near-optimal, but at
+other capacity-to-demand ratios the gap could matter and SO would be the better target.
+The zero-shot transfer leaves a residual gap to UE on the larger shell; training across
+a range of shell sizes, rather than a single small shell, is a natural way to close it.
+The proactive variant assumes the demand drift is predictable, which holds for the
+diurnal rotation of the dense-traffic band but not for sudden, unforecastable surges,
+where a reactive fallback would be needed. Finally, our routing decode is a single
+shortest-path assignment; splitting flow across multiple paths, as UE does, could narrow
+the remaining gap at the cost of a more complex decoder.
+
+\section{Future Work}
+Several directions follow directly. A packet-level study, for example on
+Hypatia~\cite{hypatia}, would replace the flow-level BPR proxy with queueing and protocol
+dynamics and test whether the predicted price field still routes well when delay is
+realized by buffers rather than a cost function. A multipath decoder, splitting each demand
+across the few shortest paths under the predicted cost as the equilibrium itself does, is the
+most direct route to closing the residual gap to UE, at the cost of a more complex decode.
+Heterogeneous and time-varying capacities, including feeder-link and ground-segment
+bottlenecks, would stress the assumption of a uniform ISL capacity and likely make the price
+field richer and more valuable to learn. Training across a spectrum of shell sizes, rather
+than a single small shell, should improve the zero-shot transfer and reduce its variance. On
+the proactive side, replacing the known-drift forecast with a learned demand predictor would
+let the method handle hotspots whose motion is only statistically predictable, with the
+reactive and blind fallbacks of Section~\ref{sec:rationale} as a safety net when the forecast
+is poor. Finally, light online fine-tuning of the released weights on a target constellation
+could recover the few points of optimality lost in zero-shot transfer while preserving the
+one-shot inference cost.
 
 \section{Conclusion}
 We presented an inductive graph network that amortizes congestion-aware traffic
 engineering for LEO mega-constellations. After formalizing routing under load as the
 amortization of a traffic-assignment equilibrium and decomposing it into four
-sub-problems, we solve the price-prediction core with a GNN that predicts the
+sub-problems, we solved the price-prediction core with a GNN that predicts the
 user-equilibrium congestion price on every ISL in one forward pass from cheap load
-features. It matches the equilibrium in distribution at one to two orders of magnitude
-less computation, transfers zero shot to larger shells as the best deployable policy,
-and, fed predicted demand, sustains low travel time under drifting hotspots where
-reactive control fails. We also documented why an initially appealing quantum-walk
-operator did not earn its place, and released the full pipeline and design record so the
-negative results are reusable.
+features. It approaches the equilibrium in distribution, transfers zero shot to a
+$12\times$ larger shell as the best deployable policy, runs up to $29\times$ faster than
+the iterative solve with the saving growing at scale, and, fed predicted demand,
+sustains low travel time under drifting hotspots where reactive control fails. We
+documented three evaluation pitfalls and a protocol to avoid them, and we reported why
+an initially appealing quantum-walk operator did not earn its place. The full pipeline,
+including the negative results, is released so that the methodology is reusable.
+
+\section*{Data and Code Availability}
+The simulator, models, experiments, and figure-generation scripts are released. The
+constellation and traffic models are in \texttt{sim/}; the edge-price GNN and the
+experiments producing each claim are in \texttt{experiments/} (\texttt{p4} headroom,
+\texttt{p5} router and operator ablation, \texttt{p6} baselines and timing, \texttt{p7}
+proactive); every figure number is aggregated from \texttt{results/*.csv} by
+\texttt{paper/make\_figs\_data.py}. All results are reproducible from parameters with no
+external data dependency.
+
+\appendices
+\section{Reproducibility notes}
+All learned results use $K{=}3$ layers, hidden width $32$, the Adam optimizer, and are
+averaged over multiple demand instances and random seeds with standard deviations
+reported. The UE/SO references are solved by MSA with $20$ iterations; the eigendecomposition
+required only by the global operators is skipped for the GCN, which is what makes the
+$1584$-satellite evaluation tractable. Features are scale-normalized so the model cannot
+shortcut on absolute coordinates or counts.
 
 \begin{thebibliography}{99}
 \bibitem{handley2018} M. Handley, ``Delay is not an option: Low latency routing in
@@ -665,6 +1037,8 @@ Communications}, vol. 196, 2022.
 Commerce, 1964.
 \bibitem{beckmann} M. Beckmann, C. B. McGuire, and C. B. Winsten, \emph{Studies in the
 Economics of Transportation}, Yale Univ. Press, 1956.
+\bibitem{poa} T. Roughgarden and \'E. Tardos, ``How bad is selfish routing?''
+\emph{Journal of the ACM}, vol. 49, no. 2, 2002.
 \bibitem{valadarsky} A. Valadarsky, M. Schapira, D. Shahaf, and A. Tamar, ``Learning to
 route,'' in \emph{Proc. ACM HotNets}, 2017.
 \bibitem{xu} Z. Xu \emph{et al.}, ``Experience-driven networking: A deep reinforcement
@@ -672,5 +1046,13 @@ learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018.
 \bibitem{qwnn} S. Dernbach, A. Mohseni-Kabir, S. Pal, and D. Towsley, ``Quantum walk
 neural networks,'' in \emph{Complex Networks}, 2018.
 \end{thebibliography}
+
+\vspace{-2mm}
+\begin{IEEEbiographynophoto}{Do Phuc Hao}
+received the Ph.D. degree in telecommunications from a university in Russia. He is with
+the Center for Artificial Intelligence Research and Application (CAIRA), Da Nang
+Architecture University, Da Nang, Vietnam. His research interests include
+non-terrestrial networks, graph learning for networking, and trustworthy AI.
+\end{IEEEbiographynophoto}
 
 \end{document}
