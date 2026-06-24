@@ -208,42 +208,56 @@ design~\cite{handley2018,bhattacherjee2019}. Handley showed that a $+$Grid of IS
 beat terrestrial fiber on long paths because light is faster in vacuum, making the ISL
 layer worth routing carefully~\cite{handley2018}; Bhattacherjee and Snoeren explored how
 the choice of which satellites to interconnect shapes path length and
-churn~\cite{bhattacherjee2019}. Packet-level simulators such as Hypatia~\cite{hypatia}
-and StarPerf~\cite{starperf} reconstruct the moving topology from constellation
-parameters and have driven work on path stability, handover, and delay under realistic
-orbital dynamics. This line predominantly routes on delay or hop count and evaluates a
-lightly loaded network; the contribution we make is orthogonal and complementary, namely
-how to route when the bottleneck is congestion rather than geometry, and how to do so
-without a per-slot optimization.
+churn~\cite{bhattacherjee2019}. The broader push toward non-terrestrial networks in the
+$6$G era is surveyed in~\cite{kodheli,giordani}, and the design space of competing LEO
+constellations is compared in~\cite{delportillo}; measurement studies of operational
+systems such as Starlink confirm that capacity, not only geometry, shapes the user
+experience~\cite{michel}. Packet-level simulators such as Hypatia~\cite{hypatia} and
+StarPerf~\cite{starperf} reconstruct the moving topology from constellation parameters and
+have driven work on path stability, handover, and delay under realistic orbital dynamics.
+This line predominantly routes on delay or hop count and evaluates a lightly loaded
+network; our contribution is orthogonal and complementary, namely how to route when the
+bottleneck is congestion rather than geometry, and how to do so without a per-slot
+optimization.
 
-\textbf{GNNs for networking.} Graph convolutions~\cite{gcn}, attention~\cite{gat}, and
-inductive sampling~\cite{graphsage} underpin learning on graphs. RouteNet predicts
-per-path delay and jitter for network modeling and what-if analysis~\cite{routenet};
-reinforcement learning with GNNs has been applied to routing
-optimization~\cite{almasan}. These approaches either model performance or learn a
-control policy by trial and error. Ours is supervised and predicts a congestion-price
-\emph{field} that is decoded by a single shortest-path pass, which keeps inference to
-one forward evaluation and makes inductivity across constellation size immediate.
+\textbf{GNNs for networking.} Message passing~\cite{mpnn}, graph convolutions~\cite{gcn},
+attention~\cite{gat}, and inductive sampling~\cite{graphsage} underpin learning on graphs,
+whose expressive power~\cite{gin} and relational inductive biases~\cite{battaglia} are now
+well understood. In networking specifically, GNNs have been used for modeling and control:
+RouteNet predicts per-path delay and jitter for network modeling and what-if
+analysis~\cite{routenet}; surveys map the emerging use cases~\cite{suarez}; and learned
+routing has been pursued by generating distributed protocols~\cite{geyer}, by data-driven
+distance-vector routing~\cite{gddr}, and by reinforcement learning with
+GNNs~\cite{almasan}. These approaches either model performance or learn a control policy by
+trial and error. Ours is supervised and predicts a congestion-price \emph{field} that is
+decoded by a single one-shot pass, which keeps inference to one forward evaluation and
+makes inductivity across constellation size immediate.
 
 \textbf{Traffic engineering and equilibria.} Load-dependent link cost, the user
 equilibrium, and the system optimum are classical in transportation
-science~\cite{wardrop,bpr,beckmann}: Wardrop's principles characterize the equilibrium,
-the Beckmann transformation casts it as a convex program, and the BPR function is the
-standard congestion cost. The gap between selfish and optimal routing is the price of
-anarchy, bounded for such cost classes by Roughgarden and Tardos~\cite{poa}. Learning to
-route so as to reduce congestion has been explored for terrestrial and software-defined
-networks~\cite{valadarsky,xu}, typically with reinforcement learning over a fixed
-topology. Two things change in LEO and motivate a different design: the topology is large
-and changes every few seconds, so a per-slot equilibrium solve is the bottleneck and
-amortizing it is the prize; and the demand is non-stationary but \emph{predictable}, so a
-forecast-driven, proactive controller is both possible and valuable. We therefore learn
-to predict the equilibrium price field and decode it with a classical router, rather than
-learn a topology-specific policy by trial and error.
+science~\cite{wardrop,bpr,beckmann,sheffi}: Wardrop's principles characterize the
+equilibrium, the Beckmann transformation casts it as a convex program solvable by
+Frank-Wolfe and the method of successive averages~\cite{frankwolfe,sheffi}, and the BPR
+function is the standard congestion cost. The gap between selfish and optimal routing is
+the price of anarchy, bounded for such cost classes by Roughgarden and Tardos~\cite{poa}.
+In data networks, traffic engineering has a long line of work, from tuning OSPF link
+weights~\cite{fortz} and responsive-yet-stable load balancing~\cite{texcp} to
+software-driven wide-area networks~\cite{swan,b4}. These solve an optimization per
+measurement epoch; the novelty in LEO is that the topology is large and changes every few
+seconds, so a per-slot solve is the bottleneck and amortizing it is the prize.
 
-\textbf{Quantum-walk networks.} Continuous-time quantum walks have been used as a graph
-propagation operator to capture long-range structure~\cite{qwnn}. We evaluate one as a
-candidate operator and report it as a negative ablation
-(Section~\ref{sec:ablation}).
+\textbf{Learning-based control.} Deep reinforcement learning has been applied to resource
+management~\cite{deeprm}, datacenter traffic optimization~\cite{auto}, and routing over a
+fixed topology~\cite{valadarsky,xu}. Such policies are powerful but require online
+exploration and are tied to the training topology. We instead supervise on a computable
+equilibrium and exploit the predictable demand drift for proactivity, which removes
+exploration at deployment and makes the learned map transfer across constellation size.
+
+\textbf{Quantum walks and learned operators.} Continuous-time quantum walks have been used
+as a graph propagation operator to capture long-range structure~\cite{qwnn}, and recent
+function-learning layers such as Kolmogorov-Arnold networks~\cite{kan} offer alternative
+inductive biases. We evaluate a quantum-walk operator as a candidate and report it as a
+negative ablation (Section~\ref{sec:ablation}).
 
 \section{System Model}\label{sec:model}
 Table~\ref{tab:notation} lists the notation.
@@ -410,7 +424,7 @@ Cost of SP2 plus inference versus the UE solve gives \textbf{C3}
 \node[blk, right=of obs] (feat) {Node/edge\\ features $\mathcal{S}_t$};
 \node[blk, right=of feat] (gnn) {Edge-price GNN\\ $K$ message-passing\\ layers};
 \node[blk, right=of gnn] (price) {Edge prices\\ $\hat g_{uv}$};
-\node[blk, right=of price] (dec) {Shortest-path\\ decode on\\ $\prop(1+\hat g)$};
+\node[blk, right=of price] (dec) {Multipath\\ decode on\\ $\prop(1+\hat g)$};
 \node[blkb, right=of dec] (out) {Routed flows\\ realized $\TTT$};
 \foreach \a/\b in {g/obs,obs/feat,feat/gnn,gnn/price,price/dec,dec/out}
   \draw[flowarr] (\a) -- (\b);
@@ -419,8 +433,8 @@ Cost of SP2 plus inference versus the UE solve gives \textbf{C3}
 \end{tikzpicture}}
 \caption{End-to-end pipeline. Cheap observable state (demand and the load that one
 congestion-blind pass would induce) feeds an edge-price GNN that predicts the
-equilibrium congestion price per ISL in one forward pass; a single shortest-path decode
-then routes the whole demand matrix. The proactive variant (dashed) feeds the predicted
+equilibrium congestion price per ISL in one forward pass; a single one-shot multipath
+decode then routes the whole demand matrix. The proactive variant (dashed) feeds the predicted
 next-slot demand.}
 \label{fig:pipeline}
 \end{figure*}
@@ -748,7 +762,7 @@ The congestion task, not static routing, is where a learned router helps.
 \begin{tikzpicture}
 \begin{axis}[prostyle,
   xlabel={offered load (number of demands)}, ylabel={UE gain over blind (\%)},
-  xmin=0,xmax=1700, ymin=0, ymax=104, legend pos=south east, ytick={0,20,40,60,80,100}]
+  xmin=0,xmax=1700, ymin=0, ymax=110, legend pos=south east, ytick={0,20,40,60,80,100}]
 \fill[cAmber!10] (axis cs:330,0) rectangle (axis cs:1700,104);
 \node[font=\scriptsize\itshape, cAmber!75!black, anchor=north east]
   at (axis cs:1660,30) {congested regime};
@@ -1132,9 +1146,9 @@ single trained model serves an entire program of shells. Two safeguards follow n
 from our analysis. When the demand forecast is unreliable, for example during an
 unmodeled surge, the controller can fall back to reactive features or to blind routing,
 which our proactive sweep shows is preferable to acting on a badly stale estimate beyond
-the crossover drift. And because the decoded routing is always a valid shortest-path
-assignment on a positive cost, it can never produce a loop or a disconnected route,
-unlike a directly predicted next-hop policy that must be guarded against such failures.
+the crossover drift. And because the decoded routing is a valid flow on a downhill DAG of
+positive-cost edges, it can never produce a loop or a disconnected route, unlike a directly
+predicted next-hop policy that must be guarded against such failures.
 
 \section{Threats to Validity}
 We separate threats we controlled from those that remain. \emph{Construct validity}:
@@ -1163,17 +1177,19 @@ The zero-shot transfer leaves a residual gap to UE on the larger shell; training
 a range of shell sizes, rather than a single small shell, is a natural way to close it.
 The proactive variant assumes the demand drift is predictable, which holds for the
 diurnal rotation of the dense-traffic band but not for sudden, unforecastable surges,
-where a reactive fallback would be needed. Finally, our routing decode is a single
-shortest-path assignment; splitting flow across multiple paths, as UE does, could narrow
-the remaining gap at the cost of a more complex decoder.
+where a reactive fallback would be needed. Finally, our multipath decode closes most but
+not all of the gap to UE; the residual decoder floor $\delta_{\mathrm{dec}}$ (about $3.6\%$,
+Section~\ref{sec:results-decode}) reflects the softmin split's deviation from the exact
+equilibrium splitting, which an equilibrium-faithful or learned decoder could shrink
+further.
 
 \section{Future Work}
 Several directions follow directly. A packet-level study, for example on
 Hypatia~\cite{hypatia}, would replace the flow-level BPR proxy with queueing and protocol
 dynamics and test whether the predicted price field still routes well when delay is
-realized by buffers rather than a cost function. A multipath decoder, splitting each demand
-across the few shortest paths under the predicted cost as the equilibrium itself does, is the
-most direct route to closing the residual gap to UE, at the cost of a more complex decode.
+realized by buffers rather than a cost function. An equilibrium-faithful or learned decoder,
+going beyond the softmin downhill split to reproduce the exact UE flow splitting, is the most
+direct route to closing the residual decoder floor $\delta_{\mathrm{dec}}$.
 Heterogeneous and time-varying capacities, including feeder-link and ground-segment
 bottlenecks, would stress the assumption of a uniform ISL capacity and likely make the price
 field richer and more valuable to learn. Training across a spectrum of shell sizes, rather
@@ -1254,6 +1270,49 @@ route,'' in \emph{Proc. ACM HotNets}, 2017.
 learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018.
 \bibitem{qwnn} S. Dernbach, A. Mohseni-Kabir, S. Pal, and D. Towsley, ``Quantum walk
 neural networks,'' in \emph{Complex Networks}, 2018.
+\bibitem{kodheli} O. Kodheli \emph{et al.}, ``Satellite communications in the new space
+era: A survey and future challenges,'' \emph{IEEE Commun. Surveys Tuts.}, vol. 23, no. 1,
+pp. 70--109, 2021.
+\bibitem{giordani} M. Giordani and M. Zorzi, ``Non-terrestrial networks in the 6G era:
+Challenges and opportunities,'' \emph{IEEE Network}, vol. 35, no. 2, pp. 244--251, 2021.
+\bibitem{delportillo} I. del Portillo, B. G. Cameron, and E. F. Crawley, ``A technical
+comparison of three low Earth orbit satellite constellation systems to provide global
+broadband,'' \emph{Acta Astronautica}, vol. 159, pp. 123--135, 2019.
+\bibitem{michel} F. Michel, M. Trevisan, D. Giordano, and O. Bonaventure, ``A first look
+at Starlink performance,'' in \emph{Proc. ACM IMC}, 2022.
+\bibitem{mpnn} J. Gilmer, S. S. Schoenholz, P. F. Riley, O. Vinyals, and G. E. Dahl,
+``Neural message passing for quantum chemistry,'' in \emph{Proc. ICML}, 2017.
+\bibitem{gin} K. Xu, W. Hu, J. Leskovec, and S. Jegelka, ``How powerful are graph neural
+networks?'' in \emph{Proc. ICLR}, 2019.
+\bibitem{battaglia} P. W. Battaglia \emph{et al.}, ``Relational inductive biases, deep
+learning, and graph networks,'' \emph{arXiv:1806.01261}, 2018.
+\bibitem{suarez} J. Su\'arez-Varela \emph{et al.}, ``Graph neural networks for
+communication networks: Context, use cases and opportunities,'' \emph{IEEE Network}, vol.
+37, no. 3, pp. 146--153, 2023.
+\bibitem{geyer} F. Geyer and G. Carle, ``Learning and generating distributed routing
+protocols using graph-based deep learning,'' in \emph{Proc. ACM SIGCOMM Workshop on Big
+Data Analytics and Machine Learning for Data Communication Networks (Big-DAMA)}, 2018.
+\bibitem{gddr} O. Hope and E. Yoneki, ``GDDR: GNN-based data-driven routing,'' in
+\emph{Proc. IEEE ICDCS}, 2021.
+\bibitem{sheffi} Y. Sheffi, \emph{Urban Transportation Networks: Equilibrium Analysis with
+Mathematical Programming Methods}. Englewood Cliffs, NJ, USA: Prentice-Hall, 1985.
+\bibitem{frankwolfe} M. Frank and P. Wolfe, ``An algorithm for quadratic programming,''
+\emph{Naval Research Logistics Quarterly}, vol. 3, no. 1--2, pp. 95--110, 1956.
+\bibitem{fortz} B. Fortz and M. Thorup, ``Internet traffic engineering by optimizing OSPF
+weights,'' in \emph{Proc. IEEE INFOCOM}, 2000.
+\bibitem{texcp} S. Kandula, D. Katabi, B. Davie, and A. Charny, ``Walking the tightrope:
+Responsive yet stable traffic engineering,'' in \emph{Proc. ACM SIGCOMM}, 2005.
+\bibitem{swan} C.-Y. Hong \emph{et al.}, ``Achieving high utilization with software-driven
+WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013.
+\bibitem{b4} S. Jain \emph{et al.}, ``B4: Experience with a globally-deployed software
+defined WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013.
+\bibitem{deeprm} H. Mao, M. Alizadeh, I. Menache, and S. Kandula, ``Resource management
+with deep reinforcement learning,'' in \emph{Proc. ACM HotNets}, 2016.
+\bibitem{auto} L. Chen, J. Lingys, K. Chen, and F. Liu, ``AuTO: Scaling deep reinforcement
+learning for datacenter-scale automatic traffic optimization,'' in \emph{Proc. ACM
+SIGCOMM}, 2018.
+\bibitem{kan} Z. Liu \emph{et al.}, ``KAN: Kolmogorov-Arnold networks,''
+\emph{arXiv:2404.19756}, 2024.
 \end{thebibliography}
 
 \vspace{-2mm}

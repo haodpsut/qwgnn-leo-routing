@@ -196,7 +196,7 @@ N_EVAL_INST = int(os.environ.get("QWGNN_EVAL", "4"))
 # is skipped unless requested, which is what makes the 1584-satellite run feasible.
 OPS = [o for o in os.environ.get("QWGNN_OPS", "GCN").split(",") if o in PROPS]
 NEED_EIG = any(o in ("Heat", "QW") for o in OPS)
-OUT = os.path.join(ROOT, "results", "p5_router.csv")
+OUT = os.path.join(ROOT, "results", os.environ.get("QWGNN_OUT", "p5_router.csv"))
 
 
 def main():
