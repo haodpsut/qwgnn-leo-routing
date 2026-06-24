@@ -10,9 +10,39 @@
 \usepackage{booktabs}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
-\usepgfplotslibrary{statistics}
+\usepgfplotslibrary{statistics,fillbetween}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc,shapes.geometric}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc,shapes.geometric,patterns}
+
+% ---- professional result-figure palette and styles ----
+\definecolor{cNavy}{HTML}{1F3A5F}
+\definecolor{cSteel}{HTML}{2E6F95}
+\definecolor{cAmber}{HTML}{E8973A}
+\definecolor{cRed}{HTML}{C0392B}
+\definecolor{cGray}{HTML}{7F8C8D}
+\definecolor{cGreen}{HTML}{2E8B57}
+\pgfplotsset{
+  prostyle/.style={
+    width=8.6cm, height=5.6cm,
+    every axis label/.append style={font=\small},
+    label style={font=\small}, tick label style={font=\footnotesize},
+    legend style={font=\footnotesize, draw=cGray, fill=white, rounded corners=1pt,
+                  inner sep=2.5pt, row sep=0.5pt},
+    legend cell align=left,
+    grid=major, major grid style={draw=black!10},
+    axis line style={draw=black!55}, tick align=outside, tick style={black!55},
+    every axis plot/.append style={line width=1.1pt},
+  },
+  probar/.style={prostyle, ybar, bar width=7pt,
+    every node near coord/.append style={font=\tiny, /pgf/number format/fixed,
+      /pgf/number format/precision=2},
+  },
+}
+\tikzset{
+  pmark/.style={mark=*, mark size=2pt, mark options={fill=white, line width=0.9pt}},
+  smark/.style={mark=square*, mark size=2pt, mark options={fill=white, line width=0.9pt}},
+  tmark/.style={mark=triangle*, mark size=2.6pt, mark options={fill=white, line width=0.9pt}},
+}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{url}
@@ -650,20 +680,27 @@ The congestion task, not static routing, is where a learned router helps.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.92\columnwidth}{!}{%
+\resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[
-  xlabel={offered load (number of demands)}, ylabel={UE travel-time gain (\%)},
-  xmin=0,xmax=1700, ymin=0, ymax=100, grid=both, legend pos=south east,
-  width=8.4cm, height=5.4cm, tick align=outside]
-\addplot[mark=*,thick,blue] coordinates {(100,0.1)(300,9.4)(600,55.4)(1000,89.9)(1600,97.6)};
+\begin{axis}[prostyle,
+  xlabel={offered load (number of demands)}, ylabel={UE gain over blind (\%)},
+  xmin=0,xmax=1700, ymin=0, ymax=104, legend pos=south east, ytick={0,20,40,60,80,100}]
+\fill[cAmber!10] (axis cs:330,0) rectangle (axis cs:1700,104);
+\node[font=\scriptsize\itshape, cAmber!75!black, anchor=north east]
+  at (axis cs:1660,30) {congested regime};
+\node[font=\scriptsize\itshape, cGray, anchor=south west, rotate=90]
+  at (axis cs:150,4) {light load};
+\addplot[cNavy, pmark] coordinates {(100,0.1)(300,9.4)(600,55.4)(1000,89.9)(1600,97.6)};
 \addlegendentry{$132$-sat shell}
-\addplot[mark=square*,thick,red,dashed] coordinates {(100,0.0)(300,10.5)(600,61.9)(1000,92.0)(1600,97.9)};
+\addplot[cRed, densely dashed, smark] coordinates {(100,0.0)(300,10.5)(600,61.9)(1000,92.0)(1600,97.9)};
 \addlegendentry{$264$-sat shell}
+\node[font=\scriptsize, cNavy, anchor=south] at (axis cs:1600,97.6) {$98\%$};
 \end{axis}
 \end{tikzpicture}}
 \caption{Congestion headroom: the gain of the user equilibrium over congestion-blind
-shortest path grows with load, to $98\%$ under heavy load. None at light load.}
+shortest path grows with load, to $98\%$ under heavy load, and is negligible at light
+load. The shaded region marks the congested regime where a learned router earns its
+place.}
 \label{fig:headroom}
 \end{figure}
 
@@ -731,23 +768,27 @@ needed.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.92\columnwidth}{!}{%
+\resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[
-  ybar, bar width=6pt, width=8.6cm, height=5.6cm,
+\begin{axis}[probar, bar width=8pt,
   symbolic x coords={blind,geographic,one-step,GNN,UE,SO},
-  xtick=data, x tick label style={font=\small,rotate=20,anchor=east},
-  ylabel={TTT relative to blind}, ymin=0, ymax=1.2, grid=both,
-  legend pos=north east, enlarge x limits=0.12]
-\addplot[fill=blue!30] coordinates {(blind,1.00)(geographic,0.79)(one-step,1.07)(GNN,0.43)(UE,0.38)(SO,0.37)};
-\addplot[fill=orange!50] coordinates {(blind,1.00)(geographic,0.79)(one-step,0.54)(GNN,0.37)(UE,0.05)(SO,0.05)};
+  xtick=data, x tick label style={font=\footnotesize,rotate=18,anchor=east},
+  ylabel={TTT relative to blind}, ymin=0, ymax=1.25, ytick={0,0.25,...,1.0},
+  legend pos=north east, enlarge x limits=0.10, nodes near coords,
+  every node near coord/.append style={rotate=90, anchor=west, font=\tiny}]
+\draw[dashed, cGray, line width=0.7pt] (axis cs:blind,1.0) -- (axis cs:SO,1.0);
+\addplot[draw=cSteel!80!black, fill=cSteel!35] coordinates
+  {(blind,1.00)(geographic,0.79)(one-step,1.07)(GNN,0.43)(UE,0.38)(SO,0.37)};
+\addplot[draw=cAmber!80!black, fill=cAmber!45, postaction={pattern=north east lines,
+  pattern color=cAmber!80!black}] coordinates
+  {(blind,1.00)(geographic,0.79)(one-step,0.54)(GNN,0.37)(UE,0.05)(SO,0.05)};
 \legend{in-distribution, OOD ($264$)}
 \end{axis}
 \end{tikzpicture}}
-\caption{Travel time relative to blind (lower is better). The GNN approaches UE in
-distribution and is the best \emph{deployable} policy out of distribution; the cheap
-heuristics fail (one-step is worse than blind in distribution, geographic stalls). UE and
-SO nearly coincide.}
+\caption{Travel time relative to blind (lower is better; the dashed line is the blind
+reference at $1.0$). The GNN approaches UE in distribution and is the best
+\emph{deployable} policy out of distribution; the cheap heuristics fail (one-step is worse
+than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 \label{fig:baselines}
 \end{figure}
 
@@ -803,17 +844,23 @@ OOD & $1584$ & $71\pm8$ & $8.4$ & $29\times$ \\
 
 \begin{figure}[t]
 \centering
-\resizebox{0.86\columnwidth}{!}{%
+\resizebox{0.9\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[
-  xlabel={shell size (satellites)}, ylabel={speedup of GNN over UE/MSA ($\times$)},
-  xmin=0,xmax=1700, ymin=0, ymax=34, grid=both, width=8.2cm, height=5.0cm,
-  tick align=outside]
-\addplot[mark=*,thick,blue] coordinates {(132,18.6)(264,20.4)(1584,29.0)};
+\begin{axis}[prostyle, width=8.4cm, height=5.0cm,
+  xlabel={shell size (satellites)}, ylabel={speedup over UE/MSA ($\times$)},
+  xmin=0,xmax=1720, ymin=0, ymax=34, ytick={0,10,20,30},
+  nodes near coords={\pgfmathprintnumber[precision=0]{\pgfplotspointmeta}$\times$},
+  every node near coord/.append style={font=\scriptsize, cNavy, anchor=south east}]
+\addplot[name path=A, cNavy, pmark] coordinates {(132,18.6)(264,20.4)(1584,29.0)};
+\path[name path=B] (axis cs:0,0) -- (axis cs:1720,0);
+\addplot[cNavy!10] fill between[of=A and B];
+\node[font=\scriptsize\itshape, cNavy, anchor=north east] at (axis cs:1560,17)
+  {grows with scale};
 \end{axis}
 \end{tikzpicture}}
 \caption{Inference speedup of the one-shot GNN router over the MSA equilibrium solve,
-versus shell size. The advantage grows with the constellation.}
+versus shell size. The advantage grows with the constellation, reaching $29\times$ at
+$1584$ satellites.}
 \label{fig:speedup}
 \end{figure}
 
@@ -835,25 +882,34 @@ instead of the last slot.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.92\columnwidth}{!}{%
+\resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[
+\begin{axis}[prostyle,
   xlabel={per-slot hotspot drift (rad)}, ylabel={TTT relative to blind},
-  xmin=0,xmax=1.55, ymin=0.3, ymax=1.75, grid=both, legend pos=north west,
-  width=8.4cm, height=5.6cm, tick align=outside]
-\addplot[mark=*,thick,red] coordinates {(0,0.50)(0.3,0.59)(0.6,0.77)(1.0,1.02)(1.5,1.63)};
+  xmin=0,xmax=1.55, ymin=0.3, ymax=1.75, legend pos=north west,
+  legend columns=2, ytick={0.4,0.7,1.0,1.3,1.6}]
+% blind reference at 1.0
+\addplot[cGray, dotted, line width=1.4pt, forget plot] coordinates {(0,1.0)(1.5,1.0)};
+% reactive and proactive, with the advantage shaded between them
+\addplot[name path=R, cRed, pmark] coordinates {(0,0.50)(0.3,0.59)(0.6,0.77)(1.0,1.02)(1.5,1.63)};
 \addlegendentry{reactive (lag-1)}
-\addplot[mark=square*,thick,blue] coordinates {(0,0.50)(0.3,0.52)(0.6,0.54)(1.0,0.44)(1.5,0.38)};
-\addlegendentry{proactive (predicted)}
-\addplot[mark=triangle*,thick,black,densely dashed] coordinates {(0,0.44)(0.3,0.44)(0.6,0.44)(1.0,0.39)(1.5,0.35)};
+\addplot[name path=P, cNavy, smark] coordinates {(0,0.50)(0.3,0.52)(0.6,0.54)(1.0,0.44)(1.5,0.38)};
+\addlegendentry{proactive (ours)}
+\addplot[cNavy!12, forget plot] fill between[of=R and P];
+\addplot[cGreen, densely dashed, tmark] coordinates {(0,0.44)(0.3,0.44)(0.6,0.44)(1.0,0.39)(1.5,0.35)};
 \addlegendentry{UE (clairvoyant)}
-\addplot[dotted,very thick,gray] coordinates {(0,1.0)(1.5,1.0)};
-\addlegendentry{blind}
+\addlegendimage{cGray, dotted, line width=1.4pt}\addlegendentry{blind}
+% crossover where reactive passes blind
+\draw[cRed!70, dashed] (axis cs:0.97,0.3) -- (axis cs:0.97,1.02);
+\node[font=\scriptsize, cRed!80!black, anchor=west, align=left] at (axis cs:0.62,1.45)
+  {reactive worse\\ than blind};
+\node[font=\scriptsize, cNavy, anchor=north] at (axis cs:1.18,0.62) {proactive gain};
 \end{axis}
 \end{tikzpicture}}
-\caption{Proactive versus reactive routing under drifting hotspots. The reactive lag-1
-router degrades past blind as the hotspot moves; the proactive router tracks the
-clairvoyant optimum.}
+\caption{Proactive versus reactive routing under drifting hotspots (shaded band is the
+proactive advantage). The reactive lag-1 router degrades past the blind reference once the
+drift exceeds about one radian; the proactive router tracks the clairvoyant optimum
+throughout.}
 \label{fig:proactive}
 \end{figure}
 
@@ -895,6 +951,30 @@ distribution and the global operators add variance without benefit; the quantum-
 operator is the most variable ($\pm 20$). The quantum walk originally motivated this work
 as a way to capture long-range structure; the data did not support it, and we report it
 as an honest negative ablation rather than force it into the contribution.
+Figure~\ref{fig:ablation} shows the same comparison with error bars.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.9\columnwidth}{!}{%
+\begin{tikzpicture}
+\begin{axis}[probar, bar width=10pt, symbolic x coords={GCN,Heat,QW}, xtick=data,
+  ylabel={recovered gain (\%)}, ymin=0, ymax=110, ytick={0,25,...,100},
+  legend pos=south west, enlarge x limits=0.28,
+  error bars/y dir=both, error bars/y explicit,
+  error bars/error bar style={black!65, line width=0.7pt}]
+\addplot[draw=cSteel!80!black, fill=cSteel!35] coordinates {
+  (GCN,86) +- (0,6) (Heat,89) +- (0,4) (QW,82) +- (0,8)};
+\addplot[draw=cAmber!80!black, fill=cAmber!45, postaction={pattern=north east lines,
+  pattern color=cAmber!80!black}] coordinates {
+  (GCN,65) +- (0,9) (Heat,52) +- (0,6) (QW,62) +- (0,20)};
+\legend{in-distribution, OOD ($264$)}
+\end{axis}
+\end{tikzpicture}}
+\caption{Operator ablation with error bars (recovered fraction of the blind-to-UE gain,
+mean $\pm$ std, $n{=}12$). The local GCN is best out of distribution; the global
+quantum-walk operator does not help and is the most variable.}
+\label{fig:ablation}
+\end{figure}
 
 \begin{table}[t]
 \centering
