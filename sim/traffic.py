@@ -62,6 +62,18 @@ def link_cost(prop_W, load, cap, alpha=0.15, beta=4.0):
     return cost
 
 
+def link_marginal_cost(prop_W, load, cap, alpha=0.15, beta=4.0):
+    """
+    Marginal link cost d/dx[x*cost(x)] for the BPR form, used to route the system
+    optimum (where each flow is charged its externality):
+        m_uv(x) = prop_uv * (1 + alpha*(beta+1)*(x/cap)^beta).
+    """
+    util = load / cap
+    m = prop_W * (1.0 + alpha * (beta + 1.0) * np.power(util, beta))
+    m[prop_W <= 0] = 0.0
+    return m
+
+
 def _route_on_cost(A, cost, demands):
     """Shortest path per demand on a given cost matrix. Returns list of (nodes,rate)."""
     n = A.shape[0]
@@ -102,6 +114,9 @@ def evaluate(A, prop_W, demands, cap, policy="blind", iters=20):
     """
     n = A.shape[0]
     free = link_cost(prop_W, np.zeros_like(prop_W), cap)
+    # 'ue' routes on the link cost (user equilibrium); 'so' routes on the marginal
+    # cost (system optimum, Frank-Wolfe / MSA). Realized TTT always uses link_cost.
+    route_cost_fn = link_marginal_cost if policy == "so" else link_cost
 
     if policy == "blind":
         paths = _route_on_cost(A, free, demands)
@@ -111,14 +126,21 @@ def evaluate(A, prop_W, demands, cap, policy="blind", iters=20):
         paths = _route_on_cost(A, free, demands)
         load = edge_loads([(p, r) for p, r in paths if p is not None], n)
         for k in range(1, iters + 1):
-            cost = link_cost(prop_W, load, cap)
+            cost = route_cost_fn(prop_W, load, cap)
             aon = _route_on_cost(A, cost, demands)
             yload = edge_loads([(p, r) for p, r in aon if p is not None], n)
             load = load + (yload - load) / (k + 1)
             paths = aon
-        # final paths consistent with the equilibrium load
-        paths = _route_on_cost(A, link_cost(prop_W, load, cap), demands)
-        load = edge_loads([(p, r) for p, r in paths if p is not None], n)
+        # For equilibria the MSA-averaged load, not a single re-routing, defines the
+        # operating point. Measure TTT directly on that load to avoid a path/load
+        # mismatch (which can otherwise make SO appear above UE):
+        #   TTT = sum_e x_e * cost_e(x_e).
+        cost = link_cost(prop_W, load, cap)          # realized (actual) cost
+        total = float((load * cost).sum())
+        demand_total = sum(r for _, _, r in demands)
+        mean = total / demand_total if demand_total > 0 else float("nan")
+        return {"total_ttt": total, "mean_delay": mean,
+                "max_util": float((load / cap).max()), "unmet": 0}
 
     total, mean = _realized(prop_W, load, cap, demands, paths)
     unmet = sum(1 for p, _ in paths if p is None)

@@ -37,8 +37,8 @@ from p5_gnn_router import (make_instance, train, eval_instance,
                            TRAIN_WALKER, TRAIN_PAIRS, CAP, N_TRAIN_INST)
 
 OP = "GCN"                       # chosen operator (quantum dropped)
-SEEDS = [0, 1, 2]
-N_EVAL = 3
+SEEDS = [int(s) for s in os.environ.get("QWGNN_SEEDS", "0,1,2").split(",")]
+N_EVAL = int(os.environ.get("QWGNN_EVAL", "3"))
 OOD_WALKER = Walker(264, 24, 1, 53.0, 550.0)
 OOD_PAIRS = 1200
 TIME_SHELLS = [("w132", Walker(132, 12, 1, 53.0, 550.0), 600),
@@ -52,21 +52,22 @@ def all_policies(model, ins):
     A, W, dem, cap = ins["A_np"], ins["W_np"], ins["dem"], ins["cap"]
     blind = route_and_measure(A, W, dem, cap, W)["total_ttt"]
     ue = evaluate(A, W, dem, cap, policy="ue")["total_ttt"]
+    so = evaluate(A, W, dem, cap, policy="so")["total_ttt"]      # system optimum
     onestep = route_and_measure(A, W, dem, cap,
                                 link_cost(W, ins["bload"], cap))["total_ttt"]
     gpaths, gstuck = geographic_paths(A, ins["pos"], dem, W)
     geo = measure_paths(W, cap, dem, gpaths)["total_ttt"]
     gnn = eval_instance(model, ins)["gnn"]
-    # primary metric: TTT relative to blind (lower is better); UE is the reference
+    # primary metric: TTT relative to blind (lower is better); UE/SO are references
     ratio = lambda x: x / blind
-    return {"blind": blind, "ue": ue, "geo_ttt": geo, "onestep": onestep, "gnn": gnn,
-            "geo_stuck_frac": gstuck / len(dem),
-            "r_ue": ratio(ue), "r_geo": ratio(geo),
+    return {"blind": blind, "ue": ue, "so": so, "geo_ttt": geo, "onestep": onestep,
+            "gnn": gnn, "geo_stuck_frac": gstuck / len(dem),
+            "r_ue": ratio(ue), "r_so": ratio(so), "r_geo": ratio(geo),
             "r_1step": ratio(onestep), "r_gnn": ratio(gnn)}
 
 
 def timing_row(model, walker, npairs, seed):
-    ins = make_instance(walker, npairs, 5000 + seed)
+    ins = make_instance(walker, npairs, 5000 + seed, need_eig=False, need_target=False)
     A, W, dem, cap = ins["A_np"], ins["W_np"], ins["dem"], ins["cap"]
     # GNN pipeline cost: blind-load pass is already the feature; time forward+route
     t0 = time.perf_counter()
@@ -87,25 +88,27 @@ def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     rows = []
     print("QUALITY (TTT relative to blind, lower=better; blind=1.00)\n")
-    print(f"{'seed':>4} {'split':10s} | {'UE':>6} {'geo':>6} {'1step':>6} {'GNN':>6} "
-          f"| {'geo_stuck':>9}")
+    print(f"{'seed':>4} {'split':10s} | {'UE':>6} {'SO':>6} {'geo':>6} {'1step':>6} "
+          f"{'GNN':>6} | {'geo_stuck':>9}")
     for seed in SEEDS:
-        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i)
-                       for i in range(N_TRAIN_INST)]
+        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i,
+                                     need_eig=False) for i in range(N_TRAIN_INST)]
         model = train(OP, train_insts, seed)
         for split, walker, npairs in [("in-dist", TRAIN_WALKER, TRAIN_PAIRS),
                                        ("ood", OOD_WALKER, OOD_PAIRS)]:
             for j in range(N_EVAL):
-                ins = make_instance(walker, npairs, 800 + seed * 10 + j)
+                ins = make_instance(walker, npairs, 800 + seed * 10 + j,
+                                    need_eig=False, need_target=False)
                 r = all_policies(model, ins)
                 rows.append({"seed": seed, "split": split, **r})
             rs = [x for x in rows if x["seed"] == seed and x["split"] == split]
             m = lambda k: np.mean([x[k] for x in rs])
-            print(f"{seed:>4} {split:10s} | {m('r_ue'):>6.2f} {m('r_geo'):>6.2f} "
-                  f"{m('r_1step'):>6.2f} {m('r_gnn'):>6.2f} | {m('geo_stuck_frac'):>8.0%}")
+            print(f"{seed:>4} {split:10s} | {m('r_ue'):>6.2f} {m('r_so'):>6.2f} "
+                  f"{m('r_geo'):>6.2f} {m('r_1step'):>6.2f} {m('r_gnn'):>6.2f} "
+                  f"| {m('geo_stuck_frac'):>8.0%}")
 
     # timing (one model from seed 0 reused)
-    model = train(OP, [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + i)
+    model = train(OP, [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + i, need_eig=False)
                        for i in range(N_TRAIN_INST)], 0)
     print("\nINFERENCE TIME (GNN one-shot vs UE/MSA)\n")
     print(f"{'shell':10s} {'n':>5} {'pairs':>5} | {'t_gnn(s)':>9} {'t_ue(s)':>9} {'speedup':>8}")
@@ -129,8 +132,8 @@ def verdict(rows, trows):
     for split in ("in-dist", "ood"):
         rs = [r for r in rows if r["split"] == split]
         g = lambda k: np.nanmean([r[k] for r in rs])
-        print(f"  {split:8s} | UE {g('r_ue'):.2f}  geo {g('r_geo'):.2f}  "
-              f"1step {g('r_1step'):.2f}  GNN {g('r_gnn'):.2f}  "
+        print(f"  {split:8s} | SO {g('r_so'):.2f}  UE {g('r_ue'):.2f}  "
+              f"geo {g('r_geo'):.2f}  1step {g('r_1step'):.2f}  GNN {g('r_gnn'):.2f}  "
               f"(geo stuck {g('geo_stuck_frac'):.0%})")
     sp = [t["speedup"] for t in trows]
     print(f"\nGNN vs UE/MSA speedup: {min(sp):.0f}x - {max(sp):.0f}x  "

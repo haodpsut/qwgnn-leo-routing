@@ -90,11 +90,12 @@ class EdgePriceGNN(nn.Module):
 
 
 # ---- features -------------------------------------------------------------
-def build_features(A_np, W_np, dem):
+def build_features(A_np, W_np, dem, need_eig=True):
     """Observable inputs: per-node [out,in] demand + blind-load, per-edge prop+load.
 
     `dem` here is the demand the router OBSERVES (current slot for reactive, or
     predicted next slot for proactive); it need not match the routed demand.
+    `need_eig=False` skips the eigendecomposition (GCN-only, needed at 1584 scale).
     Returns (X, ctx, rows, cols, bload).
     """
     n = A_np.shape[0]
@@ -106,7 +107,7 @@ def build_features(A_np, W_np, dem):
     Xnp = np.stack([_norm(odf[:, 0]), _norm(odf[:, 1]),
                     _norm(bload.sum(1)), _norm(bload.sum(0))], axis=1)
     A = torch.from_numpy(A_np.astype(np.float64))
-    ctx = build_ctx(A)
+    ctx = build_ctx(A, need_eig=need_eig)
     rows, cols = np.nonzero(A_np)
     ctx["eidx"] = (torch.from_numpy(rows), torch.from_numpy(cols))
     ctx["eprop"] = torch.from_numpy(W_np[rows, cols] / (W_np[rows, cols].mean() + 1e-9))
@@ -116,21 +117,26 @@ def build_features(A_np, W_np, dem):
 
 
 # ---- instance construction -------------------------------------------------
-def make_instance(walker, npairs, seed):
+def make_instance(walker, npairs, seed, need_eig=True, need_target=True):
+    """Build one routing instance. `need_target=False` skips the expensive UE solve
+    for the training target (eval/timing instances do not need it), which roughly
+    halves the cost at mega-constellation scale."""
     A_np, W_np = grid_isl_graph(walker, 0.0, seam=False)
     rng = np.random.default_rng(seed)
     pos = walker.positions(0.0)
     dem = gravity_demands(pos, npairs, rng)
     cap = CAP
-    _, g_star = ue_loads(A_np, W_np, dem, cap)          # target multiplier
-    X, ctx, rows, cols, bload = build_features(A_np, W_np, dem)
-    return {
+    X, ctx, rows, cols, bload = build_features(A_np, W_np, dem, need_eig=need_eig)
+    out = {
         "A_np": A_np, "W_np": W_np, "dem": dem, "cap": cap, "n": A_np.shape[0],
         "X": X, "ctx": ctx, "pos": pos, "bload": bload,
-        "g_star": torch.from_numpy(g_star[rows, cols]),  # (E,)
-        "tgt": torch.from_numpy(np.log1p(g_star[rows, cols])),
-        "rows": rows, "cols": cols,
+        "rows": rows, "cols": cols, "g_star": None, "tgt": None,
     }
+    if need_target:
+        _, g_star = ue_loads(A_np, W_np, dem, cap)       # UE price target
+        out["g_star"] = torch.from_numpy(g_star[rows, cols])
+        out["tgt"] = torch.from_numpy(np.log1p(g_star[rows, cols]))
+    return out
 
 
 def train(prop_name, train_insts, seed):
@@ -173,9 +179,14 @@ OOD_PAIRS = 1200
 if os.environ.get("QWGNN_FULL") == "1":
     OOD_WALKER = Walker(1584, 72, 1, 53.0, 550.0)
     OOD_PAIRS = 7200
-SEEDS = [0, 1, 2]
-N_TRAIN_INST = 10
-N_EVAL_INST = 4
+SEEDS = [int(s) for s in os.environ.get("QWGNN_SEEDS", "0,1,2").split(",")]
+N_TRAIN_INST = int(os.environ.get("QWGNN_TRAIN", "10"))
+N_EVAL_INST = int(os.environ.get("QWGNN_EVAL", "4"))
+# operators to run; default GCN-only since the quantum walk was dropped. Set e.g.
+# QWGNN_OPS=GCN,Heat,QW for the small-shell ablation. The eigendecomposition (Heat/QW)
+# is skipped unless requested, which is what makes the 1584-satellite run feasible.
+OPS = [o for o in os.environ.get("QWGNN_OPS", "GCN").split(",") if o in PROPS]
+NEED_EIG = any(o in ("Heat", "QW") for o in OPS)
 OUT = os.path.join(ROOT, "results", "p5_router.csv")
 
 
@@ -183,15 +194,18 @@ def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     rows = []
     print(f"train: Walker132 @ {TRAIN_PAIRS} pairs   OOD: larger shell @ {OOD_PAIRS}")
-    print(f"{N_TRAIN_INST} train insts, {N_EVAL_INST} eval insts/split, {len(SEEDS)} seeds\n")
+    print(f"ops={OPS} need_eig={NEED_EIG}; {N_TRAIN_INST} train, "
+          f"{N_EVAL_INST} eval/split, {len(SEEDS)} seeds\n")
     for seed in SEEDS:
-        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i)
-                       for i in range(N_TRAIN_INST)]
-        indist = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 900 + seed * 10 + i)
+        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i,
+                                     need_eig=NEED_EIG) for i in range(N_TRAIN_INST)]
+        indist = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 900 + seed * 10 + i,
+                                need_eig=NEED_EIG, need_target=False)
                   for i in range(N_EVAL_INST)]
-        ood = [make_instance(OOD_WALKER, OOD_PAIRS, 700 + seed * 10 + i)
+        ood = [make_instance(OOD_WALKER, OOD_PAIRS, 700 + seed * 10 + i,
+                             need_eig=NEED_EIG, need_target=False)
                for i in range(N_EVAL_INST)]
-        for prop_name in PROPS:
+        for prop_name in OPS:
             model = train(prop_name, train_insts, seed)
             for split, insts in [("in-dist", indist), ("ood-largeshell", ood)]:
                 for j, ins in enumerate(insts):
@@ -215,7 +229,7 @@ def verdict(rows):
     print("\n" + "=" * 72)
     print(f"{'prop':5s} {'split':14s} | {'recovered% mean +/- std (n)':>30}")
     best = {}
-    for prop_name in PROPS:
+    for prop_name in OPS:
         for split in ("in-dist", "ood-largeshell"):
             rs = [r for r in rows if r["prop"] == prop_name and r["split"] == split]
             recs = 100 * np.array([r["recovered"] for r in rs])
@@ -223,7 +237,7 @@ def verdict(rows):
             print(f"{prop_name:5s} {split:14s} | "
                   f"{recs.mean():>10.1f}% +/- {recs.std():>4.1f}  (n={len(recs)})")
     print("\nP5 VERDICT")
-    ood = {p: best[(p, "ood-largeshell")] for p in PROPS}
+    ood = {p: best[(p, "ood-largeshell")] for p in OPS}
     bp = max(ood, key=lambda p: ood[p][0])
     m, s, n = ood[bp]
     solid = m - s >= 40.0           # mean minus one std clears a meaningful bar

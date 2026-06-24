@@ -114,10 +114,17 @@ class QWGNN(_Base):
         return prop.abs()  # measurement probability amplitude (real, >=0)
 
 
-def build_ctx(A: torch.Tensor):
-    """Precompute everything the operators need for one graph."""
-    evals, evecs = laplacian_eig(A)
-    return {"A": A, "A_hat": normalized_adj(A), "evals": evals, "evecs": evecs}
+def build_ctx(A: torch.Tensor, need_eig: bool = True):
+    """Precompute what the operators need for one graph.
+
+    The eigendecomposition is only required by the global Heat/QW operators; the GCN
+    uses A_hat alone. Set need_eig=False to skip the O(n^3) eigh, which is essential
+    at mega-constellation scale (e.g. 1584 satellites) where eigh is prohibitive.
+    """
+    ctx = {"A": A, "A_hat": normalized_adj(A)}
+    if need_eig:
+        ctx["evals"], ctx["evecs"] = laplacian_eig(A)
+    return ctx
 
 
 def count_params(m: nn.Module) -> int:

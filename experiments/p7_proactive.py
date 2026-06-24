@@ -48,7 +48,7 @@ def demands_at(pos, npairs, band, seed):
 
 def route_prices(model, A_np, W_np, obs_dem, route_dem, cap):
     """Predict prices from obs_dem features, route route_dem on prop*(1+g)."""
-    X, ctx, rows, cols, _ = build_features(A_np, W_np, obs_dem)
+    X, ctx, rows, cols, _ = build_features(A_np, W_np, obs_dem, need_eig=False)
     with torch.no_grad():
         g = torch.expm1(model(X, ctx)).clamp(min=0).numpy()
     rc = W_np.copy()
@@ -63,8 +63,8 @@ def main():
     pos = EVAL_WALKER.positions(0.0)
     print(f"{'seed':>4} {'drift':>6} | {'blind':>6} {'UE':>6} {'react':>6} {'proact':>6}")
     for seed in SEEDS:
-        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i)
-                       for i in range(N_TRAIN_INST)]
+        train_insts = [make_instance(TRAIN_WALKER, TRAIN_PAIRS, 100 + seed * 50 + i,
+                                     need_eig=False) for i in range(N_TRAIN_INST)]
         model = train(OP, train_insts, seed)
         for drift in DRIFTS:
             D_prev = demands_at(pos, EVAL_PAIRS, 0.0, 1234 + seed)
