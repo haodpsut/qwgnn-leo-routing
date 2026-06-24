@@ -18,11 +18,13 @@ export QWGNN_SEEDS="${QWGNN_SEEDS:-0,1}"
 export QWGNN_TRAIN="${QWGNN_TRAIN:-8}"
 export QWGNN_EVAL="${QWGNN_EVAL:-2}"
 
-echo "=== [1/2] C2: inductive zero-shot on the 1584-sat shell (GCN, no eig) ==="
+# GNN uses the multipath decode by default (QWGNN_DECODE=multipath); set
+# QWGNN_DECODE=single for the single-path ablation.
+echo "=== [1/2] C2: inductive zero-shot on the 1584-sat shell (GCN, multipath) ==="
 QWGNN_FULL=1 QWGNN_OPS=GCN \
   python experiments/p5_gnn_router.py 2>&1 | tee results/p5_full_1584.log
 
-echo "=== [2/2] C3: inference time on 1584 + system-optimal reference ==="
+echo "=== [2/2] C3: inference time on 1584 + baselines + SO (multipath) ==="
 QWGNN_FULL=1 \
   python experiments/p6_baselines.py 2>&1 | tee results/p6_full_1584.log
 
