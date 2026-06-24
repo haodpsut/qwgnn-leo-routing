@@ -1,20 +1,22 @@
 /home/daipv11/.conda/envs/qwgnn/lib/python3.11/site-packages/torch/autograd/graph.py:882: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 12050). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)
   return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
 train: Walker132 @ 600 pairs   OOD: larger shell @ 7200
-ops=['GCN'] need_eig=False; 8 train, 2 eval/split, 2 seeds
+ops=['GCN'] need_eig=False; 8 train, 3 eval/split, 3 seeds
 
-GCN   seed0 in-dist        | recovered   88.3% +/-  0.3
-GCN   seed0 ood-largeshell | recovered   63.5% +/-  1.9
-GCN   seed1 in-dist        | recovered   87.0% +/-  6.0
-GCN   seed1 ood-largeshell | recovered   79.0% +/-  1.5
+GCN   seed0 in-dist        | recovered   97.5% +/-  0.8
+GCN   seed0 ood-largeshell | recovered   91.9% +/-  0.7
+GCN   seed1 in-dist        | recovered   97.1% +/-  2.7
+GCN   seed1 ood-largeshell | recovered   95.1% +/-  0.7
+GCN   seed2 in-dist        | recovered   97.1% +/-  0.9
+GCN   seed2 ood-largeshell | recovered   96.0% +/-  0.3
 
 ========================================================================
 prop  split          |    recovered% mean +/- std (n)
-GCN   in-dist        |       87.6% +/-  4.3  (n=4)
-GCN   ood-largeshell |       71.3% +/-  7.9  (n=4)
+GCN   in-dist        |       97.2% +/-  1.8  (n=9)
+GCN   ood-largeshell |       94.3% +/-  1.9  (n=9)
 
 P5 VERDICT
-  => PASS (solid): GCN recovers 71% +/-8 of the blind->UE
+  => PASS (solid): GCN recovers 94% +/-2 of the blind->UE
      gain ZERO-SHOT on a larger shell, one forward pass, low variance.
      Next: proactive (predicted demand) + baselines + paper.
 ========================================================================

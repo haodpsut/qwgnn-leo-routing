@@ -3,26 +3,28 @@
 QUALITY (TTT relative to blind, lower=better; blind=1.00)
 
 seed split      |     UE     SO    geo  1step    GNN | geo_stuck
-   0 in-dist    |   0.38   0.37   0.84   1.10   0.44 |      55%
-   0 ood        |   0.06   0.06   0.80   0.57   0.28 |      67%
-   1 in-dist    |   0.38   0.36   0.74   1.04   0.42 |      55%
-   1 ood        |   0.05   0.05   0.78   0.51   0.46 |      68%
+   0 in-dist    |   0.40   0.39   0.83   1.14   0.42 |      55%
+   0 ood        |   0.06   0.06   0.80   0.57   0.10 |      68%
+   1 in-dist    |   0.40   0.39   0.75   0.99   0.40 |      53%
+   1 ood        |   0.05   0.05   0.80   0.50   0.13 |      68%
+   2 in-dist    |   0.42   0.41   0.77   1.00   0.43 |      52%
+   2 ood        |   0.05   0.05   0.80   0.58   0.12 |      69%
 
 INFERENCE TIME (GNN one-shot vs UE/MSA)
 
 shell          n pairs |  t_gnn(s)   t_ue(s)  speedup
-w132         132   600 |     0.050     0.920    18.6x
-w264         264  1200 |     0.245     4.982    20.4x
-shell1584   1584  7200 |     8.407   244.160    29.0x
+w132         132   600 |     0.048     1.038    21.8x
+w264         264  1200 |     0.232     4.921    21.2x
+shell1584   1584  7200 |     8.380   243.723    29.1x
 
 ========================================================================
 Mean TTT relative to blind (1.00); UE is the congestion-aware reference.
-  in-dist  | SO 0.37  UE 0.38  geo 0.79  1step 1.07  GNN 0.43  (geo stuck 55%)
-  ood      | SO 0.05  UE 0.05  geo 0.79  1step 0.54  GNN 0.37  (geo stuck 67%)
+  in-dist  | SO 0.39  UE 0.40  geo 0.78  1step 1.04  GNN 0.42  (geo stuck 53%)
+  ood      | SO 0.05  UE 0.05  geo 0.80  1step 0.55  GNN 0.12  (geo stuck 68%)
 
-GNN vs UE/MSA speedup: 19x - 29x  [18.6, 20.4, 29.0]
+GNN vs UE/MSA speedup: 21x - 29x  [21.8, 21.2, 29.1]
 
 P6 VERDICT
-  => GNN (0.37) is the best deployable policy zero-shot: beats 1-step (0.54), geo (0.79), blind (1.00),
-     recovers 66% of the blind->UE gain, at ~22x less compute than UE. Residual gap to UE remains.
+  => GNN (0.12) is the best deployable policy zero-shot: beats 1-step (0.55), geo (0.80), blind (1.00),
+     recovers 93% of the blind->UE gain, at ~24x less compute than UE. Residual gap to UE remains.
 ========================================================================
