@@ -331,8 +331,10 @@ which is smooth, strictly increasing, and convex in $x$, and which blows up as a
 approaches and exceeds capacity. The total travel time of a policy $\pi$ inducing loads
 $x(\pi)$ is
 \begin{equation}
-\TTT(\pi)=\sum_{(u,v)}x_{uv}(\pi)\,\cost_{uv}\big(x_{uv}(\pi)\big)
-        =\sum_{k} r_k \!\!\sum_{(u,v)\in P_k}\!\!\cost_{uv}\big(x_{uv}(\pi)\big).
+\begin{aligned}
+\TTT(\pi)&=\sum_{(u,v)}x_{uv}(\pi)\,\cost_{uv}\big(x_{uv}(\pi)\big)\\
+         &=\sum_{k} r_k \!\!\sum_{(u,v)\in P_k}\!\!\cost_{uv}\big(x_{uv}(\pi)\big).
+\end{aligned}
 \label{eq:ttt}
 \end{equation}
 The two forms are equal because $\sum_k r_k\sum_{(u,v)\in P_k}(\cdot)=\sum_{(u,v)}x_{uv}(\cdot)$;
@@ -572,8 +574,10 @@ $\mu_d(\cdot)$ under $c$ with one Dijkstra, then push each demand's rate downhil
 node $u$, the rate is split across the distance-decreasing out-edges $(u,v)$, i.e.
 $\mu_d(v)<\mu_d(u)$, with the softmin weight
 \begin{equation}
-w_{uv}\propto \exp\!\big(-\,\mathrm{slack}_{uv}/(\tau\,\bar c)\big),\quad
-\mathrm{slack}_{uv}=c_{uv}+\mu_d(v)-\mu_d(u)\ge 0,
+\begin{aligned}
+w_{uv}&\propto \exp\!\big(-\,\mathrm{slack}_{uv}/(\tau\,\bar c)\big),\\
+\mathrm{slack}_{uv}&=c_{uv}+\mu_d(v)-\mu_d(u)\ge 0,
+\end{aligned}
 \label{eq:split}
 \end{equation}
 where $\bar c$ is the mean edge cost and $\mathrm{slack}_{uv}=0$ on a shortest path. The
