@@ -742,10 +742,15 @@ reusable evaluation protocol for learned traffic engineering, since each silentl
 publishable-looking but wrong number before it was caught.
 
 \section{Experimental Setup}\label{sec:setup}
-We simulate Walker shells with a pure-kinematic propagator (no packet-level dependency,
-fully reproducible from parameters): an Iridium-like shell ($66$ satellites, diameter
-$9$) and Starlink-like $53^\circ$ shells of $132$ (diameter $16$), $264$ ($28$), and
-$1584$ satellites. Capacity is uniform; demands follow the drifting gravity model. We
+We evaluate in the flow-level traffic-assignment framework (BPR cost, user equilibrium),
+the standard model in which congestion-aware routing is defined and analyzed; this is a
+deliberate choice that isolates the load-balancing mechanism our method targets, cleanly
+and reproducibly, before the additional confounds of a packet-level stack (queueing,
+protocol dynamics) that we leave to a dedicated validation. We simulate Walker shells with
+a pure-kinematic propagator, fully reproducible from parameters: an Iridium-like shell
+($66$ satellites, diameter $9$) and Starlink-like $53^\circ$ shells of $132$ (diameter
+$16$), $264$ ($28$), and $1584$ satellites. Capacity is uniform; demands follow the
+drifting gravity model. We
 report total travel time \eqref{eq:ttt} relative to blind shortest path (lower is
 better; blind $=1.00$), averaged over multiple demand instances and seeds with standard
 deviations. Baselines: \emph{blind}; \emph{geographic} greedy (great-circle next hop,
@@ -855,6 +860,23 @@ one-step oscillation that overshoots the equilibrium. The GNN, trained on the co
 prices, predicts the \emph{fixed point} of that process directly and so avoids the
 overshoot. This is why a learned price field, rather than a hand-tuned correction, is
 needed.
+
+\subsection{Comparison to a learned router}\label{sec:results-learned}
+The natural learned alternative to predicting a price \emph{field} is to predict the
+\emph{routing} directly. We implement GNN-NextHop, a graph network with the same observable
+features (demand and blind load) plus a destination indicator, trained to regress the
+equilibrium cost-to-go to each destination and decoded by greedy next-hop descent (with a
+shortest-path fallback for stalled flows, so travel time stays comparable). It is a fair,
+non-trivial learned baseline, and it loses on both axes that matter. In quality, its
+relative travel time is $0.74\pm.06$ in distribution and $0.92\pm.06$ zero shot, versus
+$0.42$ and $0.12$ for our edge-price router, because greedy descent on a regressed potential
+stalls in false local minima: its greedy delivery rate is only $51\%$ in distribution and
+$21\%$ zero shot (the rest fall back to shortest path), and the potential transfers poorly
+to the larger shell. In cost, predicting a per-destination potential needs one forward pass
+\emph{per destination} ($94$ to $190$ forwards per slot in our instances), whereas the
+edge-price field is predicted once and routes the whole demand matrix in a single forward.
+Predicting the price and decoding with a classical router is thus both more accurate and far
+cheaper than learning the routing end to end.
 
 \begin{figure}[t]
 \centering
@@ -1165,9 +1187,10 @@ predicted next-hop policy that must be guarded against such failures.
 
 \section{Threats to Validity}
 We separate threats we controlled from those that remain. \emph{Construct validity}:
-total travel time under the BPR cost is the standard traffic-assignment objective and is
-survivorship free by Section~\ref{sec:pitfalls}, but it is a flow-level proxy for the
-packet-level delay an operator ultimately cares about. \emph{Internal validity}: every
+total travel time under the BPR cost is the standard, well-grounded traffic-assignment
+objective and is survivorship free by Section~\ref{sec:pitfalls}; it is a flow-level model,
+and a packet-level study (Section~\ref{sec:future}) is the natural confirmation that the
+predicted prices route well when delay is realized by queues rather than a cost function. \emph{Internal validity}: every
 learned number is param-matched across operators, averaged over multiple instances and
 seeds with standard deviations, and features are scale-normalized so the model cannot
 shortcut on absolute coordinates; the operator ablation isolates the propagation operator
@@ -1196,7 +1219,7 @@ Section~\ref{sec:results-decode}) reflects the softmin split's deviation from th
 equilibrium splitting, which an equilibrium-faithful or learned decoder could shrink
 further.
 
-\section{Future Work}
+\section{Future Work}\label{sec:future}
 Several directions follow directly. A packet-level study, for example on
 Hypatia~\cite{hypatia}, would replace the flow-level BPR proxy with queueing and protocol
 dynamics and test whether the predicted price field still routes well when delay is

@@ -104,6 +104,20 @@ except FileNotFoundError:
     print("  (run experiments/p9_bound.py)")
 
 print("=" * 70)
+print("LEARNED baseline (p10_learned.csv): TTT/blind, delivery, forwards")
+try:
+    p10 = load("p10_learned.csv")
+    for split in ("in-dist", "ood"):
+        rs = [r for r in p10 if r["split"] == split]
+        tm, ts = ms([r["r_learned"] for r in rs])
+        dm, _ = ms([r["delivery"] for r in rs])
+        fm, _ = ms([r["forwards"] for r in rs])
+        print(f"  {split:8s} learned TTT/blind {tm:.2f}+-{ts:.2f}  "
+              f"greedy delivery {dm:.0%}  forwards/slot {fm:.0f}")
+except FileNotFoundError:
+    print("  (run experiments/p10_learned_baseline.py)")
+
+print("=" * 70)
 print("TABLE price of anarchy (poa.csv): UE/SO by load, PoA mean+/-std")
 try:
     for r in load("poa.csv"):
