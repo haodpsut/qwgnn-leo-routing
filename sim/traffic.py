@@ -7,10 +7,10 @@ the whole congestion pivot is dead and no GNN can help. This module provides:
 
   - gravity demands (population-like weights) with moving hotspots over slots;
   - link loads induced by a set of routed paths;
-  - an M/M/1 link cost  cost = prop_delay + base_q * util/(1-util)  (util=load/cap),
-    which blows up convexly near capacity and drops traffic above capacity;
-  - routing policies (load-blind vs load-aware equilibrium) and a realized-delay /
-    drop-rate evaluator.
+  - a BPR link cost  cost = prop * (1 + alpha*(load/cap)^beta)  (alpha=0.15, beta=4),
+    smooth and monotone with no hard drop, so the user equilibrium is well defined;
+  - routing policies: blind, user equilibrium (MSA), and system optimum (marginal
+    cost), with a survivorship-free total-travel-time evaluator.
 
 Everything is pure numpy + networkx, deterministic from a seed.
 """

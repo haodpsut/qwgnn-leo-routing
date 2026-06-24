@@ -451,9 +451,10 @@ to a measured claim.}
 \draw[flowarr, orange!80!black] (2.5,3.6) -- (3.1,3.6) node[right,font=\scriptsize]{drift $\Delta$};
 \node[font=\scriptsize] at (2.0,-0.8) {hotspot band $\phi_t$};
 \node[font=\scriptsize, blue!55!black] at (-0.9,1.5) {intra-plane};
-\node[font=\scriptsize, black!55] at (1.5,-1.2) {cross-plane};
+\node[font=\scriptsize, black!75] at (1.5,-1.2) {cross-plane};
 \end{tikzpicture}}
-\caption{LEO $+$Grid ISL topology (torus). Intra-plane links (vertical) are stable;
+\caption{LEO $+$Grid ISL topology (a $4\times4$ patch of the torus; the wraparound links
+that close the torus are omitted for clarity). Intra-plane links (vertical) are stable;
 cross-plane links (horizontal) vary with the geometry. The shaded band is the traffic
 hotspot region, which drifts by a known $\Delta$ per slot.}
 \label{fig:topo}
@@ -621,7 +622,7 @@ what produces the numbers in Section~\ref{sec:results}.
 
 \textbf{P1: survivorship in greedy baselines.} A natural baseline, greedy geographic
 routing (forward to the neighbor closest to the destination), stalls in local minima on
-the $+$Grid ISL graph and fails to deliver $53$ to $68\%$ of flows in our loaded
+the $+$Grid ISL graph and fails to deliver $53$ to $70\%$ of flows in our loaded
 regime. Scoring only the delivered flows credits the baseline with a near-optimal mean
 delay, because the survivors are the short, easy paths. \emph{Fix:} guarantee delivery
 (here, a shortest-path fallback for stalled flows) and report a survivorship-free total
@@ -642,7 +643,7 @@ travel time of $0.23$ versus the correct $0.05$ at high load), which would have 
 learned router look closer to optimal than it is. \emph{Fix:} evaluate
 $\TTT=\sum_{(u,v)} x_{uv}\cost_{uv}(x_{uv})$ on the converged load. As a check, the
 corrected estimator respects $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$ at every load, with
-the price of anarchy growing from $1.00$ to $1.11$ as load rises; the inflated estimator
+the price of anarchy growing from $1.00$ to $1.12$ as load rises; the inflated estimator
 violated this ordering, which is how we caught it.
 
 None of these three pitfalls is specific to LEO or to graph networks. P1 arises whenever a
@@ -732,7 +733,7 @@ ratio & $1.0$ & $1.1$  & $2.2$  & $10.0$  & $41.2$ \\
 The corrected estimator of Section~\ref{sec:pitfalls} also lets us read off the price of
 anarchy. Solving SO by the marginal-cost iteration and comparing to UE,
 Table~\ref{tab:poa} shows $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$ at every load, with the
-ratio rising from $1.00$ at light load to $1.11$ under heavy load. The two operating
+ratio rising from $1.00$ at light load to $1.12$ under heavy load. The two operating
 points nearly coincide, so the learned router's target (UE) is within a few percent of
 the true system optimum, and matching UE is matching the optimum for practical purposes.
 
@@ -745,7 +746,7 @@ $\ge 1$ at every load confirms the corrected estimator (Section~\ref{sec:pitfall
 \toprule
 demands & $300$ & $600$ & $1000$ \\
 \midrule
-$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00$ & $1.03$ & $1.11$ \\
+$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00$ & $1.03$ & $1.12$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1029,7 +1030,7 @@ geometry-driven delay and load-induced congestion through the BPR model, the mec
 the method targets, but it does not model queueing dynamics or protocol behavior, and a
 packet-level study (for example on Hypatia) is the natural next validation. UE is a
 selfish equilibrium and only a lower bound away from SO; in our regime the two nearly
-coincide (price of anarchy up to $1.11$), so the learned target is near-optimal, but at
+coincide (price of anarchy up to $1.12$), so the learned target is near-optimal, but at
 other capacity-to-demand ratios the gap could matter and SO would be the better target.
 The zero-shot transfer leaves a residual gap to UE on the larger shell; training across
 a range of shell sizes, rather than a single small shell, is a natural way to close it.
@@ -1076,7 +1077,8 @@ The simulator, models, experiments, and figure-generation scripts are released a
 \url{https://github.com/haodpsut/qwgnn-leo-routing}. The constellation and traffic models
 are in \texttt{sim/}; the edge-price GNN and the experiments producing each claim are in
 \texttt{experiments/} (\texttt{p4} headroom, \texttt{p5} router and operator ablation,
-\texttt{p6} baselines and timing, \texttt{p7} proactive); every figure number is
+\texttt{p6} baselines and timing, \texttt{p7} proactive, \texttt{poa\_check} price of
+anarchy); every figure number is
 aggregated from \texttt{results/*.csv} by \texttt{paper/make\_figs\_data.py}. All results
 are reproducible from parameters with no external data dependency.
 

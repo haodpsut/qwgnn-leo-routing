@@ -73,5 +73,14 @@ for drift in sorted({r["drift"] for r in p7}):
           f"  proact {g('r_proact'):.2f}  gain {gain:.0f}%")
 
 print("=" * 64)
+print("TABLE price of anarchy (poa.csv): UE/SO by load on the 132-shell")
+try:
+    for r in load("poa.csv"):
+        print(f"  load {int(r['load'])}: UE {r['ue_ttt']:.2f}  SO {r['so_ttt']:.2f}"
+              f"  PoA {r['poa']:.3f}")
+except FileNotFoundError:
+    print("  (run experiments/poa_check.py first)")
+
+print("=" * 64)
 print("NOTE: 1584 C2 and timing are in results/p5_full_1584.log + p6_full_1584.log")
 print("      (server run; not in the small-shell CSVs).")
