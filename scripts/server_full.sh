@@ -14,9 +14,10 @@
 set -euo pipefail
 mkdir -p results
 
-export QWGNN_SEEDS="${QWGNN_SEEDS:-0,1}"
+# 3 seeds for proper mean +/- std error bars (n = seeds x eval instances per cell).
+export QWGNN_SEEDS="${QWGNN_SEEDS:-0,1,2}"
 export QWGNN_TRAIN="${QWGNN_TRAIN:-8}"
-export QWGNN_EVAL="${QWGNN_EVAL:-2}"
+export QWGNN_EVAL="${QWGNN_EVAL:-3}"
 
 # GNN uses the multipath decode by default (QWGNN_DECODE=multipath); set
 # QWGNN_DECODE=single for the single-path ablation.
