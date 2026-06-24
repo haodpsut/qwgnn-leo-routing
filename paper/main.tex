@@ -508,9 +508,11 @@ h_v^{(l+1)}=\mathrm{ReLU}\!\Big(W^{(l)}\!\!\sum_{u}\hat A_{vu}\,h_u^{(l)}\Big),
 \label{eq:gcn}
 \end{equation}
 where $\hat A=\tilde D^{-1/2}(A{+}I)\tilde D^{-1/2}$ and $\tilde D$ is the degree of
-$A{+}I$. A per-edge readout produces the price
+$A{+}I$. A per-edge head predicts the \emph{log-price}
+$m_{uv}=\mathrm{MLP}\big([\,h_u,\,h_v,\,\prop_{uv},\,x^{0}_{uv}\,]\big)$, from which the
+non-negative price is recovered as
 \begin{equation}
-\hat g_{uv}=\softplus\!\Big(\mathrm{MLP}\big([\,h_u,\,h_v,\,\prop_{uv},\,x^{0}_{uv}\,]\big)\Big).
+\hat g_{uv}=\max\!\big(0,\ \exp(m_{uv})-1\big).
 \label{eq:readout}
 \end{equation}
 We use $K=3$ layers and hidden width $d=32$ throughout; the model has on the order of a
@@ -520,9 +522,11 @@ few thousand parameters, independent of $S$.
 We regress the log-price over a dataset $\mathcal{I}$ of (shell, demand) instances:
 \begin{equation}
 \mathcal{L}(\theta)=\frac{1}{|\mathcal{I}|}\sum_{i\in\mathcal{I}}\frac{1}{|E_i|}
-\sum_{(u,v)\in E_i}\!\Big(\log(1{+}\hat g_{uv})-\log(1{+}g^{*}_{uv})\Big)^2 .
+\sum_{(u,v)\in E_i}\!\Big(m_{uv}-\log(1{+}g^{*}_{uv})\Big)^2 ,
 \label{eq:loss}
 \end{equation}
+i.e. the head $m_{uv}$ is regressed directly onto $\log(1{+}g^{*}_{uv})$, and at inference
+$\hat g_{uv}=\max(0,e^{m_{uv}}-1)$.
 The $\log(1{+}\cdot)$ scale tames the heavy tail of $g^{*}$ at saturated links, where the
 BPR exponent makes the raw price span several orders of magnitude. Targets $g^{*}$ come
 from solving UE \eqref{eq:msa} on the training instances offline; the cost of this
@@ -655,7 +659,7 @@ pass, one forward, and one decode, i.e. two $\AoN$ passes plus the forward. UE b
 \eqref{eq:msa} costs $T$ $\AoN$ passes, $T\!\approx\!20$ in our runs. The predicted
 speedup is thus $\Theta(T)$ up to the forward, and it \emph{grows} with scale because
 the forward is cheap relative to the repeated routing on a larger graph; the measured
-factor rises from $22\times$ at $132$ satellites to $29\times$ at $1584$
+factor is $21$--$22\times$ at the small shells and rises to $29\times$ at $1584$
 (Section~\ref{sec:c2}). Table~\ref{tab:cost} expresses the per-slot cost of each policy
 in $\AoN$-pass units, the quantity that dominates at scale. Blind and geographic are one
 pass; one-step is two; the GNN is two passes plus a forward that is asymptotically
@@ -901,10 +905,13 @@ Table~\ref{tab:decode} isolates the decoder. The single-path decode of the predi
 prices leaves a large gap, especially out of distribution, because it cannot reproduce
 the multi-path equilibrium even when the prices are good; the one-shot multipath decode
 \eqref{eq:split} closes most of it, raising the recovered fraction from $90$ to $97\%$ in
-distribution and from $64$ to $94\%$ zero shot, at the same order of cost (all entries
-are mean $\pm$ std over seeds and instances). The multipath
-decode is the deployed method and is what Table~\ref{tab:baselines} and the scaling results
-report; the single-path decode here serves to expose the decoding gap it closes.
+distribution and from $64$ to $94\%$ zero shot on the $264$-shell, at the same order of cost
+(all entries are mean $\pm$ std over seeds and instances). This decoder-comparison run is
+independent of the headline tables and agrees with them within one standard deviation
+(the $264$ multipath GNN reads $0.11$ here and $0.12$ in Table~\ref{tab:baselines}). The
+multipath decode is the deployed method and is what Table~\ref{tab:baselines} and the
+scaling results report; the single-path decode here serves to expose the decoding gap it
+closes.
 
 \begin{table}[t]
 \centering
@@ -959,9 +966,10 @@ Trained only on the $132$-satellite shell, the model is applied zero shot to the
 $264$- and $1584$-satellite shells. Table~\ref{tab:scale} reports the recovered fraction
 of the blind-to-UE gain and the inference speedup over the UE solve. The GNN recovers
 $93\%$ at $264$ and $94\pm2\%$ at $1584$ (a $12\times$ size jump), remaining the best
-deployable policy throughout, while the speedup over MSA \emph{rises} from $22\times$ to
-$29\times$ (Fig.~\ref{fig:speedup}). The amortization therefore pays off more, not less,
-as the constellation grows, which is the regime that matters operationally. The transfer
+deployable policy throughout, while the speedup over MSA is $21$--$22\times$ at the small
+shells and \emph{rises} to $29\times$ at $1584$ (Fig.~\ref{fig:speedup}). The amortization
+therefore pays off more, not less, at the mega-constellation scale that matters
+operationally. The transfer
 is genuinely zero shot: the $1584$-shell is never seen during training, has a different
 number of planes and satellites per plane, and a larger diameter, yet the same weights
 produce a near-equilibrium price field on it. This works because the learned map is from
@@ -1222,7 +1230,8 @@ including the negative results, is released so that the methodology is reusable.
 
 \section*{Data and Code Availability}
 The simulator, models, experiments, and figure-generation scripts are released at
-\url{https://github.com/haodpsut/qwgnn-leo-routing}. The constellation and traffic models
+\url{https://github.com/haodpsut/qwgnn-leo-routing} (the repository name reflects the
+project's original quantum-walk direction, which the paper reports as a negative ablation). The constellation and traffic models
 are in \texttt{sim/}; the edge-price GNN and the experiments producing each claim are in
 \texttt{experiments/} (\texttt{p4} headroom, \texttt{p5} router and operator ablation,
 \texttt{p6} baselines and timing, \texttt{p7} proactive, \texttt{poa\_check} price of
