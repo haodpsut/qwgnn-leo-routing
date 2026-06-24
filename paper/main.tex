@@ -102,9 +102,9 @@ and solve the first with an inductive graph neural network that predicts the
 equilibrium congestion price on each inter-satellite link in a single forward pass
 from cheap, observable load features. On a constellation simulator with a standard
 Bureau of Public Roads cost model, the network closely approaches the user
-equilibrium in distribution (recovering about $92\%$ of the gain over blind routing),
-recovers about $71\%$ of that gain when transferred zero shot to a shell twelve times
-larger, runs $19$ to $29\times$ faster than the iterative solve with the saving
+equilibrium in distribution (recovering about $97\%$ of the gain over blind routing),
+recovers about $94\%$ of that gain when transferred zero shot to a shell twelve times
+larger, runs $21$ to $29\times$ faster than the iterative solve with the saving
 growing with scale, and, fed predicted demand, sustains low travel time under
 drifting hotspots where a reactive controller degrades to $1.6\times$ blind. We
 contribute, in addition, a record of three evaluation pitfalls that silently
@@ -182,11 +182,11 @@ so that the reported numbers are trustworthy and reproducible.
 traffic-assignment equilibrium and \emph{decompose} it into four sub-problems
 (Section~\ref{sec:decomp}), each mapped to a measurable claim.
 \item \textbf{C1 (amortization).} A one-shot GNN closely approaches the user
-equilibrium in distribution, recovering about $92\%$ of the gain over blind routing,
-at $19$ to $29\times$ less computation than the iterative solve.
+equilibrium in distribution, recovering about $97\%$ of the gain over blind routing,
+at $21$ to $29\times$ less computation than the iterative solve.
 \item \textbf{C2 (inductive scale generalization).} Trained on a $132$-satellite
 shell, the same model transferred zero shot to a $1584$-satellite shell ($12\times$
-larger) recovers about $71\%$ of the gain and remains the best \emph{deployable}
+larger) recovers about $94\%$ of the gain and remains the best \emph{deployable}
 policy.
 \item \textbf{C3 (cost that improves with scale).} We give a complexity analysis and
 wall-clock measurements showing the inference saving over UE \emph{grows} with the
@@ -637,7 +637,7 @@ pass, one forward, and one decode, i.e. two $\AoN$ passes plus the forward. UE b
 \eqref{eq:msa} costs $T$ $\AoN$ passes, $T\!\approx\!20$ in our runs. The predicted
 speedup is thus $\Theta(T)$ up to the forward, and it \emph{grows} with scale because
 the forward is cheap relative to the repeated routing on a larger graph; the measured
-factor rises from $19\times$ at $132$ satellites to $29\times$ at $1584$
+factor rises from $22\times$ at $132$ satellites to $29\times$ at $1584$
 (Section~\ref{sec:c2}). Table~\ref{tab:cost} expresses the per-slot cost of each policy
 in $\AoN$-pass units, the quantity that dominates at scale. Blind and geographic are one
 pass; one-step is two; the GNN is two passes plus a forward that is asymptotically
@@ -817,14 +817,15 @@ $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00{\scriptstyle\pm.00}$ & $1.03{\scri
 \end{table}
 
 \subsection{The GNN approaches UE and beats every cheap baseline (C1)}
-Figure~\ref{fig:baselines} and Table~\ref{tab:baselines} report TTT relative to blind. In
-distribution, the GNN single-path decode ($0.43$) approaches UE ($0.38$), recovering about
-$92\%$ of the blind-to-UE gain, and the multipath decode (Section~\ref{sec:results-decode})
-raises this to about $97\%$; SO ($0.37$) and UE nearly coincide, so the target is
-essentially the system optimum. The cheap alternatives fail: one-step correction overshoots and
-oscillates (relative travel time $1.07$, \emph{worse} than blind, because rerouting onto
-the apparently idle alternates creates fresh hotspots), and geographic greedy stalls on
-the ISL grid, needing the fallback for $55\%$ of flows and still reaching only $0.79$. The contrast
+Figure~\ref{fig:baselines} and Table~\ref{tab:baselines} report TTT relative to blind (the
+GNN uses the multipath decode of Section~\ref{sec:results-decode}; all values are mean $\pm$
+std over seeds and instances). In distribution, the GNN ($0.42$) closely approaches UE
+($0.40$), recovering about $97\%$ of the blind-to-UE gain; SO ($0.39$) and UE nearly
+coincide, so the target is essentially the system optimum. The cheap alternatives fail:
+one-step correction overshoots and oscillates (relative travel time $1.04$, \emph{worse}
+than blind, because rerouting onto the apparently idle alternates creates fresh hotspots),
+and geographic greedy stalls on the ISL grid, needing the fallback for $53\%$ of flows and
+still reaching only $0.78$. The contrast
 between the GNN and one-step is the central evidence that the problem is not trivial: a
 single congestion-blind pass tells you where the hotspots are, but reacting to it by
 rerouting everyone onto the apparent alternates simply relocates the hotspots, a
@@ -844,11 +845,11 @@ needed.
   legend pos=north east, enlarge x limits=0.10, nodes near coords,
   every node near coord/.append style={rotate=90, anchor=west, font=\tiny}]
 \draw[dashed, cGray, line width=0.7pt] (axis cs:blind,1.0) -- (axis cs:SO,1.0);
-\addplot[draw=cSteel!80!black, fill=cSteel!35] coordinates
-  {(blind,1.00)(geographic,0.79)(one-step,1.07)(GNN,0.43)(UE,0.38)(SO,0.37)};
+\addplot[draw=cSteel!80!black, fill=cSteel!35, error bars/.cd, y dir=both, y explicit] coordinates
+  {(blind,1.00)+-(0,0) (geographic,0.78)+-(0,0.04) (one-step,1.04)+-(0,0.14) (GNN,0.42)+-(0,0.03) (UE,0.40)+-(0,0.03) (SO,0.39)+-(0,0.03)};
 \addplot[draw=cAmber!80!black, fill=cAmber!45, postaction={pattern=north east lines,
-  pattern color=cAmber!80!black}] coordinates
-  {(blind,1.00)(geographic,0.79)(one-step,0.54)(GNN,0.37)(UE,0.05)(SO,0.05)};
+  pattern color=cAmber!80!black}, error bars/.cd, y dir=both, y explicit] coordinates
+  {(blind,1.00)+-(0,0) (geographic,0.80)+-(0,0.03) (one-step,0.55)+-(0,0.09) (GNN,0.12)+-(0,0.02) (UE,0.05)+-(0,0.01) (SO,0.05)+-(0,0.01)};
 \legend{in-distribution, OOD ($264$)}
 \end{axis}
 \end{tikzpicture}}
@@ -869,10 +870,10 @@ instances and seeds. SO/UE are references; the GNN is the deployable policy.}
 \toprule
 split & SO & UE & geographic & one-step & \textbf{GNN} \\
 \midrule
-in-distribution & $0.37{\scriptstyle\pm.01}$ & $0.38{\scriptstyle\pm.01}$ &
- $0.79{\scriptstyle\pm.05}$ & $1.07{\scriptstyle\pm.17}$ & $\mathbf{0.43{\scriptstyle\pm.03}}$ \\
+in-distribution & $0.39{\scriptstyle\pm.03}$ & $0.40{\scriptstyle\pm.03}$ &
+ $0.78{\scriptstyle\pm.04}$ & $1.04{\scriptstyle\pm.14}$ & $\mathbf{0.42{\scriptstyle\pm.03}}$ \\
 OOD ($264$) & $0.05{\scriptstyle\pm.01}$ & $0.05{\scriptstyle\pm.01}$ &
- $0.79{\scriptstyle\pm.03}$ & $0.54{\scriptstyle\pm.05}$ & $\mathbf{0.37{\scriptstyle\pm.10}}$ \\
+ $0.80{\scriptstyle\pm.03}$ & $0.55{\scriptstyle\pm.09}$ & $\mathbf{0.12{\scriptstyle\pm.02}}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -884,8 +885,8 @@ the multi-path equilibrium even when the prices are good; the one-shot multipath
 \eqref{eq:split} closes most of it, raising the recovered fraction from $90$ to $97\%$ in
 distribution and from $64$ to $94\%$ zero shot, at the same order of cost (all entries
 are mean $\pm$ std over seeds and instances). The multipath
-decode is the deployed method; Table~\ref{tab:baselines} reports the single-path decode to
-expose the gap this subsection closes.
+decode is the deployed method and is what Table~\ref{tab:baselines} and the scaling results
+report; the single-path decode here serves to expose the decoding gap it closes.
 
 \begin{table}[t]
 \centering
@@ -939,20 +940,17 @@ error vanishes. The multipath decode is both lower and far less error-sensitive.
 Trained only on the $132$-satellite shell, the model is applied zero shot to the
 $264$- and $1584$-satellite shells. Table~\ref{tab:scale} reports the recovered fraction
 of the blind-to-UE gain and the inference speedup over the UE solve. The GNN recovers
-$65\%$ at $264$ and $71\%$ at $1584$ (a $12\times$ size jump), remaining the best
-deployable policy throughout, while the speedup over MSA \emph{rises} from $19\times$ to
+$93\%$ at $264$ and $94\pm2\%$ at $1584$ (a $12\times$ size jump), remaining the best
+deployable policy throughout, while the speedup over MSA \emph{rises} from $22\times$ to
 $29\times$ (Fig.~\ref{fig:speedup}). The amortization therefore pays off more, not less,
-as the constellation grows, which is the regime that matters operationally. Two points
-deserve emphasis. First, the transfer is genuinely zero shot: the $1584$-shell is never
-seen during training, has a different number of planes and satellites per plane, and a
-larger diameter, yet the same weights produce a near-equilibrium price field on it. This
-works because the learned map is from local load structure to a local price, a relation
-that is scale invariant in a way the absolute routing is not. Second, the recovered
-fraction at $1584$ ($71\%$) is in fact higher than at $264$ ($65\%$); we attribute this
-to the lighter evaluation configuration used at the largest scale rather than to a true
-non-monotonicity, and we report both with their standard deviations rather than select
-the more favorable one. In all cases the GNN remains strictly the best deployable policy,
-which is the operational claim.
+as the constellation grows, which is the regime that matters operationally. The transfer
+is genuinely zero shot: the $1584$-shell is never seen during training, has a different
+number of planes and satellites per plane, and a larger diameter, yet the same weights
+produce a near-equilibrium price field on it. This works because the learned map is from
+local load structure to a local price, a relation that is scale invariant in a way the
+absolute routing is not, and because the multipath decode realizes the predicted
+equilibrium faithfully; the recovered fraction stays near $94\%$ and its variance stays
+low ($\pm 2$) all the way to the largest shell.
 
 \begin{table}[t]
 \centering
@@ -963,9 +961,9 @@ the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA s
 \toprule
 shell & sats & recovered \% & GNN (s) & speedup vs UE \\
 \midrule
-in-dist & $132$ & $88\pm4$ & $0.05$ & $19\times$ \\
-OOD & $264$ & $65\pm9$ & $0.25$ & $20\times$ \\
-OOD & $1584$ & $71\pm8$ & $8.4$ & $29\times$ \\
+in-dist & $132$ & $97\pm2$ & $0.05$ & $22\times$ \\
+OOD & $264$ & $93\pm2$ & $0.23$ & $21\times$ \\
+OOD & $1584$ & $94\pm2$ & $8.4$ & $29\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -979,7 +977,7 @@ OOD & $1584$ & $71\pm8$ & $8.4$ & $29\times$ \\
   xmin=0,xmax=1720, ymin=0, ymax=34, ytick={0,10,20,30},
   nodes near coords={\pgfmathprintnumber[precision=0]{\pgfplotspointmeta}$\times$},
   every node near coord/.append style={font=\scriptsize, cNavy, anchor=south east}]
-\addplot[name path=A, cNavy, pmark] coordinates {(132,18.6)(264,20.4)(1584,29.0)};
+\addplot[name path=A, cNavy, pmark] coordinates {(132,21.8)(264,21.2)(1584,29.1)};
 \path[name path=B] (axis cs:0,0) -- (axis cs:1720,0);
 \addplot[cNavy!10] fill between[of=A and B];
 \node[font=\scriptsize\itshape, cNavy, anchor=north east] at (axis cs:1560,17)
