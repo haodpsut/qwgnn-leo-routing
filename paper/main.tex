@@ -101,8 +101,8 @@ and solve the first with an inductive graph neural network that predicts the
 equilibrium congestion price on each inter-satellite link in a single forward pass
 from cheap, observable load features. On a constellation simulator with a standard
 Bureau of Public Roads cost model, the network closely approaches the user
-equilibrium in distribution (recovering about $97\%$ of the gain over blind routing),
-recovers about $94\%$ of that gain when transferred zero shot to a shell twelve times
+equilibrium in distribution (recovering about $0.97$ of the gain over blind routing),
+recovers about $0.94$ of that gain when transferred zero shot to a shell twelve times
 larger, runs $21$ to $29\times$ faster than the iterative solve with the saving
 growing with scale, and, fed predicted demand, sustains low travel time under
 drifting hotspots where a reactive controller degrades to $1.6\times$ blind. We
@@ -192,7 +192,7 @@ else. We encountered all four, caught them, and distil a protocol
 \textbf{Contributions.}
 \begin{itemize}
 \item \textbf{A comparator this literature has not used.} We evaluate learned congestion prices
-against tolerance-based multipath spreading at a matched computational budget. We also record a
+against blind multipath spreading (an $\varepsilon$-tolerance split) at a matched computational budget. We also record a
 property specific to satellite topologies: inter-satellite delays take continuous values, so
 exact cost ties essentially never occur and textbook equal-cost multipath~\cite{ecmp}
 degenerates to single-path routing. Only a tolerance-based variant is meaningful, and its
@@ -201,7 +201,7 @@ value.
 
 \item \textbf{A measured boundary: decisive in distribution, level outside it.} With both sides
 tuned per shell over fixed grids, the learned field recovers $0.977$ of the blind-to-equilibrium
-gap on the shell it was trained on against $0.668$ for blind spreading. (At the fixed decoder
+gap on the shell it was trained on against $0.668$ for blind multipath. (At the fixed decoder
 setting the same shell reads $0.968$ against a strongest cheap rival of $0.869$; the tuned
 comparison above is the fair one.) Paired per unit,
 the median difference is $0.317$. On
@@ -220,7 +220,7 @@ between the $132$-satellite shell and the larger ones, and holding it at the fix
 of $0.065$ to $0.094$ per unit on every unseen shell. A fixed temperature quietly converts a decoder mismatch into what
 reads as a failure to generalize.
 
-\item \textbf{Why blind spreading is a serious baseline here, and where it stops being one.}
+\item \textbf{Why blind multipath is a serious baseline here, and where it stops being one.}
 Tolerance-based spreading recovers $0.668$ of the gap on the smallest shell and $0.976$ on a
 shell half again as large, because a larger grid offers more near-shortest detours to spread
 across. Its strength therefore grows in exactly the regime where a learned map is asked to
@@ -796,7 +796,7 @@ the cheapest heuristics while delivering near-equilibrium quality, and an order 
 magnitude below the equilibrium solve.
 
 \begin{table}[t]
-\centering
+\centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Per-slot routing cost in all-or-nothing ($\AoN$) shortest-path passes ($T$ is
 the MSA iteration count, $\approx 20$). The GNN adds one forward to two passes; UE/SO
 need $T$ passes.}
@@ -908,9 +908,8 @@ The congestion task, not static routing, is where a learned router helps.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[prostyle,
+\begin{axis}[prostyle, width=8.4cm,
   xlabel={offered load (number of demands)}, ylabel={UE gain over blind (\%)},
   xmin=0,xmax=1700, ymin=0, ymax=110, legend pos=south east, ytick={0,20,40,60,80,100}]
 \fill[cAmber!10] (axis cs:330,0) rectangle (axis cs:1700,104);
@@ -926,7 +925,7 @@ The congestion task, not static routing, is where a learned router helps.
 \addlegendentry{$264$-sat shell}
 \node[font=\scriptsize, cNavy, anchor=south] at (axis cs:1600,97.6) {$98\%$};
 \end{axis}
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{Congestion headroom: the gain of the user equilibrium over congestion-blind
 shortest path grows with load, to $98\%$ under heavy load, and is negligible at light
 load. The shaded region marks the congested regime where a learned router earns its
@@ -944,7 +943,7 @@ the same demand carried over diverse paths is comfortably feasible, which is why
 congestion-aware policy recovers almost all of the gap.
 
 \begin{table}[t]
-\centering
+\centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Absolute travel time (arbitrary units) of blind versus UE on the $132$-shell as
 offered load grows, and their ratio. Mean over seeds.}
 \label{tab:headroom}
@@ -967,7 +966,7 @@ points nearly coincide, so the learned router's target (UE) is within a few perc
 the true system optimum, and matching UE is matching the optimum for practical purposes.
 
 \begin{table}[t]
-\centering
+\centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Price of anarchy $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ on the $132$-shell;
 $\ge 1$ at every load confirms the corrected estimator (Section~\ref{sec:pitfalls}).}
 \label{tab:poa}
@@ -984,7 +983,7 @@ $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00{\scriptstyle\pm.00}$ & $1.03{\scri
 Figure~\ref{fig:baselines} and Table~\ref{tab:baselines} report TTT relative to blind (the
 GNN uses the multipath decode of Section~\ref{sec:results-decode}; all values are mean $\pm$
 std over seeds and instances). In distribution, the GNN ($0.42$) closely approaches UE
-($0.40$), recovering about $97\%$ of the blind-to-UE gain; SO ($0.39$) and UE nearly
+($0.40$), recovering about $0.97$ of the blind-to-UE gain; SO ($0.39$) and UE nearly
 coincide, so the target is essentially the system optimum. The cheap alternatives fail:
 one-step correction overshoots and oscillates (relative travel time $1.04$, \emph{worse}
 than blind, because rerouting onto the apparently idle alternates creates fresh hotspots),
@@ -1017,9 +1016,8 @@ cheaper than learning the routing end to end.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[probar, bar width=8pt,
+\begin{axis}[probar, width=8.4cm, bar width=8pt,
   symbolic x coords={blind,geographic,one-step,GNN,UE,SO},
   xtick=data, x tick label style={font=\footnotesize,rotate=18,anchor=east},
   ylabel={TTT relative to blind}, ymin=0, ymax=1.25, ytick={0,0.25,...,1.0},
@@ -1033,7 +1031,7 @@ cheaper than learning the routing end to end.
   {(blind,1.00)+-(0,0) (geographic,0.80)+-(0,0.03) (one-step,0.55)+-(0,0.09) (GNN,0.12)+-(0,0.02) (UE,0.05)+-(0,0.01) (SO,0.05)+-(0,0.01)};
 \legend{in-distribution, OOD ($264$)}
 \end{axis}
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{Travel time relative to blind (lower is better; the dashed line is the blind
 reference at $1.0$). The GNN approaches UE in distribution and is the best deployable policy among the comparators shown here; the cheap heuristics fail (one-step is worse
 than blind in distribution, geographic stalls). UE and SO nearly coincide.}
@@ -1062,8 +1060,8 @@ OOD ($264$) & $0.05{\scriptstyle\pm.01}$ & $0.05{\scriptstyle\pm.01}$ &
 Table~\ref{tab:decode} isolates the decoder. The single-path decode of the predicted
 prices leaves a large gap, especially out of distribution, because it cannot reproduce
 the multi-path equilibrium even when the prices are good; the one-shot multipath decode
-\eqref{eq:split} closes most of it, raising the recovered fraction from $90$ to $97\%$ in
-distribution and from $64$ to $94\%$ zero shot on the $264$-shell, at the same order of cost
+\eqref{eq:split} closes most of it, raising the recovered fraction from $0.90$ to $0.97$ in
+distribution and from $0.64$ to $0.94$ zero shot on the $264$-shell, at the same order of cost
 (all entries are mean $\pm$ std over seeds and instances). This decoder-comparison run is
 independent of the headline tables and agrees with them within one standard deviation
 (the $264$ multipath GNN reads $0.11$ here and $0.12$ in Table~\ref{tab:baselines}). The
@@ -1072,7 +1070,7 @@ scaling results report; the single-path decode here serves to expose the decodin
 closes.
 
 \begin{table}[t]
-\centering
+\centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Decoder comparison: TTT relative to blind and recovered fraction of the
 blind-to-UE gain. The multipath decode \eqref{eq:split} closes most of the single-path
 decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:scale} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
@@ -1082,9 +1080,9 @@ decoding gap. \emph{Run set:} this table is computed from its own independent se
  & single-path & multipath & UE \\
 \midrule
 in-dist (TTT/blind) & $0.47{\scriptstyle\pm.03}$ & $\mathbf{0.42{\scriptstyle\pm.03}}$ & $0.40$ \\
-\quad recovered & $90{\scriptstyle\pm5}\%$ & $\mathbf{97{\scriptstyle\pm1}\%}$ & -- \\
+\quad recovered & $0.90{\scriptstyle\pm.05}$ & $\mathbf{0.97{\scriptstyle\pm.01}}$ & -- \\
 OOD ($264$, TTT/blind) & $0.39{\scriptstyle\pm.13}$ & $\mathbf{0.11{\scriptstyle\pm.01}}$ & $0.05$ \\
-\quad recovered & $64{\scriptstyle\pm14}\%$ & $\mathbf{94{\scriptstyle\pm1}\%}$ & -- \\
+\quad recovered & $0.64{\scriptstyle\pm.14}$ & $\mathbf{0.94{\scriptstyle\pm.01}}$ & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1098,7 +1096,6 @@ both lower and far less sensitive to prediction error, matching the bound.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.9\columnwidth}{!}{%
 \begin{tikzpicture}
 \begin{axis}[prostyle, width=8.4cm, height=5.2cm,
   xlabel={relative price error $\lVert\hat g-g^{*}\rVert/\bar g$},
@@ -1112,7 +1109,7 @@ both lower and far less sensitive to prediction error, matching the bound.
 \addlegendentry{multipath decode}
 \node[font=\scriptsize, cNavy, anchor=south west] at (axis cs:0.0,4.0) {$\delta_{\mathrm{dec}}\!\approx\!3.6\%$};
 \end{axis}
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{Empirical validation of Proposition~\ref{prop:bound}: the travel-time gap to UE
 grows monotonically with the price error and flattens to a small decoder floor as the
 error vanishes. The multipath decode is both lower and far less error-sensitive.}
@@ -1123,7 +1120,7 @@ error vanishes. The multipath decode is both lower and far less error-sensitive.
 Trained only on the $132$-satellite shell, the model is applied zero shot to the
 $264$- and $1584$-satellite shells. Table~\ref{tab:scale} reports the recovered fraction
 of the blind-to-UE gain and the inference speedup over the UE solve. The GNN recovers
-$93\%$ at $264$ and $94\pm2\%$ at $1584$ (a $12\times$ size jump), remaining the best
+$0.93$ at $264$ and $0.94{\scriptstyle\pm.02}$ at $1584$ (a $12\times$ size jump), remaining the best
 deployable policy throughout, while the speedup over MSA is $21$--$22\times$ at the small
 shells and \emph{rises} to $29\times$ at $1584$ (Fig.~\ref{fig:speedup}). The amortization
 therefore pays off more, not less, at the mega-constellation scale that matters
@@ -1133,9 +1130,9 @@ number of planes and satellites per plane, and a larger diameter, yet the same w
 produce a near-equilibrium price field on it. This works because the learned map is from
 local load structure to a local price, a relation that is scale invariant in a way the
 absolute routing is not, and because the multipath decode realizes the predicted
-equilibrium faithfully; the recovered fraction stays near $94\%$ and its variance stays
-low ($\pm 2$) all the way to the largest shell. The $264$-shell recovered fraction reads
-$93\%$ here (Table~\ref{tab:scale}) and $94\%$ in the decoder and operator tables
+equilibrium faithfully; the recovered fraction stays near $0.94$ and its variance stays
+low ($\pm 0.02$) all the way to the largest shell. The $264$-shell recovered fraction reads
+$0.93$ here (Table~\ref{tab:scale}) and $0.94$ in the decoder and operator tables
 (Tables~\ref{tab:decode},~\ref{tab:ablation}); the one-point spread is the same
 independent-run variation as the $0.11$-versus-$0.12$ travel time noted in
 Section~\ref{sec:results-decode}, not a discrepancy. We report the $1584$ result as a
@@ -1144,24 +1141,23 @@ is far off the range that frames the smaller shells, so the fraction of the blin
 gain is the meaningful, scale-free figure.
 
 \begin{table}[t]
-\centering
+\centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
 the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:decode} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
 \label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
-shell & sats & recovered \% & GNN (s) & speedup vs UE \\
+shell & sats & recovered & GNN (s) & speedup vs UE \\
 \midrule
-in-dist & $132$ & $97\pm2$ & $0.05$ & $22\times$ \\
-OOD & $264$ & $93\pm2$ & $0.23$ & $21\times$ \\
-OOD & $1584$ & $94\pm2$ & $8.4$ & $29\times$ \\
+in-dist & $132$ & $0.97{\scriptstyle\pm.02}$ & $0.05$ & $22\times$ \\
+OOD & $264$ & $0.93{\scriptstyle\pm.02}$ & $0.23$ & $21\times$ \\
+OOD & $1584$ & $0.94{\scriptstyle\pm.02}$ & $8.4$ & $29\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[t]
 \centering
-\resizebox{0.9\columnwidth}{!}{%
 \begin{tikzpicture}
 \begin{axis}[prostyle, width=8.4cm, height=5.0cm,
   xlabel={shell size (satellites)}, ylabel={speedup over UE/MSA ($\times$)},
@@ -1174,7 +1170,7 @@ OOD & $1584$ & $94\pm2$ & $8.4$ & $29\times$ \\
 \node[font=\scriptsize\itshape, cNavy, anchor=north east] at (axis cs:1560,17)
   {grows with scale};
 \end{axis}
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{Inference speedup of the one-shot GNN router over the MSA equilibrium solve,
 versus shell size. The advantage grows with the constellation, reaching $29\times$ at
 $1584$ satellites.}
@@ -1199,9 +1195,8 @@ instead of the last slot.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[prostyle,
+\begin{axis}[prostyle, width=8.4cm,
   xlabel={per-slot hotspot drift (rad)}, ylabel={TTT relative to blind},
   xmin=0,xmax=1.55, ymin=0.3, ymax=1.75, legend pos=north west,
   legend columns=2, ytick={0.4,0.7,1.0,1.3,1.6}]
@@ -1232,7 +1227,7 @@ instead of the last slot.
   {reactive worse\\ than blind};
 \node[font=\scriptsize, cNavy, anchor=north] at (axis cs:1.18,0.62) {proactive gain};
 \end{axis}
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{Proactive versus reactive routing under drifting hotspots (shaded band is the
 proactive advantage). The reactive lag-1 router degrades past the blind reference once the
 drift exceeds about one radian; the proactive router tracks the clairvoyant optimum
@@ -1248,7 +1243,8 @@ capacity: a link offered $L$ with capacity $C$ carries $\min(L,C)$, each flow cr
 $\min(1,C/L)$, and end-to-end delivery is the product along the path. The configurations, shells,
 loads and seeds are those of Section~\ref{sec:headroom}, so the rows correspond one to one.
 
-On configurations where blind routing offers a link more than four times its capacity, the
+Table~\ref{tab:feasibility} reports the result. On configurations where blind routing offers a link
+more than four times its capacity, the
 congestion-aware advantage reads $79.1\%$ as a reduction in travel time and $30.9\%$ as an increase
 in delivered rate. Both are real; they measure different things, and only the second is available
 to a link that drops what it cannot carry. Below capacity both are zero, which the operating-regime
@@ -1283,7 +1279,7 @@ advantage that is large is the in-distribution one.
 
 The reason the baseline is strong off distribution, and weak on the training shell, is structural
 rather than incidental. Spreading needs somewhere to spread: on the $132$-satellite grid the
-tolerance-based split recovers $0.660$ of the gap, and on a shell twice the size it recovers
+blind multipath split recovers $0.660$ of the gap, and on a shell twice the size it recovers
 $0.970$, because a larger grid offers more near-shortest detours between the same pair. Its
 strength grows precisely in the regime where a learned map is asked to generalize.
 
@@ -1304,7 +1300,8 @@ diversity in inclination did not transfer to inclination here, and we do not kno
 
 The second has not been reported before as far as we are aware, and is of comparable size. The
 softmin temperature that decodes prices into split flows is treated in the literature, and in our
-own earlier sections, as a constant. It is not. Sweeping it, the setting that maximises recovery
+own earlier sections, as a constant. It is not. Sweeping it, as Fig.~\ref{fig:tau} shows, the
+setting that maximises recovery
 moves by one to two orders of magnitude between the smallest shell and the larger ones, and holding
 it at the value chosen on the smallest costs a median of $0.094$, $0.089$ and $0.065$ per instance
 on the three unseen shells. On the training shell itself the same fixed value costs $0.007$, which
@@ -1347,30 +1344,29 @@ Table~\ref{tab:ablation} compares three param-matched propagation operators: a l
 graph convolution (GCN), a global classical-diffusion operator (Heat), and a global
 quantum-walk operator (QW). All three use the multipath decode. Once the blind-load
 features are present, predicting the price is largely a local function of a link's own
-load, so the plain GCN is best out of distribution ($94\pm1\%$) and the global operators
+load, so the plain GCN is best out of distribution ($0.94{\scriptstyle\pm.01}$) and the global operators
 add variance without benefit: the quantum walk is both the lowest and the most variable
-($90\pm6\%$). The quantum walk originally motivated this work as a way to capture long-range
+($0.90{\scriptstyle\pm.06}$). The quantum walk originally motivated this work as a way to capture long-range
 structure; the data did not support it, and we report it as an honest negative ablation
 rather than force it into the contribution.
 Figure~\ref{fig:ablation} shows the same comparison with error bars.
 
 \begin{figure}[t]
 \centering
-\resizebox{0.9\columnwidth}{!}{%
 \begin{tikzpicture}
-\begin{axis}[probar, bar width=10pt, symbolic x coords={GCN,Heat,QW}, xtick=data,
-  ylabel={recovered gain (\%)}, ymin=0, ymax=110, ytick={0,25,...,100},
+\begin{axis}[probar, width=8.4cm, bar width=10pt, symbolic x coords={GCN,Heat,QW}, xtick=data,
+  ylabel={recovered fraction}, ymin=0, ymax=1.1, ytick={0,0.25,...,1},
   legend pos=south west, enlarge x limits=0.28,
   error bars/y dir=both, error bars/y explicit,
   error bars/error bar style={black!65, line width=0.7pt}]
 \addplot[draw=cSteel!80!black, fill=cSteel!35] coordinates {
-  (GCN,97) +- (0,2) (Heat,97) +- (0,2) (QW,94) +- (0,4)};
+  (GCN,0.97) +- (0,0.02) (Heat,0.97) +- (0,0.02) (QW,0.94) +- (0,0.04)};
 \addplot[draw=cAmber!80!black, fill=cAmber!45, postaction={pattern=north east lines,
   pattern color=cAmber!80!black}] coordinates {
-  (GCN,94) +- (0,1) (Heat,92) +- (0,2) (QW,90) +- (0,6)};
+  (GCN,0.94) +- (0,0.01) (Heat,0.92) +- (0,0.02) (QW,0.90) +- (0,0.06)};
 \legend{in-distribution, OOD ($264$)}
 \end{axis}
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{Operator ablation with error bars (recovered fraction of the blind-to-UE gain,
 mean $\pm$ std, $n{=}12$). The local GCN is best out of distribution; the global
 quantum-walk operator does not help and is the most variable.}
@@ -1378,7 +1374,7 @@ quantum-walk operator does not help and is the most variable.}
 \end{figure}
 
 \begin{table}[t]
-\centering
+\centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Operator ablation: recovered fraction of the blind-to-UE gain (mean $\pm$ std,
 $n{=}12$). The plain GCN is best out of distribution; the global quantum-walk operator
 does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:scale} and~\ref{tab:decode}; the spread is run-to-run variation, not disagreement.}
@@ -1387,9 +1383,9 @@ does not help and is the most variable. \emph{Run set:} this table is computed f
 \toprule
 operator & in-distribution & OOD ($264$) \\
 \midrule
-\textbf{GCN (local)} & $97\pm2$ & $\mathbf{94\pm1}$ \\
-Heat (global diffusion) & $97\pm2$ & $92\pm2$ \\
-QW (global quantum walk) & $94\pm4$ & $90\pm6$ \\
+\textbf{GCN (local)} & $0.97{\scriptstyle\pm.02}$ & $\mathbf{0.94{\scriptstyle\pm.01}}$ \\
+Heat (global diffusion) & $0.97{\scriptstyle\pm.02}$ & $0.92{\scriptstyle\pm.02}$ \\
+QW (global quantum walk) & $0.94{\scriptstyle\pm.04}$ & $0.90{\scriptstyle\pm.06}$ \\
 \bottomrule
 \end{tabular}
 \end{table}

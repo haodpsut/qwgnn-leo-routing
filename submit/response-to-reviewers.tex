@@ -41,6 +41,14 @@ VI-I).
 months before our submission and we had missed it.
 \item Thirteen sections merged into eight; a summary table of every headline number opens Section
 VI; a claims manifest ties every number in the text to the file that produced it.
+\item \emph{What was removed.} The contribution list C1--C4 is gone as a list, and with it three
+claims we can no longer support in the form we made them: that the method is the first to formalize
+LEO routing as equilibrium amortization (arXiv:2601.21921 precedes it); that inductive transfer to a
+$12\times$ larger shell is a result in its own right (a one-pass blind baseline reaches the same
+place); and that the reported gap is the operational gap (it is the gap in BPR delay, and under a
+hard capacity it is smaller). The claim that the paper distils a general evaluation protocol is
+narrowed to the three specific pitfalls we measured. No section was deleted outright; the material
+was merged, and every measurement in the previous submission is still in the paper.
 \end{itemize}
 
 \hrule
@@ -63,7 +71,10 @@ OOD case appears as 93\% in Table VII and 94\% in Tables VI and VIII.}
 tables did not. A run-set note is now in the caption of each of the three tables, so a reader
 comparing them sees the reason without hunting for it. More generally, this class of mismatch is
 now checked mechanically: a claims manifest ties every number in the paper to the CSV, column,
-filter and aggregation that produce it, and a script recomputes all $49$ of them.
+filter and aggregation that produce it, and a script recomputes all $65$ of them. Your comment also
+made us notice a second, quieter version of the same problem: the recovered fraction was printed as
+a percentage in some sections and as a decimal in others. It is now a decimal everywhere, which is
+what its name says it is.
 
 \rc{3. Minor inconsistency in the proactive drift crossover statement. Fig.\ 8 does not have axis
 labels or units clearly marked. Please ensure the figure axes are self-explanatory and that the

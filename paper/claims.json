@@ -639,5 +639,219 @@
     "places": 3,
     "unit_of_analysis": "vo-x-seed",
     "note": "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay"
+  },
+  {
+    "id": "rel_gnn_indist",
+    "paper_value": "0.42",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_gnn",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, gnn, in-dist"
+  },
+  {
+    "id": "rel_gnn_ood",
+    "paper_value": "0.12",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_gnn",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, gnn, ood"
+  },
+  {
+    "id": "rel_ue_indist",
+    "paper_value": "0.40",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_ue",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, ue, in-dist"
+  },
+  {
+    "id": "rel_ue_ood",
+    "paper_value": "0.05",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_ue",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, ue, ood"
+  },
+  {
+    "id": "rel_so_indist",
+    "paper_value": "0.39",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_so",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, so, in-dist"
+  },
+  {
+    "id": "rel_so_ood",
+    "paper_value": "0.05",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_so",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, so, ood"
+  },
+  {
+    "id": "rel_geo_indist",
+    "paper_value": "0.78",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_geo",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, geo, in-dist"
+  },
+  {
+    "id": "rel_geo_ood",
+    "paper_value": "0.80",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_geo",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, geo, ood"
+  },
+  {
+    "id": "rel_onestep_indist",
+    "paper_value": "1.04",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_1step",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, onestep, in-dist"
+  },
+  {
+    "id": "rel_onestep_ood",
+    "paper_value": "0.55",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_1step",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, onestep, ood"
+  },
+  {
+    "id": "abl_gcn_indist",
+    "paper_value": "0.97",
+    "csv": "../code/results/p5_ablation.csv",
+    "column": "recovered",
+    "filter": {
+      "prop": "GCN",
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "phan gap thu hoi (GCN, in-dist)"
+  },
+  {
+    "id": "abl_gcn_ood",
+    "paper_value": "0.94",
+    "csv": "../code/results/p5_ablation.csv",
+    "column": "recovered",
+    "filter": {
+      "prop": "GCN",
+      "split": "ood-largeshell"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "phan gap thu hoi (GCN, ood-largeshell)"
+  },
+  {
+    "id": "abl_heat_indist",
+    "paper_value": "0.97",
+    "csv": "../code/results/p5_ablation.csv",
+    "column": "recovered",
+    "filter": {
+      "prop": "Heat",
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "phan gap thu hoi (Heat, in-dist)"
+  },
+  {
+    "id": "abl_heat_ood",
+    "paper_value": "0.92",
+    "csv": "../code/results/p5_ablation.csv",
+    "column": "recovered",
+    "filter": {
+      "prop": "Heat",
+      "split": "ood-largeshell"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "phan gap thu hoi (Heat, ood-largeshell)"
+  },
+  {
+    "id": "abl_qw_indist",
+    "paper_value": "0.94",
+    "csv": "../code/results/p5_ablation.csv",
+    "column": "recovered",
+    "filter": {
+      "prop": "QW",
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "phan gap thu hoi (QW, in-dist)"
+  },
+  {
+    "id": "abl_qw_ood",
+    "paper_value": "0.90",
+    "csv": "../code/results/p5_ablation.csv",
+    "column": "recovered",
+    "filter": {
+      "prop": "QW",
+      "split": "ood-largeshell"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "phan gap thu hoi (QW, ood-largeshell)"
   }
 ]

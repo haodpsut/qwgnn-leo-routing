@@ -74,6 +74,44 @@ def claim(cid, rows, csvfile, column, flt, note, places=3):
     return val
 
 
+def claim_raw(cid, csvfile, column, flt, agg, places, note, scale=None):
+    """Neo mot con so THUA KE tu ban cu. Khac claim(): lay trung binh (dung nhu bai ghi
+    'mean over seeds and instances') va cho phep scale, vi CSV ghi phan so con bai in phan tram."""
+    rows = list(csv.DictReader(open(os.path.join(RES, csvfile))))
+    sel = [r for r in rows if all(str(r[k]) == str(v) for k, v in flt.items())]
+    if not sel:
+        raise SystemExit(f"{cid}: filter {flt} khong khop dong nao trong {csvfile}")
+    val = st.mean(float(r[column]) for r in sel)
+    if scale:
+        val = eval(scale, {"__builtins__": {}}, {"x": val})
+    rec = {"id": cid, "paper_value": f"{val:.{places}f}",
+           "csv": f"../code/results/{csvfile}", "column": column, "filter": flt,
+           "agg": agg, "places": places,
+           "unit_of_analysis": rows[0].get("unit_of_analysis", "seed-x-instance"), "note": note}
+    if scale:
+        rec["scale"] = scale
+    C.append(rec)
+    return val
+
+
+def claim_inherited():
+    """Cac so headline mang tu ban bi reject sang. Truoc do KHONG con nao duoc neo: cong bao
+    49/49 xanh nhung 49 claim ay deu thuoc phan viet moi, nen con so do chi noi ve mot nua bai."""
+    for who, col in (("gnn", "r_gnn"), ("ue", "r_ue"), ("so", "r_so"),
+                     ("geo", "r_geo"), ("onestep", "r_1step")):
+        for split in ("in-dist", "ood"):
+            claim_raw(f"rel_{who}_{split.replace('-','')}", "p6_baselines.csv", col,
+                      {"split": split}, "mean", 2,
+                      f"thoi gian di chuyen tuong doi so voi blind, {who}, {split}")
+    for prop in ("GCN", "Heat", "QW"):
+        for split, tag in (("in-dist", "indist"), ("ood-largeshell", "ood")):
+            # Bai in dang THAP PHAN cho moi "recovered fraction" (dai luong ten la fraction thi
+            # in 97% la tu mau thuan). Truoc do nua bai in %, nua bai in thap phan.
+            claim_raw(f"abl_{prop.lower()}_{tag}", "p5_ablation.csv", "recovered",
+                      {"prop": prop, "split": split}, "mean", 2,
+                      f"phan gap thu hoi ({prop}, {split})")
+
+
 def add_fair_deltas(name):
     """Ghi hieu theo TUNG DONG vao CSV: GNN(tau tot) - ECMP(eps tot), va gia phai tra cho tau co dinh."""
     p = os.path.join(RES, name)
@@ -158,7 +196,7 @@ def emit_tables_and_figure():
     open(os.path.join(PAPER, "tab-fair.tex"), "w").write(
         "% SINH TU make_claims.py -- DUNG SUA TAY\n"
         "\\begin{table}[t]\n\\centering\\small\n"
-        "\\caption{Learned price field against congestion-blind multipath spreading, both tuned "
+        "\\caption{Learned price field against blind multipath spreading, both tuned "
         "per shell over fixed grids, eight instances each. Recovered fraction of the "
         "blind-to-equilibrium gap. The gap column is the median of the per-instance difference, "
         "not the difference of the medians. $\\tau$ is the decoder temperature and "
@@ -172,17 +210,20 @@ def emit_tables_and_figure():
     open(os.path.join(PAPER, "fig-tau.tex"), "w").write(
         "% SINH TU make_claims.py -- DUNG SUA TAY\n"
         "\\begin{figure}[t]\n\\centering\n"
-        "\\resizebox{0.95\\columnwidth}{!}{%\n\\begin{tikzpicture}\n\\begin{axis}[\n"
+        # prostyle la kieu dung chung cua MOI hinh ket qua trong bai: font nhan, do day net,
+        # mau luoi. Khong duoc bo qua no roi boc \resizebox, vi resizebox doi co chu theo mot
+        # he so rieng nen hinh nay se khong cung co voi cac hinh con lai.
+        "\\begin{tikzpicture}\n\\begin{axis}[prostyle,\n"
         "  xlabel={decoder temperature $\\tau$ (log scale)},\n"
         "  ylabel={recovered fraction},\n"
-        "  xmode=log, log basis x=10, grid=major, width=8cm, height=5.4cm,\n"
-        "  legend pos=outer north east, legend cell align=left, font=\\small,\n"
-        "  ymin=0.4, ymax=1.06, mark size=1.6pt, width=7cm]\n"
+        "  xmode=log, log basis x=10, width=8.4cm, height=5.4cm,\n"
+        "  legend pos=south east,\n"
+        "  ymin=0.4, ymax=1.06, mark size=1.6pt]\n"
         + "\n".join(curves) + "\n"
         "\\draw[dashed,gray] (axis cs:0.2,0.4) -- (axis cs:0.2,1.02);\n"
         "\\node[font=\\scriptsize,gray!60!black,anchor=south west] at (axis cs:0.21,0.42)\n"
         "  {$\\tau{=}0.2$};\n"
-        "\\end{axis}\n\\end{tikzpicture}}\n"
+        "\\end{axis}\n\\end{tikzpicture}\n"
         "\\caption{The decoder temperature is not a constant of the method. On the shell the model "
         "was trained on the curve peaks near $\\tau=0.1$ and falls away; on every larger or "
         "differently inclined shell it rises and then plateaus one to two orders of magnitude "
@@ -294,6 +335,8 @@ def main():
         claim(f"cost_fixed_tau_{shell}", fair, "r2_7_fair_tuned_wide.csv", "cost_of_fixed_tau", f,
               "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay")
 
+    claim_inherited()
+
     os.makedirs(PAPER, exist_ok=True)
     json.dump(C, open(OUT_JSON, "w"), indent=2, ensure_ascii=False)
     g = lambda cid: next(c["paper_value"] for c in C if c["id"] == cid)
@@ -332,7 +375,7 @@ question & quantity & value \\
 & single-shell training, unseen 264 & """ + g("mix_single_w264_i53") + r""" \\
 & mixed training, unseen 264 & """ + g("mix_mix_w264_i53") + r""" \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{Does proactivity reach an axis blind spreading cannot?}}\\
+\multicolumn{3}{@{}l}{\emph{Does proactivity reach an axis blind multipath cannot?}}\\
 & proactive / blind multipath, trained shell & """ + g("proact_w132_drift15") + " / " + g("proact_ecmp_w132_drift15") + r""" \\
 & proactive / blind multipath, unseen shell & """ + g("proact_w264_drift15") + " / " + g("proact_ecmp_w264_drift15") + r""" \\
 \bottomrule
