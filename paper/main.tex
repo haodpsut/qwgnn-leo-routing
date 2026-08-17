@@ -1290,14 +1290,21 @@ The difference is not noise and it is not one effect.
 
 The first is the training distribution. Holding the number of training instances fixed at twelve
 and varying only where they come from, a model shown three small shells instead of one recovers
-$0.976$ on an unseen $264$-satellite shell against $0.898$ for the single-shell model.
+$0.976$ on an unseen $264$-satellite shell against $0.898$ for the single-shell model. The effect
+is not uniform and we report all three test shells rather than the one that flatters it: on a
+$396$-satellite shell diversity helps by a similar margin, $0.881$ to $0.953$, while on the
+$264$-satellite shell at $70^\circ$ inclination it \emph{hurts}, $0.950$ to $0.934$, even though
+the mixed set included a $70^\circ$ shell at training scale. Diversity in size transfers to size;
+diversity in inclination did not transfer to inclination here, and we do not know why.
 
 The second has not been reported before as far as we are aware, and is of comparable size. The
 softmin temperature that decodes prices into split flows is treated in the literature, and in our
 own earlier sections, as a constant. It is not. Sweeping it, the setting that maximises recovery
 moves by one to two orders of magnitude between the smallest shell and the larger ones, and holding
 it at the value chosen on the smallest costs a median of $0.094$, $0.089$ and $0.065$ per instance
-on the three unseen shells. A temperature tuned on a small constellation under-spreads on a large
+on the three unseen shells. On the training shell itself the same fixed value costs $0.007$, which
+is the point: it was chosen there, and a temperature that is nearly free where it was selected is
+not thereby free anywhere else. A temperature tuned on a small constellation under-spreads on a large
 one, and the resulting loss is charged to the price field, which did not cause it. Any evaluation
 of transfer that holds the decoder fixed is measuring the decoder as much as the model.
 

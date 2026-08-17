@@ -64,7 +64,10 @@ def claim(cid, rows, csvfile, column, flt, note, places=3):
         raise SystemExit(f"{cid}: filter {flt} khong khop dong nao")
     val = st.median(float(r[column]) for r in sel)
     C.append({"id": cid, "paper_value": f"{val:.{places}f}",
-              "csv": f"code/results/{csvfile}", "column": column,
+              # Duong dan phai tuong doi voi THU MUC BAI, vi cong chay tu do (G7 cd vao paper/).
+              # Ghi tuong doi voi goc du an thi chay tay o goc thi dung, ma cong thi hong,
+              # va no hong theo kieu te nhat: bao 49/49 SAI thay vi bao khong tim thay file.
+              "csv": f"../code/results/{csvfile}", "column": column,
               "filter": flt, "agg": "median", "places": places,
               "unit_of_analysis": rows[0].get("unit_of_analysis", "?"), "note": note})
     return val

@@ -2,7 +2,7 @@
   {
     "id": "bpr_gain_overload",
     "paper_value": "79.1",
-    "csv": "code/results/r3_2_feasibility.csv",
+    "csv": "../code/results/r3_2_feasibility.csv",
     "column": "gain_bpr_pct",
     "filter": {
       "load_band": "gt4x"
@@ -15,7 +15,7 @@
   {
     "id": "goodput_gain_overload",
     "paper_value": "30.9",
-    "csv": "code/results/r3_2_feasibility.csv",
+    "csv": "../code/results/r3_2_feasibility.csv",
     "column": "gain_goodput_pct",
     "filter": {
       "load_band": "gt4x"
@@ -28,7 +28,7 @@
   {
     "id": "goodput_gain_product",
     "paper_value": "30.9",
-    "csv": "code/results/r3_2_loss_models.csv",
+    "csv": "../code/results/r3_2_loss_models.csv",
     "column": "gain_product_pct",
     "filter": {
       "load_band": "gt4x"
@@ -41,7 +41,7 @@
   {
     "id": "goodput_gain_bottleneck",
     "paper_value": "36.5",
-    "csv": "code/results/r3_2_loss_models.csv",
+    "csv": "../code/results/r3_2_loss_models.csv",
     "column": "gain_bottleneck_pct",
     "filter": {
       "load_band": "gt4x"
@@ -54,7 +54,7 @@
   {
     "id": "goodput_gain_maxmin",
     "paper_value": "37.1",
-    "csv": "code/results/r3_2_loss_models.csv",
+    "csv": "../code/results/r3_2_loss_models.csv",
     "column": "gain_maxmin_pct",
     "filter": {
       "load_band": "gt4x"
@@ -67,7 +67,7 @@
   {
     "id": "recovered_gnn_w132",
     "paper_value": "0.975",
-    "csv": "code/results/r2_7_matched_all.csv",
+    "csv": "../code/results/r2_7_matched_all.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w132"
@@ -80,7 +80,7 @@
   {
     "id": "recovered_best_rival_w132",
     "paper_value": "0.869",
-    "csv": "code/results/r2_7_matched_all.csv",
+    "csv": "../code/results/r2_7_matched_all.csv",
     "column": "recovered_warm_T2",
     "filter": {
       "shell": "w132"
@@ -93,7 +93,7 @@
   {
     "id": "recovered_gnn_w264",
     "paper_value": "0.915",
-    "csv": "code/results/r2_7_matched_all.csv",
+    "csv": "../code/results/r2_7_matched_all.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w264"
@@ -106,7 +106,7 @@
   {
     "id": "recovered_best_rival_w264",
     "paper_value": "0.969",
-    "csv": "code/results/r2_7_matched_all.csv",
+    "csv": "../code/results/r2_7_matched_all.csv",
     "column": "recovered_ecmp20",
     "filter": {
       "shell": "w264"
@@ -119,7 +119,7 @@
   {
     "id": "sweep_gnn_w132_i53",
     "paper_value": "0.975",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w132_i53"
@@ -132,7 +132,7 @@
   {
     "id": "sweep_ecmp_w132_i53",
     "paper_value": "0.660",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_ecmp_0.1",
     "filter": {
       "shell": "w132_i53"
@@ -145,7 +145,7 @@
   {
     "id": "sweep_gnn_w198_i53",
     "paper_value": "0.913",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w198_i53"
@@ -158,7 +158,7 @@
   {
     "id": "sweep_ecmp_w198_i53",
     "paper_value": "0.968",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_ecmp_0.35",
     "filter": {
       "shell": "w198_i53"
@@ -171,7 +171,7 @@
   {
     "id": "sweep_gnn_w264_i53",
     "paper_value": "0.915",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w264_i53"
@@ -184,7 +184,7 @@
   {
     "id": "sweep_ecmp_w264_i53",
     "paper_value": "0.970",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_ecmp_0.35",
     "filter": {
       "shell": "w264_i53"
@@ -197,7 +197,7 @@
   {
     "id": "sweep_gnn_w264_i70",
     "paper_value": "0.941",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w264_i70"
@@ -210,7 +210,7 @@
   {
     "id": "sweep_ecmp_w264_i70",
     "paper_value": "0.944",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_ecmp_0.5",
     "filter": {
       "shell": "w264_i70"
@@ -223,7 +223,7 @@
   {
     "id": "sweep_gnn_w396_i53",
     "paper_value": "0.947",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_gnn",
     "filter": {
       "shell": "w396_i53"
@@ -236,7 +236,7 @@
   {
     "id": "sweep_ecmp_w396_i53",
     "paper_value": "0.960",
-    "csv": "code/results/r2_7_eps_sweep.csv",
+    "csv": "../code/results/r2_7_eps_sweep.csv",
     "column": "recovered_ecmp_0.35",
     "filter": {
       "shell": "w396_i53"
@@ -249,7 +249,7 @@
   {
     "id": "mix_single_w264_i53",
     "paper_value": "0.898",
-    "csv": "code/results/r2_7_train_mix.csv",
+    "csv": "../code/results/r2_7_train_mix.csv",
     "column": "recovered_single",
     "filter": {
       "shell": "w264_i53"
@@ -262,7 +262,7 @@
   {
     "id": "mix_mix_w264_i53",
     "paper_value": "0.976",
-    "csv": "code/results/r2_7_train_mix.csv",
+    "csv": "../code/results/r2_7_train_mix.csv",
     "column": "recovered_mix",
     "filter": {
       "shell": "w264_i53"
@@ -275,7 +275,7 @@
   {
     "id": "mix_single_w264_i70",
     "paper_value": "0.950",
-    "csv": "code/results/r2_7_train_mix.csv",
+    "csv": "../code/results/r2_7_train_mix.csv",
     "column": "recovered_single",
     "filter": {
       "shell": "w264_i70"
@@ -288,7 +288,7 @@
   {
     "id": "mix_mix_w264_i70",
     "paper_value": "0.934",
-    "csv": "code/results/r2_7_train_mix.csv",
+    "csv": "../code/results/r2_7_train_mix.csv",
     "column": "recovered_mix",
     "filter": {
       "shell": "w264_i70"
@@ -301,7 +301,7 @@
   {
     "id": "mix_single_w396_i53",
     "paper_value": "0.881",
-    "csv": "code/results/r2_7_train_mix.csv",
+    "csv": "../code/results/r2_7_train_mix.csv",
     "column": "recovered_single",
     "filter": {
       "shell": "w396_i53"
@@ -314,7 +314,7 @@
   {
     "id": "mix_mix_w396_i53",
     "paper_value": "0.953",
-    "csv": "code/results/r2_7_train_mix.csv",
+    "csv": "../code/results/r2_7_train_mix.csv",
     "column": "recovered_mix",
     "filter": {
       "shell": "w396_i53"
@@ -327,7 +327,7 @@
   {
     "id": "proact_w132_drift15",
     "paper_value": "0.961",
-    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
     "column": "recovered_proact",
     "filter": {
       "shell": "w132",
@@ -341,7 +341,7 @@
   {
     "id": "proact_ecmp_w132_drift15",
     "paper_value": "0.801",
-    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
     "column": "recovered_ecmp0.35",
     "filter": {
       "shell": "w132",
@@ -355,7 +355,7 @@
   {
     "id": "proact_w264_drift15",
     "paper_value": "0.737",
-    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
     "column": "recovered_proact",
     "filter": {
       "shell": "w264",
@@ -369,7 +369,7 @@
   {
     "id": "proact_ecmp_w264_drift15",
     "paper_value": "0.984",
-    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
     "column": "recovered_ecmp0.2",
     "filter": {
       "shell": "w264",
@@ -383,7 +383,7 @@
   {
     "id": "fair_gnn_w132_i53",
     "paper_value": "0.977",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau0.1",
     "filter": {
       "shell": "w132_i53"
@@ -396,7 +396,7 @@
   {
     "id": "fair_ecmp_w132_i53",
     "paper_value": "0.668",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_ecmp_eps0.1",
     "filter": {
       "shell": "w132_i53"
@@ -409,7 +409,7 @@
   {
     "id": "fair_gnn_fixedtau_w132_i53",
     "paper_value": "0.968",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau0.2",
     "filter": {
       "shell": "w132_i53"
@@ -422,7 +422,7 @@
   {
     "id": "fair_gnn_w198_i53",
     "paper_value": "0.984",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau3.5",
     "filter": {
       "shell": "w198_i53"
@@ -435,7 +435,7 @@
   {
     "id": "fair_ecmp_w198_i53",
     "paper_value": "0.976",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_ecmp_eps0.2",
     "filter": {
       "shell": "w198_i53"
@@ -448,7 +448,7 @@
   {
     "id": "fair_gnn_fixedtau_w198_i53",
     "paper_value": "0.892",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau0.2",
     "filter": {
       "shell": "w198_i53"
@@ -461,7 +461,7 @@
   {
     "id": "fair_gnn_w264_i53",
     "paper_value": "0.974",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau8.0",
     "filter": {
       "shell": "w264_i53"
@@ -474,7 +474,7 @@
   {
     "id": "fair_ecmp_w264_i53",
     "paper_value": "0.973",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_ecmp_eps0.2",
     "filter": {
       "shell": "w264_i53"
@@ -487,7 +487,7 @@
   {
     "id": "fair_gnn_fixedtau_w264_i53",
     "paper_value": "0.885",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau0.2",
     "filter": {
       "shell": "w264_i53"
@@ -500,7 +500,7 @@
   {
     "id": "fair_gnn_w264_i70",
     "paper_value": "0.989",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau2.0",
     "filter": {
       "shell": "w264_i70"
@@ -513,7 +513,7 @@
   {
     "id": "fair_ecmp_w264_i70",
     "paper_value": "0.969",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_ecmp_eps0.5",
     "filter": {
       "shell": "w264_i70"
@@ -526,7 +526,7 @@
   {
     "id": "fair_gnn_fixedtau_w264_i70",
     "paper_value": "0.925",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "recovered_gnn_tau0.2",
     "filter": {
       "shell": "w264_i70"
@@ -539,7 +539,7 @@
   {
     "id": "gap_fair_w132_i53",
     "paper_value": "0.317",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "gap_fair",
     "filter": {
       "shell": "w132_i53"
@@ -552,7 +552,7 @@
   {
     "id": "cost_fixed_tau_w132_i53",
     "paper_value": "0.007",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "cost_of_fixed_tau",
     "filter": {
       "shell": "w132_i53"
@@ -565,7 +565,7 @@
   {
     "id": "gap_fair_w198_i53",
     "paper_value": "0.008",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "gap_fair",
     "filter": {
       "shell": "w198_i53"
@@ -578,7 +578,7 @@
   {
     "id": "cost_fixed_tau_w198_i53",
     "paper_value": "0.094",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "cost_of_fixed_tau",
     "filter": {
       "shell": "w198_i53"
@@ -591,7 +591,7 @@
   {
     "id": "gap_fair_w264_i53",
     "paper_value": "0.002",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "gap_fair",
     "filter": {
       "shell": "w264_i53"
@@ -604,7 +604,7 @@
   {
     "id": "cost_fixed_tau_w264_i53",
     "paper_value": "0.089",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "cost_of_fixed_tau",
     "filter": {
       "shell": "w264_i53"
@@ -617,7 +617,7 @@
   {
     "id": "gap_fair_w264_i70",
     "paper_value": "0.020",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "gap_fair",
     "filter": {
       "shell": "w264_i70"
@@ -630,7 +630,7 @@
   {
     "id": "cost_fixed_tau_w264_i70",
     "paper_value": "0.065",
-    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "csv": "../code/results/r2_7_fair_tuned_wide.csv",
     "column": "cost_of_fixed_tau",
     "filter": {
       "shell": "w264_i70"
