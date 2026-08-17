@@ -853,5 +853,234 @@
     "places": 2,
     "unit_of_analysis": "seed-x-instance",
     "note": "phan gap thu hoi (QW, ood-largeshell)"
+  },
+  {
+    "id": "msa_iters_cold_w132",
+    "paper_value": "14",
+    "csv": "../code/results/r4_2_warmstart_iters.csv",
+    "column": "iters_cold",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed-x-lat-cat",
+    "note": "so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong cold, w132"
+  },
+  {
+    "id": "msa_iters_warm_w132",
+    "paper_value": "6",
+    "csv": "../code/results/r4_2_warmstart_iters.csv",
+    "column": "iters_warm",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed-x-lat-cat",
+    "note": "so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong warm, w132"
+  },
+  {
+    "id": "msa_iters_cold_w264",
+    "paper_value": "22",
+    "csv": "../code/results/r4_2_warmstart_iters.csv",
+    "column": "iters_cold",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed-x-lat-cat",
+    "note": "so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong cold, w264"
+  },
+  {
+    "id": "msa_iters_warm_w264",
+    "paper_value": "2",
+    "csv": "../code/results/r4_2_warmstart_iters.csv",
+    "column": "iters_warm",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed-x-lat-cat",
+    "note": "so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong warm, w264"
+  },
+  {
+    "id": "pooled_w264_fixedtau",
+    "paper_value": "0.889",
+    "csv": "../code/results/pooled_w264_fixedtau.csv",
+    "column": "recovered",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed(-x-lat-cat)",
+    "note": "gop MOI run set do cung dai luong nay"
+  },
+  {
+    "id": "pooled_w264_lo",
+    "paper_value": "0.838",
+    "csv": "../code/results/pooled_w264_fixedtau.csv",
+    "column": "recovered",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "min",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed(-x-lat-cat)",
+    "note": "can duoi cua khoang gop"
+  },
+  {
+    "id": "pooled_w264_hi",
+    "paper_value": "0.923",
+    "csv": "../code/results/pooled_w264_fixedtau.csv",
+    "column": "recovered",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "max",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed(-x-lat-cat)",
+    "note": "can tren cua khoang gop"
+  },
+  {
+    "id": "ratio_gnn_ue_indist",
+    "paper_value": "1.02",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "ratio_gnn_over_ue",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "?",
+    "note": "ty le so voi can bang, ratio_gnn_over_ue, in-dist"
+  },
+  {
+    "id": "ratio_blind_ue_indist",
+    "paper_value": "2.51",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "ratio_blind_over_ue",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "?",
+    "note": "ty le so voi can bang, ratio_blind_over_ue, in-dist"
+  },
+  {
+    "id": "ratio_gnn_ue_ood",
+    "paper_value": "2.64",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "ratio_gnn_over_ue",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "?",
+    "note": "ty le so voi can bang, ratio_gnn_over_ue, ood"
+  },
+  {
+    "id": "ratio_blind_ue_ood",
+    "paper_value": "20.42",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "ratio_blind_over_ue",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "?",
+    "note": "ty le so voi can bang, ratio_blind_over_ue, ood"
+  },
+  {
+    "id": "proact_gap_w132_drift00",
+    "paper_value": "0.166",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "gap_proact",
+    "filter": {
+      "shell": "w132",
+      "drift": "0.0"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "hieu ghep cap proactive - blind(eps tot), w132, troi 0.0"
+  },
+  {
+    "id": "proact_gap_w132_drift15",
+    "paper_value": "0.159",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "gap_proact",
+    "filter": {
+      "shell": "w132",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "hieu ghep cap proactive - blind(eps tot), w132, troi 1.5"
+  },
+  {
+    "id": "proact_gap_w264_drift00",
+    "paper_value": "-0.209",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "gap_proact",
+    "filter": {
+      "shell": "w264",
+      "drift": "0.0"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "hieu ghep cap proactive - blind(eps tot), w264, troi 0.0"
+  },
+  {
+    "id": "proact_gap_w264_drift15",
+    "paper_value": "-0.247",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "gap_proact",
+    "filter": {
+      "shell": "w264",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "hieu ghep cap proactive - blind(eps tot), w264, troi 1.5"
+  },
+  {
+    "id": "proact_deficit_w264_drift15",
+    "paper_value": "0.247",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "gap_proact",
+    "filter": {
+      "shell": "w264",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "do lon thieu hut cua proactive so voi blind, w264, troi 1.5",
+    "scale": "-x"
+  },
+  {
+    "id": "proact_deficit_w264_drift00",
+    "paper_value": "0.209",
+    "csv": "../code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "gap_proact",
+    "filter": {
+      "shell": "w264",
+      "drift": "0.0"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "do lon thieu hut cua proactive so voi blind, w264, troi 0.0",
+    "scale": "-x"
   }
 ]

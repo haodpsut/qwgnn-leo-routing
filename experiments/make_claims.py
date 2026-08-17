@@ -81,7 +81,11 @@ def claim_raw(cid, csvfile, column, flt, agg, places, note, scale=None):
     sel = [r for r in rows if all(str(r[k]) == str(v) for k, v in flt.items())]
     if not sel:
         raise SystemExit(f"{cid}: filter {flt} khong khop dong nao trong {csvfile}")
-    val = st.mean(float(r[column]) for r in sel)
+    # LOI CUA CHINH TOI, bat duoc khi them claim so vong: ham nay GHI agg vao ban ghi nhung
+    # luon tinh MEAN. Cong tinh lai theo agg da ghi, nen mot claim khai median se lech ngay.
+    # Cong bat duoc, nhung dung ra ham khong duoc noi doi ngay tu dau.
+    vals = [float(r[column]) for r in sel]
+    val = {"median": st.median, "mean": st.mean, "min": min, "max": max}[agg](vals)
     if scale:
         val = eval(scale, {"__builtins__": {}}, {"x": val})
     rec = {"id": cid, "paper_value": f"{val:.{places}f}",
@@ -92,6 +96,130 @@ def claim_raw(cid, csvfile, column, flt, agg, places, note, scale=None):
         rec["scale"] = scale
     C.append(rec)
     return val
+
+
+def add_proact_deltas():
+    """Ghi hieu GHEP CAP proactive - blind(eps tot nhat) vao CSV, cho TUNG muc troi.
+
+    Bang tom tat truoc do chi in mot hang o muc troi 1.5, va hang do cho thay baseline mu
+    THANG 0.984 so voi 0.737 ma khong cau nao trong bai nhac toi. Doc ca luoi thi thay no
+    khong phai mot hang la: proactive thua o CA NAM muc troi ngoai phan phoi, ke ca muc 0.
+    """
+    name = "r2_7_proactive_vs_ecmp.csv"
+    p = os.path.join(RES, name)
+    rows = list(csv.DictReader(open(p)))
+    if "gap_proact" in rows[0]:
+        return rows
+    epss = [k for k in rows[0] if k.startswith("recovered_ecmp")]
+    for shell in {r["shell"] for r in rows}:
+        sel = [r for r in rows if r["shell"] == shell]
+        be = max(epss, key=lambda e: st.median(float(r[e]) for r in sel))
+        for r in sel:
+            r["best_eps_col"] = be
+            r["gap_proact"] = round(float(r["recovered_proact"]) - float(r[be]), 4)
+    with open(p, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"  + them cot 'gap_proact' vao {name}")
+    return rows
+
+
+def add_ue_ratios():
+    """Ghi TY LE so voi can bang vao CSV: blind/UE va chinh sach/UE.
+
+    Y 2.4 cua phan bien ngoai. 'Recovered fraction' co mau so (blind - UE). Khi blind benh hoan
+    thi mau so khong lo va MOI chinh sach biet trai tai deu duoc diem cao. Cung con so 0.94
+    nghia la 3.4x can bang o vo 132 nhung 47x o vo 1584. Ty le so voi UE la thu do KHONG bi
+    hieu ung do, nen no phai di kem moi phan gap thu hoi.
+    """
+    name = "p6_baselines.csv"
+    p = os.path.join(RES, name)
+    rows = list(csv.DictReader(open(p)))
+    if "ratio_gnn_over_ue" in rows[0]:
+        return rows
+    for r in rows:
+        ue = float(r["r_ue"])
+        r["ratio_gnn_over_ue"] = round(float(r["r_gnn"]) / ue, 3)
+        r["ratio_blind_over_ue"] = round(1.0 / ue, 2)
+    with open(p, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"  + them cot ty le so voi UE vao {name}")
+    return rows
+
+
+def pool_264_fixedtau():
+    """Gop MOI don vi do phan gap thu hoi cua vo 264 o tau=0.2, tu MOI run set, vao mot CSV.
+
+    Phan bien ngoai (y 3.1-3.3) dem duoc BA gia tri cho dai luong nay: 0.915 (r2_7_eps_sweep),
+    0.885 (r2_7_fair_tuned_wide) va 0.93 (Bang VIII). Ca ba deu tra nguoc dung ve CSV cua
+    chung; chung den tu ba lan chay khac nhau. Xuat xu dung KHONG bao dam nhat quan, va dat
+    ba con so canh nhau trong mot bang tu xung la "moi con so headline" thi doc gia khong the
+    biet cai nao la cai nao.
+
+    Cach chua khong phai chon lay mot con, ma la GOP roi bao ca do rong. Sau khi gop:
+    17 don vi, trung vi 0.889, khoang [0.838, 0.923].
+    """
+    out, rows = [], None
+    for f, col, flt in (("r2_7_eps_sweep.csv", "recovered_gnn", lambda r: r["shell"] == "w264_i53"),
+                        ("r2_7_fair_tuned_wide.csv", "recovered_gnn_tau0.2",
+                         lambda r: r["shell"] == "w264_i53"),
+                        ("r1_1_tau_sweep.csv", "recovered_tau0.2", lambda r: "264" in r["shell"])):
+        for r in csv.DictReader(open(os.path.join(RES, f))):
+            if flt(r):
+                out.append({"run_set": f, "shell": "w264_i53", "tau": "0.2",
+                            "seed": r.get("seed", ""), "recovered": float(r[col]),
+                            "unit_of_analysis": "vo-x-seed(-x-lat-cat)"})
+    p = os.path.join(RES, "pooled_w264_fixedtau.csv")
+    with open(p, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(out[0].keys()))
+        w.writeheader()
+        w.writerows(out)
+    print(f"  + gop {len(out)} don vi tu 3 run set -> pooled_w264_fixedtau.csv")
+    return out
+
+
+def claim_r4():
+    """Ket qua vong R4, sinh ra tu ban phan bien ngoai 17/08/2026."""
+    # 2.2: so vong MSA can de hoi tu. Bang II cua bai ghi "T ~ 20" khong kem dieu kien,
+    # va 20 dung la con so KHOI DONG LANH. Khoi dong am la doi thu that trong van hanh.
+    for sh in ("w132", "w264"):
+        for kind in ("cold", "warm"):
+            claim_raw(f"msa_iters_{kind}_{sh}", "r4_2_warmstart_iters.csv", f"iters_{kind}",
+                      {"shell": sh}, "median", 0,
+                      f"so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong {kind}, {sh}")
+
+    # 3.5: proactive so voi blind tot nhat, GHEP CAP theo tung don vi, o TUNG muc troi.
+    pool = pool_264_fixedtau()
+    claim("pooled_w264_fixedtau", pool, "pooled_w264_fixedtau.csv", "recovered",
+          {"shell": "w264_i53"}, "gop MOI run set do cung dai luong nay")
+    claim_raw("pooled_w264_lo", "pooled_w264_fixedtau.csv", "recovered",
+              {"shell": "w264_i53"}, "min", 3, "can duoi cua khoang gop")
+    claim_raw("pooled_w264_hi", "pooled_w264_fixedtau.csv", "recovered",
+              {"shell": "w264_i53"}, "max", 3, "can tren cua khoang gop")
+
+    ub = add_ue_ratios()
+    for split, tag in (("in-dist", "indist"), ("ood", "ood")):
+        for col, nm in (("ratio_gnn_over_ue", "ratio_gnn_ue"),
+                        ("ratio_blind_over_ue", "ratio_blind_ue")):
+            claim(f"{nm}_{tag}", ub, "p6_baselines.csv", col, {"split": split},
+                  f"ty le so voi can bang, {col}, {split}", places=2)
+
+    pr = add_proact_deltas()
+    for sh in ("w132", "w264"):
+        for d in ("0.0", "1.5"):
+            claim(f"proact_gap_{sh}_drift{d.replace('.','')}", pr,
+                  "r2_7_proactive_vs_ecmp.csv", "gap_proact", {"shell": sh, "drift": d},
+                  f"hieu ghep cap proactive - blind(eps tot), {sh}, troi {d}")
+    # Van xuoi viet "trails it by 0.247", tuc DO LON cua mot hieu AM. Neo rieng do lon,
+    # neu khong cong se doi chieu 0.247 voi -0.247 va bao khong khop ma khong ai sai ca.
+    for sh, d in (("w264", "1.5"), ("w264", "0.0")):
+        claim_raw(f"proact_deficit_{sh}_drift{d.replace('.','')}",
+                  "r2_7_proactive_vs_ecmp.csv", "gap_proact", {"shell": sh, "drift": d},
+                  "median", 3, f"do lon thieu hut cua proactive so voi blind, {sh}, troi {d}",
+                  scale="-x")
 
 
 def claim_inherited():
@@ -336,6 +464,7 @@ def main():
               "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay")
 
     claim_inherited()
+    claim_r4()
 
     os.makedirs(PAPER, exist_ok=True)
     json.dump(C, open(OUT_JSON, "w"), indent=2, ensure_ascii=False)
@@ -345,7 +474,10 @@ def main():
 \centering\small
 \caption{Every headline number in this study and where it is derived. Recovered fraction is
 $(\mathrm{blind}-\mathrm{policy})/(\mathrm{blind}-\mathrm{UE})$; the unit of analysis is
-(shell, seed, slot) throughout, and every value is the median over those units.}
+(shell, seed, slot) throughout, and every value is the median over those units. Blocks come from
+different experiments and are labelled with their run set: entries for the same shell and the same
+$\tau$ therefore differ between blocks, and Section~\ref{sec:pooled} pools them rather than
+picking one. Read down a block, not across blocks.}
 \label{tab:summary}
 \begin{tabular}{@{}llr@{}}
 \toprule
@@ -358,13 +490,14 @@ question & quantity & value \\
 & \quad max-min fair sharing & """ + g("goodput_gain_maxmin") + r"""\% \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does it beat a blind baseline at matched budget?}}\\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair})}\\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_7\_fair\_tuned\_wide}}\\
 & learned / blind, training shell & """ + g("fair_gnn_w132_i53") + " / " + g("fair_ecmp_w132_i53") + r""" \\
 & learned / blind, unseen 264 & """ + g("fair_gnn_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$}\\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$; same run set}\\
 & learned / blind, unseen 264 & """ + g("fair_gnn_fixedtau_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape a DIFFERENT run set (\texttt{r2\_7\_eps\_sweep}); see Section~\ref{sec:pooled}}\\
 & GNN / blind multipath, 132 sat (trained) & """ + g("sweep_gnn_w132_i53") + " / " + g("sweep_ecmp_w132_i53") + r""" \\
 & GNN / blind multipath, 198 sat & """ + g("sweep_gnn_w198_i53") + " / " + g("sweep_ecmp_w198_i53") + r""" \\
 & GNN / blind multipath, 264 sat & """ + g("sweep_gnn_w264_i53") + " / " + g("sweep_ecmp_w264_i53") + r""" \\

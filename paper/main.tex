@@ -97,7 +97,9 @@ used: a congestion-blind multipath split costing a single pass, whose path-cost 
 sweep rather than fix. With both sides tuned per shell, the learned price field recovers
 $0.977$ of the blind-to-equilibrium gap on the shell it was trained on against $0.668$ for the
 blind split, a paired median difference of $0.317$. On three shells it never saw, the paired
-differences are $0.008$, $0.002$ and $0.020$: the honest reading is parity, not advantage.
+differences are $0.008$, $0.002$ and $0.020$: the honest reading is parity, not advantage. The same
+boundary appears on a third axis: under drifting hotspots the proactive variant leads the blind
+split by $0.159$ on the training shell and trails it by $0.247$ on an unseen one.
 Two further results qualify the setting rather than the method. First, the headline gap is
 usually reported in Bureau of Public Roads travel time, which charges overload in a currency a
 packet link does not use; under a hard capacity the advantage is an increase in delivered rate
@@ -108,8 +110,10 @@ moves by one to two orders of magnitude with constellation size, and holding it 
 chosen on the smallest shell costs $0.094$, $0.089$ and $0.065$ per instance elsewhere while
 costing $0.007$ where it was chosen. That loss has been charged to the price field, which did
 not cause it, so any evaluation of transfer that holds the decoder fixed measures the decoder as
-much as the model. The inference saving over the iterative solve is real and grows with scale,
-from $21$ to $29\times$. We also report a negative result: a quantum-walk propagation operator
+much as the model. The inference saving over the iterative solve is real, from $21$ to $29\times$, but only
+against a solver started from scratch: warm-started from the previous slot the solver needs $2$ to
+$6$ iterations rather than $20$, which cuts the saving to roughly $2$ to $9\times$ and reverses its
+trend with scale. We also report a negative result: a quantum-walk propagation operator
 that motivated this study offers no benefit once load features are available, and a plain graph
 convolution is preferable. Every number is tied to the file, column and aggregation that produce
 it, and a script recomputes all of them.
@@ -786,11 +790,14 @@ hotspot.
 A forward pass costs $O\!\big(K|E|d+K|V|d^2+|E|d^2\big)$ for hidden width $d$; a decode
 pass costs $O\!\big(|\mathcal{D}|(|E|+|V|\log|V|)\big)$. The full router is one feature
 pass, one forward, and one decode, i.e. two $\AoN$ passes plus the forward. UE by MSA
-\eqref{eq:msa} costs $T$ $\AoN$ passes, $T\!\approx\!20$ in our runs. The predicted
+\eqref{eq:msa} costs $T$ $\AoN$ passes, $T\!\approx\!20$ in our runs when started from
+scratch. The predicted
 speedup is thus $\Theta(T)$ up to the forward, and it \emph{grows} with scale because
 the forward is cheap relative to the repeated routing on a larger graph; the measured
 factor is $21$--$22\times$ at the small shells and rises to $29\times$ at $1584$
-(Section~\ref{sec:c2}). Table~\ref{tab:cost} expresses the per-slot cost of each policy
+(Section~\ref{sec:c2}). Both the prediction and those measurements assume a cold start;
+Section~\ref{sec:warmstart} measures $T$ for a warm-started solver and finds the picture
+changes in size and in direction. Table~\ref{tab:cost} expresses the per-slot cost of each policy
 in $\AoN$-pass units, the quantity that dominates at scale. Blind and geographic are one
 pass; one-step is two; the GNN is two passes plus a forward that is asymptotically
 dominated by a pass; UE and SO are $T$ passes. The GNN thus sits one additive pass above
@@ -811,7 +818,8 @@ blind, geographic & $1$ \\
 blind multipath ($\varepsilon$-tolerant) & $1$ \\
 one-step correction & $2$ \\
 \textbf{GNN (ours)} & $2 + \text{1 forward}$ \\
-UE, SO (MSA) & $T\approx 20$ \\
+UE, SO (MSA), cold start & $T\approx 20$ \\
+UE, SO (MSA), warm start (Section~\ref{sec:warmstart}) & $T\approx 2$--$6$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -832,7 +840,7 @@ each slot.
 
 \section{Evaluation Protocol}\label{sec:pitfalls}
 \subsection{Pitfalls that silently distort results}
-Before reporting results we document three evaluation pitfalls we encountered. Each can
+Before reporting results we document four evaluation pitfalls we encountered. Each can
 silently fabricate or distort a headline number; each has a simple fix. We state them
 because they are easy to commit in this setting and because our corrected estimator is
 what produces the numbers in Section~\ref{sec:results}.
@@ -863,10 +871,29 @@ corrected estimator respects $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$ at every lo
 the price of anarchy growing from $1.00$ to $1.12$ as load rises; the inflated estimator
 violated this ordering, which is how we caught it.
 
-None of these three pitfalls is specific to LEO or to graph networks. P1 arises whenever a
+\textbf{P4: a gap-recovery metric saturates when the reference is pathological.} The recovered
+fraction $(\TTT_{\mathrm{blind}}-\TTT_\pi)/(\TTT_{\mathrm{blind}}-\TTT_{\mathrm{UE}})$ is the
+standard way this literature reports how close a policy comes to the congestion-aware optimum, and
+we use it throughout. Its denominator is the blind reference, and on this topology that reference
+degrades far faster than the equilibrium as the constellation grows: blind routing costs $2.51$
+times the equilibrium on the $132$-shell, $20.4$ times on the $264$-shell, and about $770$ times on
+the $1584$-shell, because a BPR cost with a fourth power is being evaluated at ever more extreme
+overload. A denominator that grows by two orders of magnitude makes the fraction insensitive: on
+the $132$-shell our router sits at $1.02$ times the equilibrium and scores $0.97$; on the
+$264$-shell it sits at $2.64$ times and still scores $0.93$. Four points of recovered fraction
+separate a policy that is two percent from equilibrium from one that is more than one hundred and
+sixty percent from it. Extrapolated to the $1584$-shell, a score of $0.94$ corresponds to roughly
+$47$ times the equilibrium. \emph{Fix:} report $\TTT_\pi/\TTT_{\mathrm{UE}}$ beside every recovered
+fraction. It is the quantity an operator experiences, it does not saturate, and it is what makes
+the three numbers above legible as the very different outcomes they are. We caught this only when
+an external reviewer asked what the metric compressed, after the fraction had already been the
+headline of an earlier version of this paper.
+
+None of these four pitfalls is specific to LEO or to graph networks. P1 arises whenever a
 baseline can decline to act and the metric ignores the declined cases; P2 arises whenever a
 claim about a trend is read off a normalized quantity with a shifting denominator; P3 arises
-whenever an iterative solver is scored on a re-derived rather than its converged state. The
+whenever an iterative solver is scored on a re-derived rather than its converged state; P4 arises
+whenever a method is scored as a fraction of a gap whose far end is free to run away. The
 general lesson is to fix a single survivorship-free, absolute, operating-point-correct figure
 of merit before comparing methods, and to keep a cheap internal consistency check (here, the
 price-of-anarchy ordering) that a corrupted estimator will fail. We surface these as a
@@ -969,14 +996,13 @@ the true system optimum, and matching UE is matching the optimum for practical p
 
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
-\caption{Price of anarchy $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ on the $132$-shell;
-$\ge 1$ at every load confirms the corrected estimator (Section~\ref{sec:pitfalls}).}
+\caption{Price of anarchy $\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ on the $132$-shell, mean $\pm$ std over $n{=}3$ seeds; $\ge 1$ at every load confirms the corrected estimator (Section~\ref{sec:pitfalls}). The spread is small but not zero: at two decimals it printed as $\pm.00$, which reads as exact.}
 \label{tab:poa}
 \begin{tabular}{lccc}
 \toprule
 demands & $300$ & $600$ & $1000$ \\
 \midrule
-$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.00{\scriptstyle\pm.00}$ & $1.03{\scriptstyle\pm.00}$ & $1.12{\scriptstyle\pm.01}$ \\
+$\TTT(\mathrm{UE})/\TTT(\mathrm{SO})$ & $1.003{\scriptstyle\pm.001}$ & $1.030{\scriptstyle\pm.004}$ & $1.117{\scriptstyle\pm.008}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1011,7 +1037,7 @@ $0.42$ and $0.12$ for our edge-price router, because greedy descent on a regress
 stalls in false local minima: its greedy delivery rate is only $51\%$ in distribution and
 $21\%$ zero shot (the rest fall back to shortest path), and the potential transfers poorly
 to the larger shell. In cost, predicting a per-destination potential needs one forward pass
-\emph{per destination} ($94$ to $190$ forwards per slot in our instances), whereas the
+\emph{per distinct destination}, not per demand pair: our gravity demand sets concentrate on $91$ to $196$ distinct destinations per slot across the shells reported here, whereas the
 edge-price field is predicted once and routes the whole demand matrix in a single forward.
 Predicting the price and decoding with a classical router is thus both more accurate and far
 cheaper than learning the routing end to end.
@@ -1042,8 +1068,8 @@ than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 
 \begin{table}[t]
 \centering
-\caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean over
-instances and seeds. SO/UE are references; the GNN is deployable, and so is the blind multipath baseline of Table~\ref{tab:fair}, which this table predates and does not include.}
+\caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean $\pm$ std over
+$n{=}9$ instance-seed units per split. SO/UE are references; the GNN is deployable, and so is the blind multipath baseline of Table~\ref{tab:fair}, which this table predates and does not include.}
 \label{tab:baselines}
 \setlength{\tabcolsep}{3pt}\footnotesize
 \begin{tabular}{lccccc}
@@ -1074,8 +1100,8 @@ closes.
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Decoder comparison: TTT relative to blind and recovered fraction of the
-blind-to-UE gain. The multipath decode \eqref{eq:split} closes most of the single-path
-decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:scale} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
+blind-to-UE gain, mean $\pm$ std over $n{=}9$ units per split. The multipath decode \eqref{eq:split} closes most of the single-path
+decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
 \label{tab:decode}
 \begin{tabular}{lccc}
 \toprule
@@ -1124,9 +1150,10 @@ $264$- and $1584$-satellite shells. Table~\ref{tab:scale} reports the recovered 
 of the blind-to-UE gain and the inference speedup over the UE solve. The GNN recovers
 $0.93$ at $264$ and $0.94{\scriptstyle\pm.02}$ at $1584$ (a $12\times$ size jump), remaining the best
 deployable policy throughout, while the speedup over MSA is $21$--$22\times$ at the small
-shells and \emph{rises} to $29\times$ at $1584$ (Fig.~\ref{fig:speedup}). The amortization
-therefore pays off more, not less, at the mega-constellation scale that matters
-operationally. The transfer
+shells and \emph{rises} to $29\times$ at $1584$ (Fig.~\ref{fig:speedup}). Against a
+cold-started solver the amortization therefore appears to pay off more, not less, at the
+mega-constellation scale that matters operationally. Section~\ref{sec:warmstart} shows that
+this reading does not survive the comparator an operator would actually run. The transfer
 is genuinely zero shot: the $1584$-shell is never seen during training, has a different
 number of planes and satellites per plane, and a larger diameter, yet the same weights
 produce a near-equilibrium price field on it. This works because the learned map is from
@@ -1145,7 +1172,7 @@ gain is the meaningful, scale-free figure.
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:decode} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
 \label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
@@ -1179,6 +1206,36 @@ $1584$ satellites.}
 \label{fig:speedup}
 \end{figure}
 
+\subsection{What the speedup is measured against}\label{sec:warmstart}
+The factors above compare a one-shot forward pass with an MSA solve started from scratch. That is
+the right comparison only if an operator would in fact start from scratch each slot, and in this
+setting they would not. The constellation is deterministic and known in advance, consecutive slots
+differ by a small rotation, and satellite identity is stable, so last slot's equilibrium load
+indexes the same links and is a natural starting point. A warm-started solver is therefore the
+comparator the deployment actually offers, and it is a harder one.
+
+We measure it directly. For each slot we take a long MSA run as the reference and count the
+iterations a solver needs to come within $0.5\%$ of it, once from the all-or-nothing pass and once
+from the previous slot's converged load, resuming the step sequence at the iteration the cache was
+left at rather than restarting it. Cold, the median is $14$ iterations on the $132$-shell and $22$
+on the $264$-shell, which is where the $T\approx 20$ of Table~\ref{tab:cost} comes from. Warm, the
+medians are $6$ and $2$. The warm start is cheaper on every one of the $18$ units measured.
+
+Two things follow, and the second is the more uncomfortable. First, the speedup shrinks by the
+ratio of those counts: the $22\times$ we report on the $132$-shell becomes roughly $9\times$
+against a warm-started solver, and the $21\times$ on the $264$-shell becomes roughly $2\times$.
+The saving is real but it is not the order of magnitude the cold-start comparison suggests.
+Second, the warm start needs \emph{fewer} iterations on the larger shell, not more, so the learned
+router's margin over it narrows as the constellation grows. That is the opposite direction from the
+one we claimed: measured against a cold start the amortization looks like it pays off more at
+scale, and measured against the comparator an operator would actually run, it pays off less. With
+three seeds and three slots per shell we can state the direction, which is consistent across all
+$18$ units, but not the magnitude.
+
+We leave the cold-start figures in Table~\ref{tab:scale} because they are what the literature
+reports and they make our numbers comparable to it, but the operationally honest reading of the
+cost contribution is the warm-start one, and it is weaker.
+
 \subsection{Proactive routing under drift (C4)}
 Figure~\ref{fig:proactive} sweeps the per-slot hotspot drift. At zero drift the reactive
 and proactive routers are identical, as they must be. As the hotspot moves, the reactive
@@ -1194,6 +1251,23 @@ ignoring congestion altogether, a concrete criterion for when proactivity stops 
 optional. Because the GNN's input is just a demand-derived feature, switching from
 reactive to proactive requires no change to the model, only feeding it the forecast
 instead of the last slot.
+
+That is the whole of the story on the shell the model was trained on. Off it, the story is the
+one the previous subsections have already told twice. Placing the same blind multipath baseline
+against the proactive router, with its tolerance tuned per shell and the comparison paired per
+unit, the proactive router is ahead by $0.166$ at zero drift and $0.159$ at the largest drift on
+the training shell, winning every unit; on the unseen $264$-satellite shell it is \emph{behind} by
+$0.209$ and $0.247$ at those same two settings, and it loses every unit at every drift level we
+swept. The zero-drift column is the informative one: the deficit is already there when there is
+nothing to anticipate, so it is not a failure of the forecast but the same effect seen in
+Section~\ref{sec:vs-blind}, namely that blind spreading has more room to work on a larger grid.
+Proactivity buys what we claimed it buys, and it buys it only where the price field was learned.
+
+This is the third axis to give the same answer. The steady-load comparison, the transfer
+comparison and the drift comparison were designed to probe different things, and all three place
+the boundary in the same place: decisive on the training shell, level or behind a one-pass blind
+policy off it. We take the consistency as the finding rather than as three separate
+disappointments.
 
 \begin{figure}[t]
 \centering
@@ -1312,6 +1386,38 @@ not thereby free anywhere else. A temperature tuned on a small constellation und
 one, and the resulting loss is charged to the price field, which did not cause it. Any evaluation
 of transfer that holds the decoder fixed is measuring the decoder as much as the model.
 
+\subsection{Reconciling the numbers that appear more than once}\label{sec:pooled}
+Several quantities in this paper were measured more than once, by experiments written at different
+times for different questions, and the resulting entries do not agree exactly. The clearest case is
+the recovered fraction of the $264$-shell at the fixed decoder temperature, which appears three
+times: the transfer sweep gives $0.915$, the tuned comparison gives $0.885$, and the scaling table
+gives $0.93$. Each traces correctly to the CSV that produced it, and the pipeline that checks every
+number against its source passed all three, because provenance and consistency are different
+properties and only the first was being checked.
+
+Pooling all $17$ units we have measured for that quantity gives a median of $0.889$ over a range of
+$0.838$ to $0.923$. That range, not any single entry, is the honest summary. We report it here
+rather than quietly selecting one value, and we have added a check that flags any quantity carrying
+two entries whose difference is not accounted for by a declared run set.
+
+The spread matters for one claim and not for the others. It does not affect the decoder-temperature
+result of Section~\ref{sec:two-causes}, because that comparison is paired within a single instance:
+both arms use the same seed, the same slot and the same demand matrix, so between-run variation
+cannot enter it. Measured that way the cost of holding $\tau$ at $0.2$ on this shell is $0.089$ and
+every one of the eight units is on the same side, against a between-run standard deviation of
+$0.020$. It does affect any reading that compares an entry in one table with an entry in another,
+which is why we now give the range wherever a quantity appears twice.
+
+A second, smaller inconsistency belongs here. Table~\ref{tab:summary} reports medians over units,
+because the comparisons it summarises are paired and a median of paired differences is the robust
+statistic for them. Tables~\ref{tab:baselines},~\ref{tab:decode},~\ref{tab:scale}
+and~\ref{tab:ablation} report means with standard deviations, because they describe the spread
+within a cell rather than compare two policies. Both choices are defensible on their own and we
+have kept them, but the earlier version declared ``median throughout'' in one place while printing
+means in four others, which invited exactly the cross-table comparison that the two estimators do
+not support. Each table now states which estimator it uses, and where a quantity appears under both
+we give the pooled range above rather than inviting the reader to subtract one from the other.
+
 \subsection{Operating regime}\label{sec:regime}
 The value of the method is regime dependent, and Table~\ref{tab:headroom} makes the boundary
 explicit. Below an average utilization of about one, blind shortest path is within a few
@@ -1379,7 +1485,7 @@ quantum-walk operator does not help and is the most variable.}
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Operator ablation: recovered fraction of the blind-to-UE gain (mean $\pm$ std,
 $n{=}12$). The plain GCN is best out of distribution; the global quantum-walk operator
-does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:scale} and~\ref{tab:decode}; the spread is run-to-run variation, not disagreement.}
+does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
 \label{tab:ablation}
 \begin{tabular}{lcc}
 \toprule
@@ -1393,7 +1499,7 @@ QW (global quantum walk) & $0.94{\scriptstyle\pm.04}$ & $0.90{\scriptstyle\pm.06
 \end{table}
 
 \section{Discussion, Threats, and Limitations}\label{sec:disc}
-\subsection{Deployment considerations}
+\subsection{Deployment considerations}\label{sec:deploy}
 In an operational control loop the router runs once per slot on the known next-slot
 topology. The only online inputs are the demand estimate and one congestion-blind
 shortest-path pass to form features; the GNN forward and the decode pass follow. Because
@@ -1455,7 +1561,7 @@ field richer and more valuable to learn. Training across a spectrum of shell siz
 than a single small shell, should improve the zero-shot transfer and reduce its variance. On
 the proactive side, replacing the known-drift forecast with a learned demand predictor would
 let the method handle hotspots whose motion is only statistically predictable, with the
-reactive and blind fallbacks of Section~\ref{sec:rationale} as a safety net when the forecast
+reactive and blind fallbacks of Section~\ref{sec:deploy} as a safety net when the forecast
 is poor. Finally, light online fine-tuning of the released weights on a target constellation
 could recover the few points of optimality lost in zero-shot transfer while preserving the
 one-shot inference cost.
@@ -1470,7 +1576,7 @@ features. It approaches the equilibrium in distribution, transfers zero shot to 
 $12\times$ larger shell as the best deployable policy, runs up to $29\times$ faster than
 the iterative solve with the saving growing at scale, and, fed predicted demand,
 sustains low travel time under drifting hotspots where reactive control fails. We
-documented three evaluation pitfalls and a protocol to avoid them, and we reported why
+documented four evaluation pitfalls and a protocol to avoid them, and we reported why
 an initially appealing quantum-walk operator did not earn its place. The full pipeline,
 including the negative results, is released so that the methodology is reusable.
 

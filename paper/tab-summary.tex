@@ -3,7 +3,10 @@
 \centering\scriptsize\setlength{\tabcolsep}{3.4pt}
 \caption{Every headline number in this study and where it is derived. Recovered fraction is
 $(\mathrm{blind}-\mathrm{policy})/(\mathrm{blind}-\mathrm{UE})$; the unit of analysis is
-(shell, seed, slot) throughout, and every value is the median over those units.}
+(shell, seed, slot) throughout, and every value is the median over those units. Blocks come from
+different experiments and are labelled with their run set: entries for the same shell and the same
+$\tau$ therefore differ between blocks, and Section~\ref{sec:pooled} pools them rather than
+picking one. Read down a block, not across blocks.}
 \label{tab:summary}
 \begin{tabular}{@{}llr@{}}
 \toprule
@@ -16,13 +19,14 @@ question & quantity & value \\
 & \quad max-min fair sharing & 37.1\% \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does it beat a blind baseline at matched budget?}}\\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair})}\\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_7\_fair\_tuned\_wide}}\\
 & learned / blind, training shell & 0.977 / 0.668 \\
 & learned / blind, unseen 264 & 0.974 / 0.973 \\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$}\\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$; same run set}\\
 & learned / blind, unseen 264 & 0.885 / 0.973 \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape a DIFFERENT run set (\texttt{r2\_7\_eps\_sweep}); see Section~\ref{sec:pooled}}\\
 & GNN / blind multipath, 132 sat (trained) & 0.975 / 0.660 \\
 & GNN / blind multipath, 198 sat & 0.913 / 0.968 \\
 & GNN / blind multipath, 264 sat & 0.915 / 0.970 \\
