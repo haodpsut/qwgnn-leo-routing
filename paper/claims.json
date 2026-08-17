@@ -379,5 +379,265 @@
     "places": 3,
     "unit_of_analysis": "vo-x-seed-x-troi",
     "note": "trai tai mu tot nhat cung canh: ecmp0.2"
+  },
+  {
+    "id": "fair_gnn_w132_i53",
+    "paper_value": "0.977",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau0.1",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o nhiet do tot nhat cho vo nay: tau=0.1"
+  },
+  {
+    "id": "fair_ecmp_w132_i53",
+    "paper_value": "0.668",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_ecmp_eps0.1",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "eps-ECMP o dung sai tot nhat cho vo nay: eps=0.1"
+  },
+  {
+    "id": "fair_gnn_fixedtau_w132_i53",
+    "paper_value": "0.968",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau0.2",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o tau=0.2 co dinh trong ban thao"
+  },
+  {
+    "id": "fair_gnn_w198_i53",
+    "paper_value": "0.984",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau3.5",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o nhiet do tot nhat cho vo nay: tau=3.5"
+  },
+  {
+    "id": "fair_ecmp_w198_i53",
+    "paper_value": "0.976",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_ecmp_eps0.2",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "eps-ECMP o dung sai tot nhat cho vo nay: eps=0.2"
+  },
+  {
+    "id": "fair_gnn_fixedtau_w198_i53",
+    "paper_value": "0.892",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau0.2",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o tau=0.2 co dinh trong ban thao"
+  },
+  {
+    "id": "fair_gnn_w264_i53",
+    "paper_value": "0.974",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau8.0",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o nhiet do tot nhat cho vo nay: tau=8.0"
+  },
+  {
+    "id": "fair_ecmp_w264_i53",
+    "paper_value": "0.973",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_ecmp_eps0.2",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "eps-ECMP o dung sai tot nhat cho vo nay: eps=0.2"
+  },
+  {
+    "id": "fair_gnn_fixedtau_w264_i53",
+    "paper_value": "0.885",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau0.2",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o tau=0.2 co dinh trong ban thao"
+  },
+  {
+    "id": "fair_gnn_w264_i70",
+    "paper_value": "0.989",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau2.0",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o nhiet do tot nhat cho vo nay: tau=2.0"
+  },
+  {
+    "id": "fair_ecmp_w264_i70",
+    "paper_value": "0.969",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_ecmp_eps0.5",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "eps-ECMP o dung sai tot nhat cho vo nay: eps=0.5"
+  },
+  {
+    "id": "fair_gnn_fixedtau_w264_i70",
+    "paper_value": "0.925",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "recovered_gnn_tau0.2",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o tau=0.2 co dinh trong ban thao"
+  },
+  {
+    "id": "gap_fair_w132_i53",
+    "paper_value": "0.317",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "gap_fair",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hieu theo tung don vi: GNN(tau tot) - ECMP(eps tot)"
+  },
+  {
+    "id": "cost_fixed_tau_w132_i53",
+    "paper_value": "0.007",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "cost_of_fixed_tau",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay"
+  },
+  {
+    "id": "gap_fair_w198_i53",
+    "paper_value": "0.008",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "gap_fair",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hieu theo tung don vi: GNN(tau tot) - ECMP(eps tot)"
+  },
+  {
+    "id": "cost_fixed_tau_w198_i53",
+    "paper_value": "0.094",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "cost_of_fixed_tau",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay"
+  },
+  {
+    "id": "gap_fair_w264_i53",
+    "paper_value": "0.002",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "gap_fair",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hieu theo tung don vi: GNN(tau tot) - ECMP(eps tot)"
+  },
+  {
+    "id": "cost_fixed_tau_w264_i53",
+    "paper_value": "0.089",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "cost_of_fixed_tau",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay"
+  },
+  {
+    "id": "gap_fair_w264_i70",
+    "paper_value": "0.020",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "gap_fair",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hieu theo tung don vi: GNN(tau tot) - ECMP(eps tot)"
+  },
+  {
+    "id": "cost_fixed_tau_w264_i70",
+    "paper_value": "0.065",
+    "csv": "code/results/r2_7_fair_tuned_wide.csv",
+    "column": "cost_of_fixed_tau",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay"
   }
 ]

@@ -70,6 +70,33 @@ def claim(cid, rows, csvfile, column, flt, note, places=3):
     return val
 
 
+def add_fair_deltas(name):
+    """Ghi hieu theo TUNG DONG vao CSV: GNN(tau tot) - ECMP(eps tot), va gia phai tra cho tau co dinh."""
+    p = os.path.join(RES, name)
+    rows = list(csv.DictReader(open(p)))
+    if "gap_fair" in rows[0]:
+        return rows
+    taus = sorted({k.split("tau")[1] for k in rows[0] if "recovered_gnn_tau" in k}, key=float)
+    epss = sorted({k.split("eps")[1] for k in rows[0] if "recovered_ecmp_eps" in k}, key=float)
+    for shell in {r["shell"] for r in rows}:
+        sel = [r for r in rows if r["shell"] == shell]
+        bt = max(taus, key=lambda t: st.median(float(r[f"recovered_gnn_tau{t}"]) for r in sel))
+        be = max(epss, key=lambda e: st.median(float(r[f"recovered_ecmp_eps{e}"]) for r in sel))
+        for r in sel:
+            r["best_tau"] = bt
+            r["best_eps"] = be
+            r["gap_fair"] = round(float(r[f"recovered_gnn_tau{bt}"])
+                                  - float(r[f"recovered_ecmp_eps{be}"]), 4)
+            r["cost_of_fixed_tau"] = round(float(r[f"recovered_gnn_tau{bt}"])
+                                           - float(r["recovered_gnn_tau0.2"]), 4)
+    with open(p, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"  + them cot dan xuat vao {name}")
+    return rows
+
+
 def main():
     BANDS = [("le1x", 0, 1.0), ("1to2x", 1.0, 2.0), ("2to4x", 2.0, 4.0), ("gt4x", 4.0, 1e9)]
     feas = add_band("r3_2_feasibility.csv", "blind_maxutil", BANDS)
@@ -121,6 +148,35 @@ def main():
             if r["shell"] == shell and r["drift"] == "1.5"))
         claim(f"proact_ecmp_{shell}_drift15", pro, "r2_7_proactive_vs_ecmp.csv",
               f"recovered_{be}", f, f"trai tai mu tot nhat cung canh: {be}")
+
+    # --- so cong bang: CA HAI ben chinh theo tung vo, 8 don vi/vo ---
+    # HIEU va KHOANG la dai luong DAN XUAT. verify_numbers tinh tren MOT cot voi mot phep
+    # tong hop, nen no khong dien ta duoc "trung vi(A) tru trung vi(B)". Thay vi de mach truy
+    # so dut o day, ghi hieu tung dong nguoc vao CSV: no thanh mot cot binh thuong, cong tu
+    # tinh lai duoc, va nguoi mo CSV thay ngay hieu duoc lay theo tung don vi chu khong phai
+    # tru hai con so da tong hop.
+    fair = add_fair_deltas("r2_7_fair_tuned_wide.csv")
+    TAUS = sorted({k.split("tau")[1] for k in fair[0] if "recovered_gnn_tau" in k},
+                  key=float)
+    EPSS = sorted({k.split("eps")[1] for k in fair[0] if "recovered_ecmp_eps" in k}, key=float)
+    for shell in sorted({r["shell"] for r in fair}):
+        f = {"shell": shell}
+        sel = [r for r in fair if r["shell"] == shell]
+        bt = max(TAUS, key=lambda t: st.median(float(r[f"recovered_gnn_tau{t}"]) for r in sel))
+        be = max(EPSS, key=lambda e: st.median(float(r[f"recovered_ecmp_eps{e}"]) for r in sel))
+        claim(f"fair_gnn_{shell}", fair, "r2_7_fair_tuned_wide.csv", f"recovered_gnn_tau{bt}", f,
+              f"GNN o nhiet do tot nhat cho vo nay: tau={bt}")
+        claim(f"fair_ecmp_{shell}", fair, "r2_7_fair_tuned_wide.csv", f"recovered_ecmp_eps{be}", f,
+              f"eps-ECMP o dung sai tot nhat cho vo nay: eps={be}")
+        claim(f"fair_gnn_fixedtau_{shell}", fair, "r2_7_fair_tuned_wide.csv",
+              "recovered_gnn_tau0.2", f, "GNN o tau=0.2 co dinh trong ban thao")
+
+    for shell in sorted({r["shell"] for r in fair}):
+        f = {"shell": shell}
+        claim(f"gap_fair_{shell}", fair, "r2_7_fair_tuned_wide.csv", "gap_fair", f,
+              "hieu theo tung don vi: GNN(tau tot) - ECMP(eps tot)")
+        claim(f"cost_fixed_tau_{shell}", fair, "r2_7_fair_tuned_wide.csv", "cost_of_fixed_tau", f,
+              "gia phai tra vi giu tau=0.2 thay vi tau tot nhat cho vo nay")
 
     os.makedirs(PAPER, exist_ok=True)
     json.dump(C, open(OUT_JSON, "w"), indent=2, ensure_ascii=False)

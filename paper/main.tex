@@ -199,23 +199,32 @@ degenerates to single-path routing. Only a tolerance-based variant is meaningful
 tolerance is a knob whose setting changes conclusions, so we report the sweep rather than a
 value.
 
-\item \textbf{A measured boundary, consistent across three axes.} On the shell it was trained
-on, the learned field beats every cheap baseline at steady load ($0.975$ against $0.869$ of the
-blind-to-equilibrium gap), under transfer, and under drifting hotspots ($0.961$ against
-$0.801$). On shells it was not trained on, one-pass blind spreading matches or beats it on all
-three ($0.915$ against $0.969$ at steady load; $0.737$ against $0.984$ under the widest drift).
+\item \textbf{A measured boundary: decisive in distribution, level outside it.} With both sides
+tuned per shell over fixed grids, the learned field recovers $0.977$ of the blind-to-equilibrium
+gap on the shell it was trained on against $0.668$ for blind spreading. Paired per unit,
+the median difference is $0.317$. On
+three shells it never saw, the same comparison reads $0.984$ against $0.976$, $0.974$ against
+$0.973$, and $0.989$ against $0.969$. It wins by unit count on every shell, but off distribution
+the margins are small enough that eight units per shell cannot separate them from a tie, and the
+honest statement is parity rather than advantage.
 
-\item \textbf{The mechanism, not only the phenomenon.} The crossing is not noise but two
-opposing trends. Blind spreading recovers $0.660$ of the gap on the smallest shell and $0.970$
-on a shell twice its size, because a larger grid offers more near-shortest detours, while the
-learned map degrades with distance from its training distribution. The baseline strengthens
-exactly where the model is asked to generalize, and the curves cross between $132$ and $198$
-satellites.
+\item \textbf{Two separate causes of the off-distribution collapse, of comparable size.} Reported
+at the manuscript's fixed decoder setting, transfer looks far worse than the above: $0.892$,
+$0.885$ and $0.925$. Two independent effects account for the difference. First, training on a
+single shell: holding the instance budget fixed and varying only provenance raises transfer to an
+unseen shell from $0.898$ to $0.976$. Second, and previously unremarked, the decoder's softmin
+temperature is not a constant of the method. Sweeping it, the setting that maximises recovery moves by one to two orders of magnitude
+between the $132$-satellite shell and the larger ones, and holding it at the fixed value costs a median
+of $0.065$ to $0.094$ per unit on every unseen shell. A fixed temperature quietly converts a decoder mismatch into what
+reads as a failure to generalize.
 
-\item \textbf{What training diversity buys, at a matched budget.} Holding the number of training
-instances fixed and varying only their provenance raises transfer to an unseen shell from
-$0.898$ to $0.976$. That is a large effect and it brings the learned field to parity with blind
-spreading rather than past it.
+\item \textbf{Why blind spreading is a serious baseline here, and where it stops being one.}
+Tolerance-based spreading recovers $0.668$ of the gap on the smallest shell and $0.976$ on a
+shell half again as large, because a larger grid offers more near-shortest detours to spread
+across. Its strength therefore grows in exactly the regime where a learned map is asked to
+generalize, which is why it must be in the comparison. What it cannot do is anticipate: it
+consults path geometry and never load, so it is indifferent to where a hotspot is or where it is
+going.
 
 \item \textbf{A caution about borrowed congestion costs.} The Bureau of Public Roads function is
 a road volume-delay curve in which offered load above capacity is a real state. A packet link
@@ -227,6 +236,14 @@ delivered rate, and the smaller figure is stable across three loss models
 \item \textbf{Honest negative results.} The study began as a quantum-walk GNN; we report the
 kill-gate record and why a plain graph convolution is the right operator here.
 \end{itemize}
+
+\textbf{Organization.} Section~\ref{sec:model} states the system model and
+decomposes the amortization problem. Section~\ref{sec:method} gives the method: the observable
+features, the edge-price network, the decoders, and the travel-time bound.
+Section~\ref{sec:pitfalls} is the evaluation protocol, including the baselines, the pitfalls we
+document, and the setup. Section~\ref{sec:results} reports the measurements, opening with a table
+of every headline number and its source. Section~\ref{sec:disc} discusses deployment, threats to
+validity, what the measurements do and do not license, and future work.
 
 \section{Related Work}
 \textbf{LEO routing and topology.} The deterministic, time-varying structure of LEO
@@ -440,6 +457,24 @@ forward pass and whose parameters $\theta$ are independent of $S$:
 \subsection{Decomposition into sub-problems}\label{sec:decomp}
 We decompose \eqref{eq:amort} into four sub-problems (Fig.~\ref{fig:decomp}), each
 mapped to a claim.
+
+The decomposition is not a matter of taste. Problem~\eqref{eq:amort} asks for a map from observable
+state to a routing that approaches the equilibrium at a fixed inference budget, and that map is a
+composition of steps which fail for unrelated reasons and are therefore measurable separately. A
+price field can be predicted accurately and still be decoded into a poor routing, because the
+equilibrium splits flow while a single shortest path cannot; the decode can be faithful and the
+prediction still collapse on a constellation the model never saw; and all three can hold at a fixed
+demand pattern and give way once the pattern moves. Each of these is a distinct failure surface, so
+each earns its own sub-problem and its own measurement rather than being averaged into one score.
+
+Consistency across the four is enforced structurally rather than assumed. They compose in one
+direction only: SP2 consumes the field SP1 produces, SP3 asks whether SP1 and SP2 survive a change
+of constellation, and SP4 asks whether they survive a change of demand. Every sub-problem is scored
+on the same end-to-end quantity, the realized travel time of the routing that is actually emitted,
+never on an intermediate such as price-prediction error, so a gain in one stage cannot be claimed
+unless it survives the stages after it. Section~\ref{sec:pitfalls} adds the arithmetic check that
+the composed pipeline never reports a travel time below the system optimum, which is the bound no
+routing can cross.
 
 \noindent\textbf{(SP1) Price prediction.} Approximate the UE congestion price field
 \begin{equation}
@@ -1017,7 +1052,7 @@ closes.
 \centering
 \caption{Decoder comparison: TTT relative to blind and recovered fraction of the
 blind-to-UE gain. The multipath decode \eqref{eq:split} closes most of the single-path
-decoding gap.}
+decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:scale} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
 \label{tab:decode}
 \begin{tabular}{lccc}
 \toprule
@@ -1088,7 +1123,7 @@ gain is the meaningful, scale-free figure.
 \begin{table}[t]
 \centering
 \caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve.}
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:decode} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
 \label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
@@ -1160,8 +1195,16 @@ instead of the last slot.
 \addplot[cGreen, densely dashed, tmark] coordinates {(0,0.44)(0.3,0.44)(0.6,0.44)(1.0,0.39)(1.5,0.35)};
 \addlegendentry{UE (clairvoyant)}
 \addlegendimage{cGray, dotted, line width=1.4pt}\addlegendentry{blind}
-% crossover where reactive passes blind
+% Crossover where reactive passes blind. R1.3 asked that this value be readable FROM the
+% figure rather than only from the prose: the dashed line was unannotated, so a reader could
+% not verify "about one radian" without taking our word for it. It is now labelled, the blind
+% reference is named on the plot, and the crossing point is marked.
 \draw[cRed!70, dashed] (axis cs:0.97,0.3) -- (axis cs:0.97,1.02);
+\addplot[cRed, mark=*, mark size=2.2pt, only marks, forget plot] coordinates {(0.97,1.00)};
+\node[font=\scriptsize, cRed!80!black, anchor=west] at (axis cs:1.00,0.86)
+  {crossover $\approx 0.97$\,rad};
+\node[font=\scriptsize, cGray!60!black, anchor=south west] at (axis cs:0.02,1.02)
+  {blind reference $=1.0$};
 \node[font=\scriptsize, cRed!80!black, anchor=west, align=left] at (axis cs:0.62,1.45)
   {reactive worse\\ than blind};
 \node[font=\scriptsize, cNavy, anchor=north] at (axis cs:1.18,0.62) {proactive gain};
@@ -1242,7 +1285,7 @@ quantum-walk operator does not help and is the most variable.}
 \centering
 \caption{Operator ablation: recovered fraction of the blind-to-UE gain (mean $\pm$ std,
 $n{=}12$). The plain GCN is best out of distribution; the global quantum-walk operator
-does not help and is the most variable.}
+does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:scale} and~\ref{tab:decode}; the spread is run-to-run variation, not disagreement.}
 \label{tab:ablation}
 \begin{tabular}{lcc}
 \toprule
@@ -1255,7 +1298,7 @@ QW (global quantum walk) & $94\pm4$ & $90\pm6$ \\
 \end{tabular}
 \end{table}
 
-\section{Discussion, Threats, and Limitations}
+\section{Discussion, Threats, and Limitations}\label{sec:disc}
 \subsection{Deployment considerations}
 In an operational control loop the router runs once per slot on the known next-slot
 topology. The only online inputs are the demand estimate and one congestion-blind
