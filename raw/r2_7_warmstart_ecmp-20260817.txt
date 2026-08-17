@@ -1,0 +1,38 @@
+R2.7b -- WARM-STARTED MSA va ECMP, hai comparator con thieu
+
+recovered = (blind - policy) / (blind - ue) tren khe dang cham
+
+shell  sd khe |  coldT2  warmT1  warmT2 ecmp.05 ecmp.20
+w132    0   1 |   0.325   0.949   0.913   0.587   0.663
+w132    0   2 |   0.194   0.854   0.865   0.441   0.425
+w132    0   3 |   0.483   0.830   0.859   0.365   0.426
+w132    1   1 |   0.775   0.889   0.919   0.577   0.712
+w132    1   2 |   0.658   0.874   0.903   0.414   0.623
+w132    1   3 |   0.494   0.711   0.863   0.414   0.669
+w132    2   1 |  -0.758   0.857   0.905   0.623   0.719
+w132    2   2 |   0.591   0.851   0.869   0.476   0.651
+w132    2   3 |  -0.277   0.591   0.814   0.339   0.563
+w264    0   1 |   0.290   0.590   0.854   0.843   0.974
+w264    0   2 |  -1.447   0.580   0.495   0.752   0.967
+w264    0   3 |  -0.080   0.620   0.790   0.766   0.969
+w264    1   1 |  -0.525   0.779   0.731   0.809   0.962
+w264    1   2 |  -0.763   0.762   0.790   0.778   0.957
+w264    1   3 |  -2.330   0.627   0.519   0.741   0.952
+w264    2   1 |   0.049   0.796   0.838   0.827   0.974
+w264    2   2 |   0.504   0.810   0.690   0.725   0.973
+w264    2   3 |   0.464   0.847   0.705   0.757   0.969
+
+# da ghi results/r2_7_warmstart_ecmp.csv (18 dong)
+
+=== TRUNG VI ===
+  MSA lanh T=2   (2 luot)    recovered =   0.242
+  MSA NONG  T=1   (1 luot)   recovered =   0.803
+  MSA NONG  T=2   (2 luot)   recovered =   0.846
+  ECMP eps=0     (1 luot)    recovered =   0.000
+  ECMP eps=0.05  (1 luot)    recovered =   0.674
+  ECMP eps=0.20  (1 luot)    recovered =   0.836
+  GNN (2 luot + forward)     recovered =   0.957
+
+=== PHAN QUYET R2.7 ===
+  Baseline manh nhat o ngan sach <= GNN: MSA NONG  T=2   (2 luot) = 0.846
+  GNN hon +0.111 => R2.7 TRA LOI DUOC. Bon comparator ho neu ten thi da co ba.
