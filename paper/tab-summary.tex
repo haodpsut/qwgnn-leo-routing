@@ -1,6 +1,6 @@
 % SINH TU code/experiments/make_claims.py -- DUNG SUA TAY.
 \begin{table}[t]
-\centering\small
+\centering\scriptsize\setlength{\tabcolsep}{3.4pt}
 \caption{Every headline number in this study and where it is derived. Recovered fraction is
 $(\mathrm{blind}-\mathrm{policy})/(\mathrm{blind}-\mathrm{UE})$; the unit of analysis is
 (shell, seed, slot) throughout, and every value is the median over those units.}
@@ -16,12 +16,13 @@ question & quantity & value \\
 & \quad max-min fair sharing & 37.1\% \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does it beat a blind baseline at matched budget?}}\\
-& GNN, training shell & 0.975 \\
-& strongest cheap rival, training shell & 0.869 \\
-& GNN, unseen shell & 0.915 \\
-& strongest cheap rival, unseen shell & 0.969 \\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair})}\\
+& learned / blind, training shell & 0.977 / 0.668 \\
+& learned / blind, unseen 264 & 0.974 / 0.973 \\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$}\\
+& learned / blind, unseen 264 & 0.885 / 0.973 \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{How far does it transfer?}}\\
+\multicolumn{3}{@{}l}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
 & GNN / blind multipath, 132 sat (trained) & 0.975 / 0.660 \\
 & GNN / blind multipath, 198 sat & 0.913 / 0.968 \\
 & GNN / blind multipath, 264 sat & 0.915 / 0.970 \\

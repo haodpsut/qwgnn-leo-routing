@@ -20,6 +20,7 @@ data, the filter is a plain equality, and a reader opening the CSV can see which
 number was computed over without reading any code.
 """
 import csv
+import io
 import json
 import os
 import statistics as st
@@ -191,6 +192,27 @@ def emit_tables_and_figure():
     print("  + tab-feasibility.tex, tab-fair.tex, fig-tau.tex")
 
 
+def fit_to_column(*files):
+    """Dat CUNG mot co chu va cung mat do cot cho moi bang sinh ra.
+
+    Ban truoc boc \\resizebox{\\columnwidth} cho ca ba. Chung deu vua khung, nhung resizebox co
+    MOI BANG MOT TI LE khac nhau tuy so cot, nen Bang IX va Bang X nam sat nhau tren cung mot trang
+    ma chu to nho khac han. Vua khung khong phai la dong bo.
+
+    Cach dung: khong co anh, ma dat \\scriptsize va thu hep \\tabcolsep cho tat ca. Moi bang khi
+    do render o dung mot co, va be rong duoc dieu chinh bang mat do cot chu khong bang phep co.
+    """
+    for f in files:
+        q = os.path.join(PAPER, f)
+        t = io.open(q, encoding="utf-8").read()
+        t = t.replace("\\resizebox{\\columnwidth}{!}{%\n", "").replace("\\end{tabular}}", "\\end{tabular}")
+        if "\\tabcolsep" not in t:
+            t = t.replace("\\centering\\small",
+                          "\\centering\\scriptsize\\setlength{\\tabcolsep}{3.4pt}")
+        io.open(q, "w", encoding="utf-8").write(t)
+        print(f"  + dong bo co chu: {f}")
+
+
 def main():
     BANDS = [("le1x", 0, 1.0), ("1to2x", 1.0, 2.0), ("2to4x", 2.0, 4.0), ("gt4x", 4.0, 1e9)]
     feas = add_band("r3_2_feasibility.csv", "blind_maxutil", BANDS)
@@ -293,12 +315,13 @@ question & quantity & value \\
 & \quad max-min fair sharing & """ + g("goodput_gain_maxmin") + r"""\% \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does it beat a blind baseline at matched budget?}}\\
-& GNN, training shell & """ + g("recovered_gnn_w132") + r""" \\
-& strongest cheap rival, training shell & """ + g("recovered_best_rival_w132") + r""" \\
-& GNN, unseen shell & """ + g("recovered_gnn_w264") + r""" \\
-& strongest cheap rival, unseen shell & """ + g("recovered_best_rival_w264") + r""" \\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair})}\\
+& learned / blind, training shell & """ + g("fair_gnn_w132_i53") + " / " + g("fair_ecmp_w132_i53") + r""" \\
+& learned / blind, unseen 264 & """ + g("fair_gnn_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$}\\
+& learned / blind, unseen 264 & """ + g("fair_gnn_fixedtau_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{How far does it transfer?}}\\
+\multicolumn{3}{@{}l}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
 & GNN / blind multipath, 132 sat (trained) & """ + g("sweep_gnn_w132_i53") + " / " + g("sweep_ecmp_w132_i53") + r""" \\
 & GNN / blind multipath, 198 sat & """ + g("sweep_gnn_w198_i53") + " / " + g("sweep_ecmp_w198_i53") + r""" \\
 & GNN / blind multipath, 264 sat & """ + g("sweep_gnn_w264_i53") + " / " + g("sweep_ecmp_w264_i53") + r""" \\
@@ -319,6 +342,7 @@ question & quantity & value \\
     print(f"\n# {len(C)} claim -> paper/claims.json")
     print(f"# bang tom tat -> paper/tab-summary.tex")
     emit_tables_and_figure()
+    fit_to_column('tab-summary.tex', 'tab-feasibility.tex', 'tab-fair.tex')
     return 0
 
 
