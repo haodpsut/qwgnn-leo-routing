@@ -1,0 +1,73 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.15in]{geometry}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{7pt}
+\pagestyle{empty}
+\begin{document}
+
+\hfill 17 August 2026
+
+\bigskip
+Dr.\ Nur Zincir-Heywood\\
+Associate Editor-in-Chief\\
+IEEE Transactions on Network and Service Management
+
+\bigskip
+Dear Dr.\ Zincir-Heywood,
+
+Thank you for the decision on TNSM-2026-11591, ``Learning to Route Under Load: An Inductive Graph
+Network that Amortizes Congestion-Aware Traffic Engineering for LEO Mega-Constellations,'' and for
+the invitation to submit a new manuscript. We are grateful to Associate Editor Dr.\ Tianqi Yu and
+to the three reviewers, whose comments were specific enough to be acted on rather than merely
+acknowledged.
+
+We should say at the outset that this is not the same paper with corrections. Two of the reviews
+asked questions we had not asked ourselves, and answering them changed our conclusions.
+
+Reviewer 3 pointed out that our headline gap is produced by a road-traffic congestion function
+evaluated where a packet link cannot operate: the excess offered to a link is lost, not delayed.
+Enforcing capacity feasibility reduces that gap from $79.1\%$ measured as travel time to $30.9\%$
+measured as delivered rate. Reviewer 2 pointed out that our comparators were weak, and asked for a
+strong baseline at a matched computational budget. Supplying one, a congestion-blind multipath
+split costing a single pass, showed that our method's advantage is decisive on the constellation it
+was trained on and level with that baseline on constellations it was not.
+
+Those two results do not support the four contributions the original manuscript claimed. Rather
+than restate weakened versions of them, we have rewritten the paper as what the measurements
+actually support: a study of what learned congestion prices buy in LEO routing, where a blind
+baseline is already sufficient, and why the boundary falls where it does. The system model, the
+simulator and the learned method are unchanged. The claims built on them are not, and the
+resubmitted manuscript reports smaller numbers than the original in three places.
+
+We also owe the Editor a correction. Following the reviewers' and your own remarks on related work,
+we found arXiv:2601.21921, which trains a graph network to infer per-link congestion prices from
+the constellation state in a single forward pass for LEO mega-constellations. That is the same core
+idea as our original contribution, it was public five months before our submission, and we had not
+cited it. It is now cited and discussed, and it is part of why the method framing is no longer the
+right one for this work.
+
+\textbf{Overlap disclosure.} One of our manuscripts under review elsewhere, at IEEE Transactions on
+Vehicular Technology, studies when coordination helps multi-user handover in LEO constellations. It
+shares the constellation simulator with this work and nothing else: it takes handover events as
+given and studies policy, whereas this paper studies the evaluation of routing under load. There
+are no shared results, tables or figures.
+
+\textbf{Data and code.} The simulator, the learned model, every experiment including those added in
+response to the reviewers, and the scripts that generate each reported number are available at
+\url{https://github.com/haodpsut/qwgnn-leo-routing}. Every headline number in the paper is tied to
+the file, column and aggregation that produce it by a claims manifest, and a script recomputes all
+of them.
+
+We hope the reviewers find the changes responsive. Where we have declined a suggestion, in
+particular four suggested citations from Reviewer 1 that concern RIS and anti-jamming rather than
+routing, we say so and explain why rather than adding them silently.
+
+\bigskip
+Sincerely,
+
+\bigskip
+The Authors
+
+\end{document}

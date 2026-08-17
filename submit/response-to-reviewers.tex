@@ -1,0 +1,235 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+\newcommand{\rc}[1]{\medskip\noindent\textit{\textcolor{black!65}{#1}}\par\smallskip}
+\newcommand{\ans}{\noindent\textbf{Response.}\ }
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\title{\vspace{-2em}Response to Reviewers\\[2pt]
+\large TNSM-2026-11591, resubmitted as a new manuscript}
+\date{}
+\begin{document}
+\maketitle
+
+We thank the Associate Editor and the three reviewers. The reviews prompted measurements we had
+not made, and two of them changed the paper's conclusions rather than its presentation. We say so
+plainly here and in the manuscript.
+
+\textbf{The headline claim has changed.} Reviewer 3 asked whether the reported gap survives if a
+link cannot carry more than its capacity, and Reviewer 2 asked for a comparison against a strong
+baseline at a matched budget. Both questions were fair and neither had been answered. Answering
+them shrank the central result and moved the contribution, so this is not a revision of the same
+paper: it is the measurement study the old manuscript should have been. The method, the
+constellation model and the code are unchanged; the claims built on them are not.
+
+\textbf{Summary of what changed.}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+\item A congestion-blind, one-pass baseline was added, with its tolerance swept rather than fixed
+(new Section VI-H). It is competitive off distribution, and no prior work in this line reports it.
+\item Enforcing capacity feasibility reduces the headline gap from $79.1\%$ measured as delay to
+$30.9\%$ measured as delivered rate, stable across three loss models (new Section VI-G).
+\item The transfer claim is withdrawn in its original form and replaced by a measured boundary:
+decisive in distribution, parity outside it (new Sections VI-H and VI-I).
+\item We identify a previously unremarked cause of apparent transfer failure: the decoder's softmin
+temperature is not a constant of the method and must scale with the constellation (new Section
+VI-I).
+\item The nearest prior work, arXiv:2601.21921, is now cited and discussed. It was public five
+months before our submission and we had missed it.
+\item Thirteen sections merged into eight; a summary table of every headline number opens Section
+VI; a claims manifest ties every number in the text to the file that produced it.
+\end{itemize}
+
+\hrule
+\section*{Reviewer 1}
+
+\rc{1. Clarification on the multipath decode temperature parameter. Is it fixed, tuned on a
+validation set, or adapted per scenario? Adding a brief note on the selection rationale and its
+sensitivity would improve reproducibility.}
+\ans Fixed at $\tau=0.2$ for every experiment, never tuned on a validation set and never adapted
+per scenario. That is now stated. The sensitivity half of the question turned out to matter far
+more than we expected, so we swept it. The setting that maximises recovery moves by one to two
+orders of magnitude between the $132$-satellite shell and the larger ones, and holding it at $0.2$
+costs a median of $0.094$, $0.089$ and $0.065$ per instance on three unseen shells. Because that
+loss was previously charged to the learned price field, the sweep changed a conclusion and not only
+a caption. New Section VI-I; sweep in \texttt{code/experiments/r1\_1\_tau\_sweep.py}.
+
+\rc{2. Discrepancy in reported numbers across tables. The recovered fraction for the 264-satellite
+OOD case appears as 93\% in Table VII and 94\% in Tables VI and VIII.}
+\ans Each of those tables was computed from its own set of seeds, which the text explained but the
+tables did not. A run-set note is now in the caption of each of the three tables, so a reader
+comparing them sees the reason without hunting for it. More generally, this class of mismatch is
+now checked mechanically: a claims manifest ties every number in the paper to the CSV, column,
+filter and aggregation that produce it, and a script recomputes all $49$ of them.
+
+\rc{3. Minor inconsistency in the proactive drift crossover statement. Fig.\ 8 does not have axis
+labels or units clearly marked. Please ensure the figure axes are self-explanatory and that the
+crossover value is visually verifiable.}
+\ans The axes did carry labels and units, so we read the comment as being about the second half:
+the crossover was asserted in prose and could not be checked against the figure. The crossing point
+is now marked, annotated with its value, and the blind reference line is named on the plot. Fig.\ 8.
+
+\rc{4. The broader literature on edge computing, resource pricing, and anti-jamming in LEO/UAV and
+RIS-enhanced aerial-ground networks may be relevant [R.1]--[R.4].}
+\ans We have expanded Section II considerably, and it now covers the learned-routing neighbourhood
+in depth, including the closest prior work we had missed. We have not added the four suggested
+references. They concern RIS, SWIPT and anti-jamming rather than routing or traffic engineering,
+and citing them where our future-work paragraph mentions integrated aerial-ground deployments would
+not help a reader of this paper. We would rather say so than pad the bibliography, and we are happy
+to revisit if the Editor sees a connection we have missed.
+
+\rc{5. Limited discussion on scalability of the multipath decode. A brief complexity breakdown for
+the decode relative to the GNN forward would be helpful.}
+\ans Table II now separates the two: the decode is one Dijkstra per destination, the same class as
+the all-or-nothing pass, and the forward is a fixed number of sparse operations independent of the
+demand matrix. The per-slot budget is reported in all-or-nothing passes throughout, which is the
+unit that dominates at scale, rather than as a single wall-clock number.
+
+\hrule
+\section*{Reviewer 2}
+
+\rc{1. Could the authors please improve the organization? There are 13 sections in total.}
+\ans Merged to eight. Decomposition folds into System Model; Pitfalls and Setup become a single
+Evaluation Protocol section, which is the right shape now that the protocol is part of the
+contribution; Deployment, Threats, Discussion and Future Work become one Discussion section.
+Nothing was cut.
+
+\rc{2. Could the authors please add a paragraph at the end of Section I to briefly describe the
+paper organization?}
+\ans Added at the end of Section I.
+
+\rc{3. The related work section is organized in quite specific aspects, which leads to the
+learning-based control and quantum walks paragraphs being short and lacking insightful analysis.}
+\ans This was the most consequential comment of the three reviews, and we treated it as a signal to
+look harder rather than to write more. Doing so turned up arXiv:2601.21921, which trains a graph
+network to infer per-link congestion prices from the constellation state in a single forward pass
+for LEO mega-constellations: the same core idea as ours, differing in the supervision signal. It
+was public five months before our submission and we had not cited it. It is now cited and
+discussed. The section is rewritten rather than extended: for a paper whose contribution is a
+measurement, related work is the target, so it now states what this line of work consistently
+compares against and what it never tests.
+
+\rc{4. Could the authors please further explain the amortization optimization problem and add a
+figure to depict the system model if necessary?}
+\ans Section III-E now states three properties of the problem that decide what a solution can be:
+the expectation is over instances rather than over slots of one deployment, which is where the
+method's exposure lies; the constraint is on inference cost rather than total cost; and the object
+being optimised is a routing rather than a price field, so decoder error is charged to the model.
+That third point is not a formality, and it is what Section VI-I measures. A system model figure
+already appears as Fig.\ 2, showing the plane structure, intra- and cross-plane links, and the
+drifting hotspot band.
+
+\rc{5. What is the basis for decomposing the amortization optimization problem into sub-problems?
+How can we ensure that the final results are consistent?}
+\ans Section III-F now argues both halves. The basis is that the map is a composition of steps that
+fail for unrelated reasons: a price field can be accurate and decode into a poor routing, the
+decode can be faithful and the prediction collapse on an unseen constellation, and all of it can
+hold at a fixed demand pattern and give way once the pattern moves. Consistency is enforced
+structurally rather than assumed: the sub-problems compose in one direction, every one is scored on
+the same end-to-end realized travel time rather than on an intermediate such as price error, and
+Section V checks that no composed pipeline ever reports a travel time below the system optimum.
+
+\rc{6. Zero-shot transfer is tested mainly from one 132-satellite shell to larger shells of related
+structure. It would be better to add tests across inclination, number of planes, capacity and
+demand distributions, and load regimes. The fact that the 53-degree case ``is near static'' weakens
+the broader time-varying-topology framing.}
+\ans Transfer is now measured across a ladder of shell sizes and across a change of inclination,
+and the results changed the paper. We also accept the framing point: the mechanism our method
+exploits is time-varying \emph{load}, not time-varying topology, and the manuscript now says so
+rather than claiming the broader property. Capacity and demand distributions remain untested and
+are stated as a limitation rather than glossed.
+
+\rc{7. One-step correction and geographic greedy are weak comparators. It would be better to
+consider stronger iterative-but-budgeted baselines, warm-started MSA, damped or adaptive load
+balancing, ECMP-style multipath, and learned models trained directly on routing objectives. It
+would also help to compare inference quality at matched computational budgets.}
+\ans Agreed, and this comment reshaped the paper. Reading our own cost table as a ladder made the
+gap obvious: every cheap comparator we had was weak and every strong one was expensive, with
+nothing in the cell our method claims. We added truncated MSA, warm-started MSA, and
+tolerance-based multipath, all at matched budgets. Two findings followed. Textbook equal-cost
+multipath is a no-op on this topology, since inter-satellite delays take continuous values and
+exact ties essentially never occur, so only a tolerance-based variant is meaningful. And with both
+sides tuned per shell, the learned field is decisively ahead in distribution ($0.977$ against
+$0.668$, paired difference $0.317$) and level outside it ($0.984$/$0.976$, $0.974$/$0.973$,
+$0.989$/$0.969$). We report parity rather than advantage off distribution because eight instances
+per shell cannot separate those margins from a tie. New Section VI-H.
+
+\hrule
+\section*{Reviewer 3}
+
+\rc{1. The Bureau of Public Roads cost function is developed for road traffic and permits offered
+load to exceed link capacity. Why is it an appropriate model for packet networks with queues, loss,
+transport protocols, and hard link rates?}
+\ans It is appropriate for the assignment problem and inappropriate for what we then did with it,
+and we should have separated those. On a road, offered load above capacity is a state the system
+occupies: vehicles still arrive, later, and the fourth power describes that delay. A packet link
+with a hard rate cannot occupy it, because the excess is lost rather than delayed. We now say this
+explicitly in Section V and quantify it in Section VI-G rather than defending the choice.
+
+\rc{2. Blind routing is reported to drive some links to nine times their capacity, which produces
+the forty-fold headline gap through the fourth-power cost. A data link cannot actually carry nine
+times its capacity. You may want to enforce flow feasibility or packet loss and reassess how much
+headroom remains.}
+\ans We did, and the reviewer is right about the direction. One clarification we would offer: an
+offered load of nine times capacity is a real operating state that a moving hotspot produces; what
+cannot happen is a link \emph{carrying} it. So the flaw was in the metric rather than in the load
+regime. Recomputing the same configurations under a hard capacity, the advantage reads $79.1\%$ as
+a reduction in travel time and $30.9\%$ as an increase in delivered rate. Because a loss model is a
+choice, we ran three that disagree where it matters: compounding survival along the path gives
+$30.9\%$, charging only the bottleneck gives $36.5\%$, and max-min fair sharing gives $37.1\%$. The
+effect survives, at well under half its previously reported magnitude, and we report the range
+rather than the most favourable member. New Section VI-G.
+
+\rc{3. User equilibrium is repeatedly described as the congestion-aware optimum, although the
+system optimum minimizes total travel time.}
+\ans Corrected throughout. The system optimum is reported alongside the equilibrium, and it also
+now serves a mechanical purpose: every policy in the new experiments is asserted against
+$\mathrm{TTT} \ge \mathrm{TTT(SO)}$, which caught a real implementation error during this work.
+
+\rc{4. The proposed features include the load produced by an all-or-nothing routing pass over the
+complete demand set. How does this reduce the information requirement relative to solving user
+equilibrium, which is criticized for needing the full demand matrix?}
+\ans The reviewer is correct and we withdraw that half of the claim. Our features do require the
+full demand matrix; what the method removes is the \emph{iteration}, two all-or-nothing passes
+against roughly twenty. The manuscript criticised the equilibrium on two grounds and only one of
+them is answered by our method, and the introduction now says exactly that.
+
+\rc{5. Several learning-based TE and routing methods are discussed but not included as baselines.
+Why are recent methods excluded from the comparison?}
+\ans A learned next-hop baseline was already included and remains. Rather than add more learned
+comparators, we judged that the missing baseline was the cheap-and-strong one, which is what
+Reviewer 2 asked for and what Section VI-H now supplies. We think that is the more informative
+addition, and we say in Section VII what it does not cover.
+
+\rc{6. A packet-level validation could be necessary because the main claim concerns routing under
+congestion. The current flow-level simulation cannot demonstrate the real performance.}
+\ans We agree this is the right eventual test and have not done it; a packet-level study is a
+separate piece of work. The hard-capacity models added in Section VI-G are a step in that
+direction, not a substitute, and we say so in Section VII rather than implying coverage.
+
+\rc{7. Ground links and gateway bottlenecks are absent even though they can dominate LEO
+congestion.}
+\ans Also correct, and also out of scope for this manuscript: adding feeder and ground-segment
+capacity changes the system model rather than extending it. It is stated as a limitation.
+
+\rc{8. Thirteen main sections make the presentation fragmented.}
+\ans Merged to eight, as described under Reviewer 2 comment 1.
+
+\hrule
+\section*{Associate Editor}
+
+\rc{The reviewers have recognized the novelty and technical contributions, while they still have
+concerns. It is important that TNSM papers contain a comprehensive review of related work.}
+\ans We took the related-work sentence literally and it was the most useful line in the letter. It
+led us to arXiv:2601.21921, which anticipates our core idea and which we had not cited. Section II
+is rewritten around what this literature claims and what it does not test, which is also the frame
+of the resubmitted paper.
+
+On the concerns: two of them changed our results rather than our exposition, and the resubmitted
+manuscript reports smaller numbers than the original in three places. We think it is a better
+paper for it, and we would rather submit the smaller number we can defend.
+
+\end{document}
