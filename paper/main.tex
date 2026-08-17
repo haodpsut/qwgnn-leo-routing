@@ -151,55 +151,81 @@ observes cheap features (per-node traffic intensity and the load that one
 congestion-blind pass would induce) and predicts, in a single forward pass, the
 equilibrium congestion price on every ISL. Routing on the predicted cost recovers
 most of the congestion-aware gain at a fraction of the cost of solving UE. Because the
-model's parameters do not depend on the number of satellites, it is \emph{inductive}:
-trained on a small shell, it applies unchanged to a larger one. And because the demand
-pattern drifts predictably (the dense-traffic band rotates under the constellation),
-feeding the predicted near future demand lets the router act \emph{proactively},
-before congestion forms. Figure~\ref{fig:pipeline} summarizes the pipeline.
+model's parameters do not depend on the number of satellites, the map is \emph{inductive} in
+the architectural sense and can be applied unchanged to a larger shell; whether it remains
+\emph{competitive} there is a separate question and one of the questions we measure. And
+because the demand pattern drifts predictably (the dense-traffic band rotates under the
+constellation), feeding the predicted near future demand lets the router act
+\emph{proactively}, before congestion forms. Figure~\ref{fig:pipeline} summarizes the pipeline.
 
 To make the stakes concrete, consider the dense-traffic band passing over a populated
 longitude. Delay-optimal routing sends the surge of flows along the few minimum-hop ISL
 chains that cross that region, driving a handful of links far past capacity while the
-cross-plane links a hop away carry almost nothing. With a fourth-power congestion cost, the
-travel time on those saturated links explodes, and the network appears to be in overload even
-though the same traffic spread across the available ISLs would be comfortably feasible. An
-operator that recomputes the equilibrium each slot fixes this but pays a heavy, repeated
-optimization; an operator that routes on stale or blind information does not fix it at all.
-The method in this paper gives a third option: spend the optimization once, offline, and let a
-network predict its outcome thereafter.
+cross-plane links a hop away carry almost nothing. The same traffic spread across the
+available ISLs would be comfortably feasible, so the loss is one of allocation rather than of
+capacity. How large that loss looks depends on how the model charges for overload, and we
+return to this in Section~\ref{sec:pitfalls}: a delay-based cost and a loss-based one disagree
+by more than a factor of two on the same configurations. An operator that recomputes the
+equilibrium each slot fixes the allocation but pays a heavy, repeated optimization; an operator
+that routes on stale or blind information does not fix it at all. Amortization offers a third
+option: spend the optimization once, offline, and let a network predict its outcome thereafter.
 
-A second, methodological thread runs through the paper. Learned traffic engineering is
-easy to evaluate incorrectly: a greedy baseline that silently drops hard flows, a
-scaling claim that rests on a ratio with a moving denominator, or an equilibrium
-reference measured off its operating point can each fabricate or distort a result. We
-encountered all three, caught them, and distil a protocol (Section~\ref{sec:pitfalls})
-so that the reported numbers are trustworthy and reproducible.
+This paper asks what that third option actually buys, and the answer turns out to depend
+sharply on a comparison the literature does not make. Evaluations of learned routing in this
+setting are anchored between a naive floor, shortest-path or hop-count routing, and the
+expensive ceiling being amortized. Both are informative and neither is competitive: the floor
+is weak by construction and the ceiling is the thing whose cost motivated the work. The cell
+that decides whether the machinery earns its place is the one in between, a policy \emph{as
+cheap as the learned model} and nonetheless strong. We put one there. Splitting demand across
+near-shortest paths is congestion-\emph{blind}, costs a single pass, and predates every method
+discussed here, and a dense $+$Grid offers it an unusual number of detours to work with.
+
+Measured against that comparator, the learned price field is not uniformly better; it is better
+in a describable region and not outside it, and saying where the boundary lies is more useful
+than another aggregate win. A second thread is methodological. Learned traffic engineering is
+easy to evaluate incorrectly: a greedy baseline that silently drops hard flows, a scaling claim
+resting on a ratio with a moving denominator, an equilibrium reference measured off its
+operating point, or a congestion cost borrowed from a domain where its arguments mean something
+else. We encountered all four, caught them, and distil a protocol
+(Section~\ref{sec:pitfalls}).
 
 \textbf{Contributions.}
 \begin{itemize}
-\item We formalize routing under load on LEO as the amortization of a
-traffic-assignment equilibrium and \emph{decompose} it into four sub-problems
-(Section~\ref{sec:decomp}), each mapped to a measurable claim.
-\item \textbf{C1 (amortization).} A one-shot GNN closely approaches the user
-equilibrium in distribution, recovering about $97\%$ of the gain over blind routing,
-at about $22\times$ less computation than the iterative solve (rising to $29\times$ at the
-largest shell; see \textbf{C3}).
-\item \textbf{C2 (inductive scale generalization).} Trained on a $132$-satellite
-shell, the same model transferred zero shot to a $1584$-satellite shell ($12\times$
-larger) recovers about $94\%$ of the gain and remains the best \emph{deployable}
-policy (the user equilibrium is a reference that costs $T\approx20$ passes per slot,
-Table~\ref{tab:cost}).
-\item \textbf{C3 (cost that improves with scale).} We give a complexity analysis and
-wall-clock measurements showing the inference saving over UE \emph{grows} with the
-constellation, reaching $29\times$ at $1584$ satellites.
-\item \textbf{C4 (proactive).} Under drifting hotspots, routing on predicted demand
-tracks the clairvoyant optimum, whereas a reactive one-slot-lagged controller degrades
-below blind shortest path as the drift grows.
-\item \textbf{Evaluation methodology.} We document three pitfalls that silently distort
-results in this setting, with fixes, and verify the corrected estimator against the
-price-of-anarchy ordering $\TTT(\mathrm{SO})\le\TTT(\mathrm{UE})$.
-\item \textbf{Honest negative result.} The study began as a quantum-walk GNN; we report
-the kill-gate record and why a plain graph convolution is the right operator here.
+\item \textbf{A comparator this literature has not used.} We evaluate learned congestion prices
+against tolerance-based multipath spreading at a matched computational budget. We also record a
+property specific to satellite topologies: inter-satellite delays take continuous values, so
+exact cost ties essentially never occur and textbook equal-cost multipath~\cite{ecmp}
+degenerates to single-path routing. Only a tolerance-based variant is meaningful, and its
+tolerance is a knob whose setting changes conclusions, so we report the sweep rather than a
+value.
+
+\item \textbf{A measured boundary, consistent across three axes.} On the shell it was trained
+on, the learned field beats every cheap baseline at steady load ($0.975$ against $0.869$ of the
+blind-to-equilibrium gap), under transfer, and under drifting hotspots ($0.961$ against
+$0.801$). On shells it was not trained on, one-pass blind spreading matches or beats it on all
+three ($0.915$ against $0.969$ at steady load; $0.737$ against $0.984$ under the widest drift).
+
+\item \textbf{The mechanism, not only the phenomenon.} The crossing is not noise but two
+opposing trends. Blind spreading recovers $0.660$ of the gap on the smallest shell and $0.970$
+on a shell twice its size, because a larger grid offers more near-shortest detours, while the
+learned map degrades with distance from its training distribution. The baseline strengthens
+exactly where the model is asked to generalize, and the curves cross between $132$ and $198$
+satellites.
+
+\item \textbf{What training diversity buys, at a matched budget.} Holding the number of training
+instances fixed and varying only their provenance raises transfer to an unseen shell from
+$0.898$ to $0.976$. That is a large effect and it brings the learned field to parity with blind
+spreading rather than past it.
+
+\item \textbf{A caution about borrowed congestion costs.} The Bureau of Public Roads function is
+a road volume-delay curve in which offered load above capacity is a real state. A packet link
+with a hard rate cannot occupy that state: the excess is lost, not delayed. Enforcing capacity
+feasibility shrinks the headline gap from $79.1\%$ measured as delay to $30.9\%$ measured as
+delivered rate, and the smaller figure is stable across three loss models
+($30.9\%$, $36.5\%$, $37.1\%$).
+
+\item \textbf{Honest negative results.} The study began as a quantum-walk GNN; we report the
+kill-gate record and why a plain graph convolution is the right operator here.
 \end{itemize}
 
 \section{Related Work}
@@ -287,7 +313,7 @@ function-learning layers such as Kolmogorov-Arnold networks~\cite{kan} offer alt
 inductive biases. We evaluate a quantum-walk operator as a candidate and report it as a
 negative ablation (Section~\ref{sec:ablation}).
 
-\section{System Model}\label{sec:model}
+\section{System Model and Problem Formulation}\label{sec:model}
 Table~\ref{tab:notation} lists the notation.
 
 \begin{table}[t]
@@ -411,7 +437,7 @@ forward pass and whose parameters $\theta$ are independent of $S$:
 \label{eq:amort}
 \end{equation}
 
-\section{Problem Decomposition}\label{sec:decomp}
+\subsection{Decomposition into sub-problems}\label{sec:decomp}
 We decompose \eqref{eq:amort} into four sub-problems (Fig.~\ref{fig:decomp}), each
 mapped to a claim.
 
@@ -743,7 +769,8 @@ which matters when each slot lasts seconds. Third, we predict the equilibrium of
 network learns to amortize an optimization it could otherwise have to solve from scratch
 each slot.
 
-\section{Pitfalls in Evaluating Learned LEO Traffic Engineering}\label{sec:pitfalls}
+\section{Evaluation Protocol}\label{sec:pitfalls}
+\subsection{Pitfalls that silently distort results}
 Before reporting results we document three evaluation pitfalls we encountered. Each can
 silently fabricate or distort a headline number; each has a simple fix. We state them
 because they are easy to commit in this setting and because our corrected estimator is
@@ -785,7 +812,7 @@ price-of-anarchy ordering) that a corrupted estimator will fail. We surface thes
 reusable evaluation protocol for learned traffic engineering, since each silently produced a
 publishable-looking but wrong number before it was caught.
 
-\section{Experimental Setup}\label{sec:setup}
+\subsection{Setup}\label{sec:setup}
 We evaluate in the flow-level traffic-assignment framework (BPR cost, user equilibrium),
 the standard model in which congestion-aware routing is defined and analyzed; this is a
 deliberate choice that isolates the load-balancing mechanism our method targets, cleanly
@@ -805,6 +832,13 @@ survivorship free per Section~\ref{sec:pitfalls}. The GNN is trained on the $132
 and evaluated both in distribution and zero shot on larger shells.
 
 \section{Results}\label{sec:results}
+
+Table~\ref{tab:summary} collects every headline number in this study with the file it is
+derived from; the subsections that follow derive them. Throughout, \emph{recovered fraction}
+is $(\mathrm{blind}-\mathrm{policy})/(\mathrm{blind}-\mathrm{UE})$, the share of the
+blind-to-equilibrium gap a policy closes, and the unit of analysis is (shell, seed, slot).
+\input{tab-summary}
+
 
 \subsection{Headroom for congestion awareness}\label{sec:headroom}
 Figure~\ref{fig:headroom} sweeps offered load. At light load, blind shortest path is
@@ -1221,7 +1255,8 @@ QW (global quantum walk) & $94\pm4$ & $90\pm6$ \\
 \end{tabular}
 \end{table}
 
-\section{Deployment Considerations}
+\section{Discussion, Threats, and Limitations}
+\subsection{Deployment considerations}
 In an operational control loop the router runs once per slot on the known next-slot
 topology. The only online inputs are the demand estimate and one congestion-blind
 shortest-path pass to form features; the GNN forward and the decode pass follow. Because
@@ -1236,7 +1271,7 @@ the crossover drift. And because the decoded routing is a valid flow on a downhi
 positive-cost edges, it can never produce a loop or a disconnected route, unlike a directly
 predicted next-hop policy that must be guarded against such failures.
 
-\section{Threats to Validity}
+\subsection{Threats to validity}
 We separate threats we controlled from those that remain. \emph{Construct validity}:
 total travel time under the BPR cost is the standard, well-grounded traffic-assignment
 objective and is survivorship free by Section~\ref{sec:pitfalls}; it is a flow-level model,
@@ -1252,7 +1287,7 @@ heterogeneous link capacities, and real traffic traces remain to be studied.
 \emph{Reproducibility}: the pipeline is deterministic from parameters and every figure
 number is regenerated from a result CSV by a released script.
 
-\section{Discussion and Limitations}
+\subsection{What the measurements do and do not license}
 The simulator is kinematic and flow level, not packet level; it captures
 geometry-driven delay and load-induced congestion through the BPR model, the mechanism
 the method targets, but it does not model queueing dynamics or protocol behavior, and a
@@ -1270,7 +1305,7 @@ Section~\ref{sec:results-decode}) reflects the softmin split's deviation from th
 equilibrium splitting, which an equilibrium-faithful or learned decoder could shrink
 further.
 
-\section{Future Work}\label{sec:future}
+\subsection{Future work}\label{sec:future}
 Several directions follow directly. A packet-level study, for example on
 Hypatia~\cite{hypatia}, would replace the flow-level BPR proxy with queueing and protocol
 dynamics and test whether the predicted price field still routes well when delay is
