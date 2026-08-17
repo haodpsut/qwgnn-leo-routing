@@ -1,0 +1,383 @@
+[
+  {
+    "id": "bpr_gain_overload",
+    "paper_value": "79.1",
+    "csv": "code/results/r3_2_feasibility.csv",
+    "column": "gain_bpr_pct",
+    "filter": {
+      "load_band": "gt4x"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "shell-x-load-x-seed",
+    "note": "khoang cach do bang do tre BPR, thuoc do CU"
+  },
+  {
+    "id": "goodput_gain_overload",
+    "paper_value": "30.9",
+    "csv": "code/results/r3_2_feasibility.csv",
+    "column": "gain_goodput_pct",
+    "filter": {
+      "load_band": "gt4x"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "shell-x-load-x-seed",
+    "note": "cung cau hinh, ep kha thi theo dung luong"
+  },
+  {
+    "id": "goodput_gain_product",
+    "paper_value": "30.9",
+    "csv": "code/results/r3_2_loss_models.csv",
+    "column": "gain_product_pct",
+    "filter": {
+      "load_band": "gt4x"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "shell-x-load-x-seed",
+    "note": "mo hinh mat mat 'product'"
+  },
+  {
+    "id": "goodput_gain_bottleneck",
+    "paper_value": "36.5",
+    "csv": "code/results/r3_2_loss_models.csv",
+    "column": "gain_bottleneck_pct",
+    "filter": {
+      "load_band": "gt4x"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "shell-x-load-x-seed",
+    "note": "mo hinh mat mat 'bottleneck'"
+  },
+  {
+    "id": "goodput_gain_maxmin",
+    "paper_value": "37.1",
+    "csv": "code/results/r3_2_loss_models.csv",
+    "column": "gain_maxmin_pct",
+    "filter": {
+      "load_band": "gt4x"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "shell-x-load-x-seed",
+    "note": "mo hinh mat mat 'maxmin'"
+  },
+  {
+    "id": "recovered_gnn_w132",
+    "paper_value": "0.975",
+    "csv": "code/results/r2_7_matched_all.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "shell-x-seed-x-slot",
+    "note": "GNN tren vo w132"
+  },
+  {
+    "id": "recovered_best_rival_w132",
+    "paper_value": "0.869",
+    "csv": "code/results/r2_7_matched_all.csv",
+    "column": "recovered_warm_T2",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "shell-x-seed-x-slot",
+    "note": "doi thu manh nhat tren w132: warm_T2"
+  },
+  {
+    "id": "recovered_gnn_w264",
+    "paper_value": "0.915",
+    "csv": "code/results/r2_7_matched_all.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "shell-x-seed-x-slot",
+    "note": "GNN tren vo w264"
+  },
+  {
+    "id": "recovered_best_rival_w264",
+    "paper_value": "0.969",
+    "csv": "code/results/r2_7_matched_all.csv",
+    "column": "recovered_ecmp20",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "shell-x-seed-x-slot",
+    "note": "doi thu manh nhat tren w264: ecmp20"
+  },
+  {
+    "id": "sweep_gnn_w132_i53",
+    "paper_value": "0.975",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "GNN, huan luyen tren vo 132"
+  },
+  {
+    "id": "sweep_ecmp_w132_i53",
+    "paper_value": "0.660",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_ecmp_0.1",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "eps-ECMP tot nhat tren vo nay: eps=0.1"
+  },
+  {
+    "id": "sweep_gnn_w198_i53",
+    "paper_value": "0.913",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "GNN, huan luyen tren vo 132"
+  },
+  {
+    "id": "sweep_ecmp_w198_i53",
+    "paper_value": "0.968",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_ecmp_0.35",
+    "filter": {
+      "shell": "w198_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "eps-ECMP tot nhat tren vo nay: eps=0.35"
+  },
+  {
+    "id": "sweep_gnn_w264_i53",
+    "paper_value": "0.915",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "GNN, huan luyen tren vo 132"
+  },
+  {
+    "id": "sweep_ecmp_w264_i53",
+    "paper_value": "0.970",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_ecmp_0.35",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "eps-ECMP tot nhat tren vo nay: eps=0.35"
+  },
+  {
+    "id": "sweep_gnn_w264_i70",
+    "paper_value": "0.941",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "GNN, huan luyen tren vo 132"
+  },
+  {
+    "id": "sweep_ecmp_w264_i70",
+    "paper_value": "0.944",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_ecmp_0.5",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "eps-ECMP tot nhat tren vo nay: eps=0.5"
+  },
+  {
+    "id": "sweep_gnn_w396_i53",
+    "paper_value": "0.947",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_gnn",
+    "filter": {
+      "shell": "w396_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "GNN, huan luyen tren vo 132"
+  },
+  {
+    "id": "sweep_ecmp_w396_i53",
+    "paper_value": "0.960",
+    "csv": "code/results/r2_7_eps_sweep.csv",
+    "column": "recovered_ecmp_0.35",
+    "filter": {
+      "shell": "w396_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "eps-ECMP tot nhat tren vo nay: eps=0.35"
+  },
+  {
+    "id": "mix_single_w264_i53",
+    "paper_value": "0.898",
+    "csv": "code/results/r2_7_train_mix.csv",
+    "column": "recovered_single",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "nhanh single, cung ngan sach 12 thuc the"
+  },
+  {
+    "id": "mix_mix_w264_i53",
+    "paper_value": "0.976",
+    "csv": "code/results/r2_7_train_mix.csv",
+    "column": "recovered_mix",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "nhanh mix, cung ngan sach 12 thuc the"
+  },
+  {
+    "id": "mix_single_w264_i70",
+    "paper_value": "0.950",
+    "csv": "code/results/r2_7_train_mix.csv",
+    "column": "recovered_single",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "nhanh single, cung ngan sach 12 thuc the"
+  },
+  {
+    "id": "mix_mix_w264_i70",
+    "paper_value": "0.934",
+    "csv": "code/results/r2_7_train_mix.csv",
+    "column": "recovered_mix",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "nhanh mix, cung ngan sach 12 thuc the"
+  },
+  {
+    "id": "mix_single_w396_i53",
+    "paper_value": "0.881",
+    "csv": "code/results/r2_7_train_mix.csv",
+    "column": "recovered_single",
+    "filter": {
+      "shell": "w396_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "nhanh single, cung ngan sach 12 thuc the"
+  },
+  {
+    "id": "mix_mix_w396_i53",
+    "paper_value": "0.953",
+    "csv": "code/results/r2_7_train_mix.csv",
+    "column": "recovered_mix",
+    "filter": {
+      "shell": "w396_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-khe",
+    "note": "nhanh mix, cung ngan sach 12 thuc the"
+  },
+  {
+    "id": "proact_w132_drift15",
+    "paper_value": "0.961",
+    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "recovered_proact",
+    "filter": {
+      "shell": "w132",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "dinh tuyen chu dong, muc troi lon nhat"
+  },
+  {
+    "id": "proact_ecmp_w132_drift15",
+    "paper_value": "0.801",
+    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "recovered_ecmp0.35",
+    "filter": {
+      "shell": "w132",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "trai tai mu tot nhat cung canh: ecmp0.35"
+  },
+  {
+    "id": "proact_w264_drift15",
+    "paper_value": "0.737",
+    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "recovered_proact",
+    "filter": {
+      "shell": "w264",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "dinh tuyen chu dong, muc troi lon nhat"
+  },
+  {
+    "id": "proact_ecmp_w264_drift15",
+    "paper_value": "0.984",
+    "csv": "code/results/r2_7_proactive_vs_ecmp.csv",
+    "column": "recovered_ecmp0.2",
+    "filter": {
+      "shell": "w264",
+      "drift": "1.5"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed-x-troi",
+    "note": "trai tai mu tot nhat cung canh: ecmp0.2"
+  }
+]
