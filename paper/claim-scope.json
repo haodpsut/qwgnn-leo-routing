@@ -1,0 +1,26 @@
+[
+  {
+    "claim_id": "comparator_not_used",
+    "text": "A comparator this literature has not used",
+    "scope": "the learned-routing-for-LEO line surveyed in Section II",
+    "evidence": "occupied-check 17/08/2026 over arXiv (learned routing / GNN / DRL / MARL for LEO, 2024-2026) and the nearest work arXiv:2601.21921; none reports a tolerance-based blind multipath baseline at a matched budget",
+    "not_claimed": "that no paper anywhere uses eps-ECMP as a baseline; ECMP is standard in terrestrial TE. The claim is about this specific line of work",
+    "how_it_could_be_wrong": "a paper outside the searched keywords, or one that reports such a baseline without naming it"
+  },
+  {
+    "claim_id": "decoder_temperature_unremarked",
+    "text": "Second, and previously unremarked, the decoder's softmin temperature is not a constant of the method",
+    "scope": "papers that amortize a traffic equilibrium with a learned price field and decode by softmin splitting",
+    "evidence": "the nearest work does not report a temperature sweep; our own prior version fixed it at 0.2 without stating so",
+    "not_claimed": "that temperature sensitivity is unknown in soft-assignment literature generally, where it is well studied",
+    "how_it_could_be_wrong": "any paper in this line that swept it and we did not find"
+  },
+  {
+    "claim_id": "no_exact_ties",
+    "text": "with inter-satellite delays taking continuous values, exact cost ties essentially never occur, and to our knowledge this is unremarked",
+    "scope": "the +Grid inter-satellite topologies used in this paper and in the LEO routing literature we surveyed",
+    "evidence": "measured: 0 of 2620 node-destination pairs had two out-edges of exactly equal cost on the 132-satellite shell",
+    "not_claimed": "that no LEO topology can have ties; a topology with quantised or uniform link lengths would have many",
+    "how_it_could_be_wrong": "operators quantise ISL delays in practice, which would create ties and make textbook ECMP meaningful again. We say so in Section VII"
+  }
+]
