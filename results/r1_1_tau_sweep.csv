@@ -1,0 +1,7 @@
+shell,seed,unit_of_analysis,recovered_tau0.02,recovered_tau0.05,recovered_tau0.1,recovered_tau0.2,recovered_tau0.35,recovered_tau0.5,recovered_tau1.0
+w132 (trained),0,vo-x-seed,0.885,0.9222,0.9599,0.9667,0.9395,0.9145,0.8658
+w132 (trained),1,vo-x-seed,0.9125,0.9444,0.9678,0.959,0.9112,0.8634,0.7657
+w132 (trained),2,vo-x-seed,0.8692,0.9251,0.9726,0.9703,0.9235,0.8787,0.7879
+w264 (unseen),0,vo-x-seed,0.489,0.5891,0.7424,0.8891,0.9521,0.968,0.9756
+w264 (unseen),1,vo-x-seed,0.5358,0.633,0.7629,0.8943,0.9481,0.9627,0.9734
+w264 (unseen),2,vo-x-seed,0.4433,0.5675,0.7358,0.8863,0.9462,0.962,0.9722

@@ -1,0 +1,25 @@
+R1.1 -- do nhay cua nhiet do softmin
+
+vo               sd |   t=0.02   t=0.05   t=0.1    t=0.2    t=0.35   t=0.5    t=1   
+w132 (trained)    0 |    0.885    0.922    0.960    0.967    0.939    0.915    0.866
+w132 (trained)    1 |    0.913    0.944    0.968    0.959    0.911    0.863    0.766
+w132 (trained)    2 |    0.869    0.925    0.973    0.970    0.924    0.879    0.788
+w264 (unseen)     0 |    0.489    0.589    0.742    0.889    0.952    0.968    0.976
+w264 (unseen)     1 |    0.536    0.633    0.763    0.894    0.948    0.963    0.973
+w264 (unseen)     2 |    0.443    0.567    0.736    0.886    0.946    0.962    0.972
+
+# da ghi results/r1_1_tau_sweep.csv (6 dong)
+
+=== TRUNG VI theo vo ===
+vo                 t=0.02   t=0.05   t=0.1    t=0.2    t=0.35   t=0.5    t=1   
+w132 (trained)      0.885    0.925    0.968    0.967    0.923    0.879    0.788
+  tot nhat tai tau=0.1 (0.968); tau=0.2 dung trong bai cho 0.967, kem +0.001
+  doan PHANG quanh gia tri dang dung (lech <= 0.02): tau in [0.1, 0.2]
+
+w264 (unseen)       0.489    0.589    0.742    0.889    0.948    0.963    0.973
+  tot nhat tai tau=1 (0.973); tau=0.2 dung trong bai cho 0.889, kem +0.084
+  doan PHANG quanh gia tri dang dung (lech <= 0.02): tau in [0.2]
+
+=== KET LUAN ===
+  ⚠ Ket qua PHU THUOC vao tau: phai khai la mot sieu tham so da chon, va bao ca duong
+  cong chu khong chi mot diem.
