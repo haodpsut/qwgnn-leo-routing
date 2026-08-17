@@ -1,0 +1,29 @@
+R2.7 -- MSA CAT NGAN o ngan sach khop, lap day o trong 2..20 cua Bang VI
+
+recovered = (blind - policy) / (blind - ue); 1.00 = bang UE day du
+
+shell  sd |    T=1     T=2     T=3     T=5     T=10    T=20
+w132    0 |   0.137   0.492   0.689   0.780   0.815   0.956
+w132    1 |  -0.638   0.524   0.724   0.872   0.900   0.926
+w132    2 |  -0.423  -0.134   0.718   0.777   0.197   0.850
+w264    0 |   0.468   0.117   0.532   0.662   0.774   0.838
+w264    1 |  -0.003  -0.311   0.463   0.361   0.624   0.802
+w264    2 |  -0.307  -0.124   0.656   0.490   0.863   0.850
+
+# da ghi results/r2_7_budget_matched.csv (6 dong)
+
+=== TRUNG VI theo ngan sach ===
+  MSA T=1  (1 luot AoN): recovered = -0.155
+  MSA T=2  (2 luot AoN): recovered = -0.003
+  MSA T=3  (3 luot AoN): recovered = 0.672
+  MSA T=5  (5 luot AoN): recovered = 0.720
+  MSA T=10 (10 luot AoN): recovered = 0.794
+  MSA T=20 (20 luot AoN): recovered = 0.850
+
+  GNN (2 luot + 1 forward), lay tu p6_baselines.csv: recovered = 0.957  (n=18)
+
+=== PHAN QUYET: o ngan sach KHOP (~2 luot), ai hon? ===
+  MSA T=2 : -0.003
+  GNN     : 0.957
+  => GNN hon +0.960. Loi the o ngan sach khop la THAT, va day chinh la
+     con so phai dua vao bai de tra loi R2.7.
