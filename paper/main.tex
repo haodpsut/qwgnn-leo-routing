@@ -68,8 +68,8 @@
 
 \begin{document}
 
-\title{Learning to Route Under Load: An Inductive Graph Network that Amortizes
-Congestion-Aware Traffic Engineering for LEO Mega-Constellations}
+\title{A Reality Check on Learned Traffic Engineering for LEO Mega-Constellations:
+What Congestion Prices Buy, and Where a Blind One-Pass Baseline Already Suffices}
 
 \author{Phuc~Hao~Do,~Nang~Hung~Van~Nguyen,~and~Minh~Tuan~Pham% <-this % stops a space
 \thanks{P. H. Do is with Danang Architecture University, Da Nang, Viet Nam
@@ -86,31 +86,33 @@ University of Danang under project number B2025-DN02-26.}}
 \maketitle
 
 \begin{abstract}
-Low Earth orbit (LEO) mega-constellations carry traffic over a dense mesh of
-inter-satellite links whose topology, although time varying, is known in advance
-from orbital ephemeris. Under load, routing on propagation delay alone concentrates
-traffic on a few bottleneck links while alternative paths sit idle, wasting most of
-the achievable performance: in our study it inflates total travel time by up to a
-factor of forty. The congestion-aware optimum, the user equilibrium, removes this
-waste but requires the full demand matrix and an iterative solve at every slot, which
-does not scale to constellations of more than a thousand satellites with rapidly
-changing topology. We formalize routing under load on LEO as the amortization of a
-traffic-assignment equilibrium, decompose it into a price-prediction sub-problem, a
-decoding sub-problem, an inductive-transfer sub-problem, and a proactive sub-problem,
-and solve the first with an inductive graph neural network that predicts the
-equilibrium congestion price on each inter-satellite link in a single forward pass
-from cheap, observable load features. On a constellation simulator with a standard
-Bureau of Public Roads cost model, the network closely approaches the user
-equilibrium in distribution (recovering about $0.97$ of the gain over blind routing),
-recovers about $0.94$ of that gain when transferred zero shot to a shell twelve times
-larger, runs $21$ to $29\times$ faster than the iterative solve with the saving
-growing with scale, and, fed predicted demand, sustains low travel time under
-drifting hotspots where a reactive controller degrades to $1.6\times$ blind. We
-contribute, in addition, a record of three evaluation pitfalls that silently
-fabricate or distort such results, with a protocol to avoid them, and we report a
-negative result: a quantum-walk propagation operator that motivated this study offers
-no benefit once load features are available, and a plain graph convolution is
-preferable.
+Low Earth orbit (LEO) mega-constellations carry traffic over a dense mesh of inter-satellite
+links whose topology, although time varying, is known in advance from orbital ephemeris. Under
+load, routing on propagation delay alone concentrates traffic on a few bottleneck links while
+alternative paths sit idle. The congestion-aware optimum, the user equilibrium, removes this
+waste but needs the full demand matrix and an iterative solve every slot, and a growing
+literature amortizes it by learning to predict per-link congestion prices in one forward pass.
+This paper asks what that buys, and measures it against the baseline the literature has not
+used: a congestion-blind multipath split costing a single pass, whose path-cost tolerance we
+sweep rather than fix. With both sides tuned per shell, the learned price field recovers
+$0.977$ of the blind-to-equilibrium gap on the shell it was trained on against $0.668$ for the
+blind split, a paired median difference of $0.317$. On three shells it never saw, the paired
+differences are $0.008$, $0.002$ and $0.020$: the honest reading is parity, not advantage.
+Two further results qualify the setting rather than the method. First, the headline gap is
+usually reported in Bureau of Public Roads travel time, which charges overload in a currency a
+packet link does not use; under a hard capacity the advantage is an increase in delivered rate
+of $30.9\%$ rather than a delay reduction of $79.1\%$, and it survives three loss models
+($30.9\%$, $36.5\%$, $37.1\%$). Second, the softmin temperature that decodes prices into split
+flows is treated as a constant of the method and is not one: the setting that maximises recovery
+moves by one to two orders of magnitude with constellation size, and holding it at the value
+chosen on the smallest shell costs $0.094$, $0.089$ and $0.065$ per instance elsewhere while
+costing $0.007$ where it was chosen. That loss has been charged to the price field, which did
+not cause it, so any evaluation of transfer that holds the decoder fixed measures the decoder as
+much as the model. The inference saving over the iterative solve is real and grows with scale,
+from $21$ to $29\times$. We also report a negative result: a quantum-walk propagation operator
+that motivated this study offers no benefit once load features are available, and a plain graph
+convolution is preferable. Every number is tied to the file, column and aggregation that produce
+it, and a script recomputes all of them.
 \end{abstract}
 
 \begin{IEEEkeywords}
