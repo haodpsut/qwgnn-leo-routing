@@ -454,6 +454,27 @@ forward pass and whose parameters $\theta$ are independent of $S$:
 \label{eq:amort}
 \end{equation}
 
+Three features of \eqref{eq:amort} are worth stating plainly, because they decide what a solution
+can and cannot be. First, the expectation is over \emph{instances}, not over slots of one
+deployment: $\theta$ is chosen once, offline, against a distribution of demand patterns
+$\mathcal{D}$ and constellation graphs $G$, and is then held fixed. This is what makes the problem
+an amortization rather than an online control problem, and it is also where its exposure lies,
+since nothing forces the deployed instances to be drawn from the distribution $\theta$ was fitted
+to. Section~\ref{sec:results} measures exactly that exposure.
+
+Second, the constraint is on \emph{inference} cost, not on total cost. Solving the equilibrium once
+per training instance is permitted and is in fact how the supervision is produced; what must be
+cheap is the per-slot map at deployment. The two costs are separated by the offline/online
+boundary, and any honest accounting of the method has to price them separately, which is why
+Table~\ref{tab:cost} reports the per-slot budget in all-or-nothing passes rather than a single
+wall-clock figure.
+
+Third, and easily missed, $\pi_\theta$ is a \emph{routing}, not a price field. The objective scores
+the travel time of the flow actually emitted, so any error introduced after the prediction, by the
+decoder that turns prices into paths, is charged to $f_\theta$ as well. A method can therefore fail
+\eqref{eq:amort} with a perfectly accurate price field, and we find the decoder is a larger source
+of loss off distribution than the prediction is.
+
 \subsection{Decomposition into sub-problems}\label{sec:decomp}
 We decompose \eqref{eq:amort} into four sub-problems (Fig.~\ref{fig:decomp}), each
 mapped to a claim.
@@ -1216,6 +1237,69 @@ drift exceeds about one radian; the proactive router tracks the clairvoyant opti
 throughout.}
 \label{fig:proactive}
 \end{figure}
+
+\subsection{Does the headline survive capacity feasibility?}\label{sec:feasible}
+The gap reported above is measured in BPR travel time, and Section~\ref{sec:pitfalls} argues that
+this charges overload in a currency the link does not use. We therefore recompute it under a hard
+capacity: a link offered $L$ with capacity $C$ carries $\min(L,C)$, each flow crossing it keeps
+$\min(1,C/L)$, and end-to-end delivery is the product along the path. The configurations, shells,
+loads and seeds are those of Section~\ref{sec:headroom}, so the rows correspond one to one.
+
+On configurations where blind routing offers a link more than four times its capacity, the
+congestion-aware advantage reads $79.1\%$ as a reduction in travel time and $30.9\%$ as an increase
+in delivered rate. Both are real; they measure different things, and only the second is available
+to a link that drops what it cannot carry. Below capacity both are zero, which the operating-regime
+discussion already anticipated.
+
+Because a loss model is a modelling choice and not a fact, we ran three that disagree where it
+matters. Compounding the per-link survival along the path gives $30.9\%$; charging only the
+bottleneck link gives $36.5\%$; sharing each link max-min fairly among the flows crossing it gives
+$37.1\%$. The advantage is not an artifact of any one of them. We report the range rather than the
+most favourable member.
+
+\subsection{Against a cheap-but-strong baseline}\label{sec:vs-blind}
+Sections~\ref{sec:headroom} to~\ref{sec:c2} compare against a naive floor and an expensive ceiling.
+Neither is competitive by construction. Here we place a policy in the cell between them: split each
+demand equally across the paths within $(1+\varepsilon)$ of shortest on free-flow cost. It is
+congestion blind, costs one pass, and predates every learned method.
+
+Textbook equal-cost multipath is a no-op on this topology. Inter-satellite delays take continuous
+values, so of $2620$ node-destination pairs examined not one had two out-edges of exactly equal
+cost, and $\varepsilon=0$ reduces to blind single-path routing. The tolerance is therefore not a
+detail but the whole of the baseline, and it is a knob: we sweep it rather than fix it.
+
+Both sides are tuned per shell over fixed grids, the learned decoder over its softmin temperature
+and the baseline over $\varepsilon$, with eight instances per shell. On the shell the model was
+trained on it recovers $0.977$ of the blind-to-equilibrium gap against $0.668$; paired per instance
+the median difference is $0.317$. On three shells it never saw, the same comparison reads $0.984$
+against $0.976$, $0.974$ against $0.973$, and $0.989$ against $0.969$, with paired differences of
+$0.008$, $0.002$ and $0.020$. The learned field is ahead on more instances than not in every case,
+but at this margin and this sample size the defensible reading is parity, not advantage. The
+advantage that is large is the in-distribution one.
+
+The reason the baseline is strong off distribution, and weak on the training shell, is structural
+rather than incidental. Spreading needs somewhere to spread: on the $132$-satellite grid the
+tolerance-based split recovers $0.660$ of the gap, and on a shell twice the size it recovers
+$0.970$, because a larger grid offers more near-shortest detours between the same pair. Its
+strength grows precisely in the regime where a learned map is asked to generalize.
+
+\subsection{Two causes of the off-distribution gap, and they are separable}\label{sec:two-causes}
+At the fixed decoder temperature used throughout the earlier sections, transfer looks much worse
+than the previous subsection reports: $0.892$, $0.885$ and $0.925$ on the three unseen shells.
+The difference is not noise and it is not one effect.
+
+The first is the training distribution. Holding the number of training instances fixed at twelve
+and varying only where they come from, a model shown three small shells instead of one recovers
+$0.976$ on an unseen $264$-satellite shell against $0.898$ for the single-shell model.
+
+The second has not been reported before as far as we are aware, and is of comparable size. The
+softmin temperature that decodes prices into split flows is treated in the literature, and in our
+own earlier sections, as a constant. It is not. Sweeping it, the setting that maximises recovery
+moves by one to two orders of magnitude between the smallest shell and the larger ones, and holding
+it at the value chosen on the smallest costs a median of $0.094$, $0.089$ and $0.065$ per instance
+on the three unseen shells. A temperature tuned on a small constellation under-spreads on a large
+one, and the resulting loss is charged to the price field, which did not cause it. Any evaluation
+of transfer that holds the decoder fixed is measuring the decoder as much as the model.
 
 \subsection{Operating regime}\label{sec:regime}
 The value of the method is regime dependent, and Table~\ref{tab:headroom} makes the boundary
