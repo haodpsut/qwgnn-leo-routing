@@ -212,6 +212,15 @@ def claim_r4():
     claim_raw("s1584_ratio_besttau", "r4_1_shell1584_controls.csv", "ratio_ue_gnn_tau8.0",
               {"shell": "w1584_i53"}, "median", 1, "GNN o tau tot nhat cach can bang bao nhieu lan")
 
+    # 4.2/4.3: hang so cua Menh de 1, dat bang so thay vi de o dang Theta().
+    for sh in ("w132_i53", "w264_i53"):
+        for cid, col, pl in ((f"bound_H_{sh}", "H_hops", 0),
+                             (f"bound_c1H_ue_{sh}", "c1H_at_ue", 0),
+                             (f"bound_c1H_blind_{sh}", "c1H_at_blind", 0),
+                             (f"bound_propratio_{sh}", "prop_ratio", 2)):
+            claim_raw(cid, "r4_3_bound_constants.csv", col, {"shell": sh}, "median", pl,
+                      f"hang so Menh de 1: {col} tren {sh}")
+
     pool = pool_264_fixedtau()
     claim("pooled_w264_fixedtau", pool, "pooled_w264_fixedtau.csv", "recovered",
           {"shell": "w264_i53"}, "gop MOI run set do cung dai luong nay")
@@ -287,6 +296,18 @@ def add_fair_deltas(name):
     return rows
 
 
+def sign_test_p(k, n):
+    """p hai phia cua kiem dinh dau. Khong dung scipy de artifact chay duoc tren cai dat tran.
+
+    Vi sao can: cot "wins" in 8/8 va 6/8 canh nhau nhu the chung cung loai bang chung. Khong
+    phai: 8/8 cho p=0.0078, con 6/8 cho p=0.289, tuc mot cai la bang chung va cai kia thi khong.
+    In ti so ma khong in p la de nguoi doc tu suy ra dieu bai khong do duoc.
+    """
+    from math import comb
+    tail = sum(comb(n, i) for i in range(min(k, n - k) + 1))
+    return min(1.0, 2.0 * tail / (2 ** n))
+
+
 def emit_tables_and_figure():
     """Sinh HAI bang va MOT hinh tu CSV.
 
@@ -336,8 +357,10 @@ def emit_tables_and_figure():
         w = sum(1 for r in sel if float(r[f"recovered_gnn_tau{bt}"])
                 > float(r[f"recovered_ecmp_eps{be}"]))
         gap = st.median(float(r["gap_fair"]) for r in sel)
+        pv = sign_test_p(w, len(sel))
+        ps = f"{pv:.3f}" if pv >= 0.001 else "<0.001"
         body.append(f"{NICE[sh]} & {mt['0.2']:.3f} & {mt[bt]:.3f} & {float(bt):g} & "
-                    f"{me[be]:.3f} & {float(be):g} & ${gap:+.3f}$ & {w}/{len(sel)} \\\\")
+                    f"{me[be]:.3f} & {float(be):g} & ${gap:+.3f}$ & {w}/{len(sel)} & ${ps}$ \\\\")
         curves.append("\\addplot coordinates {"
                       + " ".join(f"({float(t):g},{mt[t]:.4f})" for t in TAUS)
                       + "};\n\\addlegendentry{" + NICE[sh] + "}")
@@ -348,11 +371,11 @@ def emit_tables_and_figure():
         "per shell over fixed grids, eight instances each. Recovered fraction of the "
         "blind-to-equilibrium gap. The gap column is the median of the per-instance difference, "
         "not the difference of the medians. $\\tau$ is the decoder temperature and "
-        "$\\varepsilon$ the path-cost tolerance.}\n"
-        "\\label{tab:fair}\n\\begin{tabular}{@{}lrrrrrrr@{}}\n\\toprule\n"
-        "shell & \\multicolumn{3}{c}{learned} & \\multicolumn{2}{c}{blind} & gap & wins \\\\\n"
+        "$\\varepsilon$ the path-cost tolerance. The $p$ column is a two-sided sign test on the win count: with eight instances, $8/8$ is evidence and $6/8$ is not, and printing the ratio alone invites the reader to treat them alike.}\n"
+        "\\label{tab:fair}\n\\begin{tabular}{@{}lrrrrrrrr@{}}\n\\toprule\n"
+        "shell & \\multicolumn{3}{c}{learned} & \\multicolumn{2}{c}{blind} & gap & wins & $p$ \\\\\n"
         "\\cmidrule(lr){2-4}\\cmidrule(lr){5-6}\n"
-        " & $\\tau{=}0.2$ & best & $\\tau^\\star$ & best & $\\varepsilon^\\star$ & & \\\\\n"
+        " & $\\tau{=}0.2$ & best & $\\tau^\\star$ & best & $\\varepsilon^\\star$ & & & \\\\\n"
         "\\midrule\n" + "\n".join(body) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
     open(os.path.join(PAPER, "fig-tau.tex"), "w").write(

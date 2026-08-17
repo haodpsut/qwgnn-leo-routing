@@ -47,18 +47,48 @@ def flatten(path):
     # van lot va cong bao dung cai loi cu, y het nhu chua sua gi.
     t = re.sub(r"\\cmidrule\(([a-z]+)\)\{([^}]*)\}", r"\\cmidrulex{\1}{\2}", t)
     assert "\\cmidrule(" not in t, "con bien the \\cmidrule(..) chua doi"
-    return t.replace("\\begin{document}", SHIM + "\\begin{document}", 1)
+    # Thay RUOT moi tabular bang mot the mo duc, o CA HAI ban. latexdiff chen danh dau vao
+    # giua hang bang la sinh \noalign sai cho va bai khong dung duoc. Va danh dau tung ky tu
+    # trong mot bang do script sinh lai TRON VEN thi cung khong noi len dieu gi: bang doi hay
+    # khong doi la mot su kien, khong phai mot day ky tu. Sau khi so xong, the duoc tra lai
+    # bang ruot cua ban MOI.
+    bodies = []
+    def stash(m):
+        bodies.append(m.group(0))
+        return "\\TABLESTASH{%d}" % (len(bodies) - 1)
+    t = re.sub(r"\\begin\{tabular\}.*?\\end\{tabular\}", stash, t, flags=re.S)
+    return t.replace("\\begin{document}", SHIM + "\\begin{document}", 1), bodies
+new_bodies = []
 for src, dst in ((os.path.join(root, "v1-rejected/main.tex"), "old.tex"),
                  (os.path.join(root, "paper/main.tex"), "new.tex")):
-    io.open(os.path.join(work, dst), "w", encoding="utf-8").write(flatten(src))
+    txt, bodies = flatten(src)
+    if dst == "new.tex":
+        new_bodies = bodies
+    io.open(os.path.join(work, dst), "w", encoding="utf-8").write(txt)
+io.open(os.path.join(work, "bodies.txt"), "w", encoding="utf-8").write(
+    "\n%%TABLESPLIT%%\n".join(new_bodies))
 PY
 latexdiff --type=UNDERLINE --exclude-textcmd="section,subsection" \
   "$WORK/old.tex" "$WORK/new.tex" > "$WORK/diff.tex" 2>/dev/null
 # Chi doi MAU, khong gach chan cung khong gach ngang: gach chan doi font nen trang danh dau
 # doc khong cung co voi ban cuoi, va Hao da bat dung loi do mot lan.
-python3 - "$WORK/diff.tex" <<'PY'
+python3 - "$WORK/diff.tex" "$WORK/bodies.txt" <<'PY'
 import re, sys, io
 p = sys.argv[1]; t = io.open(p, encoding="utf-8").read()
+bodies = io.open(sys.argv[2], encoding="utf-8").read().split("\n%%TABLESPLIT%%\n")
+# GO VO BOC truoc khi tra ruot. latexdiff boc the trong \DIFadd{...}, va nhet ca mot tabular
+# vao doi so macro thi \midrule (dung \noalign) roi ra ngoai ngu canh alignment: LaTeX bao
+# "Misplaced \noalign" o mot dong khong lien quan gi toi nguyen nhan.
+# The nam tren dong %DIFDELCMD phai BI XOA, khong duoc tra ruot. latexdiff dung mot dong
+# chu thich de giu lai lenh da xoa; nhet mot tabular NHIEU DONG vao do thi chi dong dau con
+# bi chu thich, phan con lai thanh LaTeX song va \toprule roi ra ngoai tabular. Trieu chung
+# la "Misplaced \noalign" o mot dong cach nguyen nhan hang tram dong.
+t = re.sub(r"(%DIFDELCMD[^\n]*?)\\TABLESTASH\{\d+\}", r"\1", t)
+t = re.sub(r"\\DIF(?:add|del)(?:FL)?\{\s*(\\TABLESTASH\{\d+\})\s*\}", r"\1", t)
+# The mang chi so cua ban CU thi tro toi bang khong ton tai trong ban moi: bo han.
+t = re.sub(r"\\TABLESTASH\{(\d+)\}",
+           lambda m: bodies[int(m.group(1))] if int(m.group(1)) < len(bodies) else "", t)
+t = re.sub(r"\\DIF(?:add|del)(?:FL)?\{\s*\}", "", t)
 t = re.sub(r"\\providecommand\{\\DIFadd\}\[1\]\{[^\n]*\}",
            r"\\providecommand{\\DIFadd}[1]{{\\protect\\color[rgb]{0,0,0.75}#1}}", t)
 t = re.sub(r"\\providecommand\{\\DIFdel\}\[1\]\{[^\n]*\}",
@@ -69,7 +99,9 @@ head = (r"\noindent\textcolor[rgb]{0,0,0.75}{\textbf{Blue}}: text that is new in
         r"and removed, shown only where the two versions could be aligned. Because this manuscript "
         r"was rewritten rather than edited, most removed material could not be aligned and does "
         r"not appear here; the response letter lists what was removed and why. Unmarked text is "
-        r"unchanged.\par\bigskip" "\n")
+        r"unchanged. Tables are shown in their final form without marking: they are regenerated "
+        r"wholesale from the result files rather than edited, so a character-level diff of them "
+        r"would be noise. Every table in this manuscript should be read as new.\par\bigskip" "\n")
 t = t.replace("\\maketitle", "\\maketitle\n" + head, 1)
 io.open(p, "w", encoding="utf-8").write(t)
 PY

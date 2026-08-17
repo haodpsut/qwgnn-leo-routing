@@ -41,13 +41,26 @@ VI-I).
 months before our submission and we had missed it.
 \item Thirteen sections merged into eight; a summary table of every headline number opens Section
 VI; a claims manifest ties every number in the text to the file that produced it.
+\item Before submitting we had the manuscript read by an independent reviewer outside the
+project, and acted on that reading as well. Four further controls were run and three further
+claims moved: the speedup is restated against a warm-started solver, which needs $2$ to $6$
+iterations rather than $20$ and cuts the factor from $21$--$29\times$ to roughly $2$--$9\times$;
+the proactive variant is shown to lose to the blind multipath baseline at every drift level on an
+unseen shell; the $1584$-satellite shell finally receives the temperature sweep and the blind
+comparator that the rest of the paper demands, and the blind baseline comes out ahead there. We
+also added a fourth evaluation pitfall (Section V-A of the manuscript): the
+recovered-fraction metric saturates when its blind reference is pathological, so four points of
+that fraction can separate a policy two percent from equilibrium from one more than a hundred
+times away. Reviewer 1's observation about numbers disagreeing across tables turned out to have a
+second, larger instance than the one spotted, and the manuscript now pools the run sets and
+reports the range.
 \item \emph{What was removed.} The contribution list C1--C4 is gone as a list, and with it three
 claims we can no longer support in the form we made them: that the method is the first to formalize
 LEO routing as equilibrium amortization (arXiv:2601.21921 precedes it); that inductive transfer to a
 $12\times$ larger shell is a result in its own right (a one-pass blind baseline reaches the same
 place); and that the reported gap is the operational gap (it is the gap in BPR delay, and under a
 hard capacity it is smaller). The claim that the paper distils a general evaluation protocol is
-narrowed to the three specific pitfalls we measured. No section was deleted outright; the material
+narrowed to the four specific pitfalls we measured. No section was deleted outright; the material
 was merged, and every measurement in the previous submission is still in the paper.
 \end{itemize}
 
@@ -71,7 +84,7 @@ OOD case appears as 93\% in Table VII and 94\% in Tables VI and VIII.}
 tables did not. A run-set note is now in the caption of each of the three tables, so a reader
 comparing them sees the reason without hunting for it. More generally, this class of mismatch is
 now checked mechanically: a claims manifest ties every number in the paper to the CSV, column,
-filter and aggregation that produce it, and a script recomputes all $65$ of them. Your comment also
+filter and aggregation that produce it, and a script recomputes all $97$ of them. Your comment also
 made us notice a second, quieter version of the same problem: the recovered fraction was printed as
 a percentage in some sections and as a decimal in others. It is now a decimal everywhere, which is
 what its name says it is.

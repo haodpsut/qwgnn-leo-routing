@@ -200,7 +200,7 @@ setting the same shell reads $0.968$ against a strongest cheap rival of $0.869$;
 comparison above is the fair one.) Paired per unit,
 the median difference is $0.317$. On
 three shells it never saw, the same comparison reads $0.984$ against $0.976$, $0.974$ against
-$0.973$, and $0.989$ against $0.969$. It wins by unit count on every shell, but off distribution
+$0.973$, and $0.989$ against $0.969$. It is ahead on more units than not on every shell, but a two-sided sign test separates them: three shells give $p=0.008$ and the $264$-shell at $53^\circ$, where it wins $6/8$, gives $p=0.289$. Off distribution
 the margins are small enough that eight units per shell cannot separate them from a tie, and the
 honest statement is parity rather than advantage.
 
@@ -297,6 +297,23 @@ forward pass for LEO mega-constellations, supervising on Lagrangian duality rath
 traffic-assignment equilibrium, and jointly optimising ISL connectivity. Its reported
 comparison is against ``non-joint or heuristic baselines'' and against the iterative dual
 solve it amortises.
+
+We do not compare against it numerically, and it is better to say why than to let the omission
+pass. Its objective is a Lagrangian dual of a joint routing-and-topology problem, not a
+traffic-assignment equilibrium, so the two methods do not optimise the same quantity and no
+recovered fraction is defined that would cover both. Its constellation, demand model and ISL
+budget are not those of any public simulator we could run, no implementation is released, and it
+was a preprint under review while this work was carried out. Reimplementing it from the paper
+would produce a comparison whose result we could attribute to our reimplementation as easily as
+to the method, which is the failure mode this paper spends its length arguing against.
+
+What we offer instead is a comparison that does transfer. The blind multipath split of
+Section~\ref{sec:vs-blind} costs one pass, requires no training and no dual solve, and is
+available to any method in this family; it is the floor that a learned price field of either
+kind has to clear. Our own field clears it decisively in distribution and does not clear it
+outside, and that is a question any paper in this line, including \emph{DeepLaDu}, can answer
+about itself in a few hours of compute. We would rather supply a baseline others can run than
+a number about a system we could not.
 
 That comparison structure is the norm rather than the exception, and it is what motivates this
 paper. Across this line of work the reference points are consistently a naive floor
@@ -722,9 +739,16 @@ If $\lVert \hat g-g^{*}\rVert_\infty\le\varepsilon$, then
 \label{eq:bound}
 \end{equation}
 where $H$ is the maximum decoded path length (hops), $c_1$ depends on $L$ and the
-free-flow delays, and $\delta_{\mathrm{dec}}\ge 0$ is the decoder's gap at exact prices
+free-flow delays, and $\delta_{\mathrm{dec}}(\tau,G)\ge 0$ is the decoder's gap at exact prices
 ($\hat g=g^{*}$). The prediction term vanishes as $\varepsilon\to 0$.
 \end{proposition}
+
+The decoder term carries the temperature and the graph in its argument deliberately. An earlier
+statement of this proposition wrote it as a constant, which is wrong in a way that matters:
+Section~\ref{sec:two-causes} measures it moving by $0.065$ to $0.094$ in recovered fraction between
+shells at a fixed $\tau$, a range comparable to the entire off-distribution effect the proposition
+is being used to reason about. Treating it as a constant is what allowed that movement to be
+attributed to the price field.
 
 \begin{IEEEproof}[Proof sketch]
 Per edge, $\lvert c_{uv}-c^{*}_{uv}\rvert=\prop_{uv}\lvert\hat g_{uv}-g^{*}_{uv}\rvert\le
@@ -743,21 +767,45 @@ where the first and third bracketed terms are each at most $H\prop_{\max}\vareps
 most $H$ hops, each edge perturbed by at most $\prop_{\max}\varepsilon$) and the middle term
 is non-positive because $P_c$ is $c$-shortest. The multipath split
 \eqref{eq:split} only uses distance-decreasing edges, so this per-demand cost inflation is
-preserved under aggregation, and on the bounded operating range the induced load
-displacement is $O(\varepsilon)$. Mapping path cost to realized travel time through the
+preserved under aggregation. The step from a per-demand cost perturbation to the loads that
+result after every demand re-routes is a fixed-point argument that we do not carry out; we
+\emph{assume} that on the bounded operating range the induced load displacement is
+$O(\varepsilon)$. This is the load-stability assumption, and it is the substance of the
+proposition rather than a technicality: without it the perturbed routing could in principle
+concentrate flow on a different cut. We state it as an assumption rather than sketch a proof we
+do not have. Mapping path cost to realized travel time through the
 $L$-Lipschitz BPR response on that range then gives, under the stated bounded-range
 assumption, a multiplicative factor of order $c_1 H\varepsilon$ with
 $c_1=\Theta(L\,\prop_{\max}/\bar{\prop})$; here $L$ is finite because the utilizations stay
 in a fixed range, but it grows in the heavily congested regime, so $c_1$ is taken on the
-measured operating range rather than as a universal constant. Setting $\hat g=g^{*}$
+measured operating range rather than as a universal constant. It is worth saying how fast it
+grows and how large it gets, since the proposition is otherwise easy to read as saying more than
+it does. With the BPR exponent $\beta=4$, $L$ scales as the cube of utilization, so $c_1$ does
+too. Measured on our instances, $H$ is $15$ on the $132$-shell and $26$ on the $264$-shell,
+$\prop_{\max}/\bar{\prop}$ is $1.23$ and $1.41$, and the product $c_1H$ is $49$ and $111$ at
+equilibrium load but $472$ and $6290$ at the load blind routing produces. Setting $\hat g=g^{*}$
 ($\varepsilon=0$) leaves only $\delta_{\mathrm{dec}}$, the residual between the softmin
 split (itself a function of the temperature $\tau$) and the exact equilibrium splitting,
 which the experiments measure at a few percent.
 \end{IEEEproof}
 
-Section~\ref{sec:results-decode} validates \eqref{eq:bound} empirically: the travel-time
-gap grows monotonically with the price error and flattens to a small floor
-$\delta_{\mathrm{dec}}$ as the error vanishes.
+Section~\ref{sec:results-decode} tests the \emph{shape} of \eqref{eq:bound} empirically: the
+travel-time gap grows monotonically with the price error and flattens to a small floor
+$\delta_{\mathrm{dec}}$ as the error vanishes. We previously called this a validation of the
+bound, and it is not one. With $c_1H$ between $49$ and $6290$ on our instances, the prediction
+term contributes less than ten percent only for a per-link price error below $2\times10^{-3}$ at
+equilibrium load and below $2\times10^{-5}$ at the load blind routing produces. No model in this
+paper, on any shell including the one it was trained on, predicts prices that accurately. The
+numerical bound is therefore vacuous at every operating point we measure, and it is emptiest
+exactly where Section~\ref{sec:regime} says the method earns its place: the regime in which a
+learned router is worth deploying is the regime in which this proposition says nothing.
+
+What survives is the form rather than the number. The proposition says price error enters travel
+time linearly rather than catastrophically, that the coefficient is governed by the decoded path
+length and the local curvature of the cost, and that the residual at zero price error is a
+property of the decoder. Figure~\ref{fig:bound} is consistent with all three, and that consistency
+is what we claim. We keep the proposition because those three statements guided the design of the
+decode, and we state plainly that it does not certify any number in this paper.
 
 \subsection{Inductive transfer (SP3)}\label{sec:induct}
 The parameters $\theta=\{W_{\mathrm{in}},W^{(l)},\mathrm{MLP}\}$ have dimensions set by
@@ -1343,7 +1391,10 @@ trained on it recovers $0.977$ of the blind-to-equilibrium gap against $0.668$; 
 the median difference is $0.317$. On three shells it never saw, the same comparison reads $0.984$
 against $0.976$, $0.974$ against $0.973$, and $0.989$ against $0.969$, with paired differences of
 $0.008$, $0.002$ and $0.020$. The learned field is ahead on more instances than not in every case,
-but at this margin and this sample size the defensible reading is parity, not advantage. The
+but the win counts do not carry equal weight: $8/8$ gives a two-sided sign-test $p$ of $0.008$ and
+$6/8$ gives $0.289$, so on the $264$-shell at $53^\circ$ the direction is undetermined rather than
+merely small. At this margin and this sample size the defensible reading is parity, not advantage.
+The
 advantage that is large is the in-distribution one.
 
 The reason the baseline is strong off distribution, and weak on the training shell, is structural
@@ -1551,12 +1602,24 @@ predicted prices route well when delay is realized by queues rather than a cost 
 learned number is param-matched across operators, averaged over multiple instances and
 seeds with standard deviations, and features are scale-normalized so the model cannot
 shortcut on absolute coordinates; the operator ablation isolates the propagation operator
-at a fixed parameter budget. \emph{External validity}: results are on synthetic Walker
+at a fixed parameter budget. Two internal threats we did not control until late deserve naming.
+The decoder temperature was held fixed while the constellation changed, which confounds the
+decoder with the model and is worth $0.065$ to $0.094$ in recovered fraction
+(Section~\ref{sec:two-causes}); we now sweep it, but every comparison in this literature that
+holds it fixed carries the same confound. And on the $1584$-shell the twenty-iteration solve
+that supplies our equilibrium reference has not converged, which we detected only because the
+price of anarchy came out below one (Section~\ref{sec:s1584}); every quantity on that shell
+referenced to equilibrium inherits the uncertainty. \emph{External validity}: results are on synthetic Walker
 shells with a uniform capacity and a gravity demand model, and the zero-shot transfer was
 tested up to a $12\times$ size jump and one shell geometry; other geometries,
-heterogeneous link capacities, and real traffic traces remain to be studied.
-\emph{Reproducibility}: the pipeline is deterministic from parameters and every figure
-number is regenerated from a result CSV by a released script.
+heterogeneous link capacities, and real traffic traces remain to be studied. Only one of the five
+shells we use has an inclination at which the polar cutoff activates, so the time-varying part of
+the topology is exercised far less than the phrase ``time-varying'' suggests.
+\emph{Reproducibility}: the pipeline is deterministic from parameters, and every number in
+the text is tied by a manifest to the file, column, filter and aggregation that produce it, with a
+script that recomputes all of them. That was not true of an earlier version: the $1584$-shell
+entries existed only in the console log of a run on another machine, so no gate could reach them.
+They are now extracted to a CSV that records the log it came from.
 
 \subsection{What the measurements do and do not license}
 The simulator is kinematic and flow level, not packet level; it captures

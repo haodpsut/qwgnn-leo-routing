@@ -998,6 +998,110 @@
     "note": "GNN o tau tot nhat cach can bang bao nhieu lan"
   },
   {
+    "id": "bound_H_w132_i53",
+    "paper_value": "15",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "H_hops",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: H_hops tren w132_i53"
+  },
+  {
+    "id": "bound_c1H_ue_w132_i53",
+    "paper_value": "49",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "c1H_at_ue",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: c1H_at_ue tren w132_i53"
+  },
+  {
+    "id": "bound_c1H_blind_w132_i53",
+    "paper_value": "472",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "c1H_at_blind",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: c1H_at_blind tren w132_i53"
+  },
+  {
+    "id": "bound_propratio_w132_i53",
+    "paper_value": "1.23",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "prop_ratio",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: prop_ratio tren w132_i53"
+  },
+  {
+    "id": "bound_H_w264_i53",
+    "paper_value": "26",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "H_hops",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: H_hops tren w264_i53"
+  },
+  {
+    "id": "bound_c1H_ue_w264_i53",
+    "paper_value": "111",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "c1H_at_ue",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: c1H_at_ue tren w264_i53"
+  },
+  {
+    "id": "bound_c1H_blind_w264_i53",
+    "paper_value": "6290",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "c1H_at_blind",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: c1H_at_blind tren w264_i53"
+  },
+  {
+    "id": "bound_propratio_w264_i53",
+    "paper_value": "1.41",
+    "csv": "../code/results/r4_3_bound_constants.csv",
+    "column": "prop_ratio",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "hang so Menh de 1: prop_ratio tren w264_i53"
+  },
+  {
     "id": "pooled_w264_fixedtau",
     "paper_value": "0.889",
     "csv": "../code/results/pooled_w264_fixedtau.csv",
