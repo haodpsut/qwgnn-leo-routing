@@ -63,7 +63,6 @@
 \newcommand{\cost}{\mathrm{cost}}
 \newcommand{\prop}{\mathrm{prop}}
 \newcommand{\cpc}{\mathrm{cap}}
-\newcommand{\softplus}{\mathrm{softplus}}
 \newcommand{\TTT}{\mathrm{TTT}}
 \newcommand{\AoN}{\textsc{AoN}}
 
@@ -147,7 +146,7 @@ per slot. At constellation scale, with topology changing every few seconds,
 recomputing UE from scratch each slot is impractical.
 
 This tension, a cheap-but-blind heuristic versus an expensive-but-optimal solve,
-motivates our approach: \emph{amortize} the equilibrium. A graph neural network (GNN)
+motivates our approach: \emph{amortize} the equilibrium~\cite{amos2023}. A graph neural network (GNN)
 observes cheap features (per-node traffic intensity and the load that one
 congestion-blind pass would induce) and predicts, in a single forward pass, the
 equilibrium congestion price on every ISL. Routing on the predicted cost recovers
@@ -183,11 +182,13 @@ traffic-assignment equilibrium and \emph{decompose} it into four sub-problems
 (Section~\ref{sec:decomp}), each mapped to a measurable claim.
 \item \textbf{C1 (amortization).} A one-shot GNN closely approaches the user
 equilibrium in distribution, recovering about $97\%$ of the gain over blind routing,
-at $21$ to $29\times$ less computation than the iterative solve.
+at about $22\times$ less computation than the iterative solve (rising to $29\times$ at the
+largest shell; see \textbf{C3}).
 \item \textbf{C2 (inductive scale generalization).} Trained on a $132$-satellite
 shell, the same model transferred zero shot to a $1584$-satellite shell ($12\times$
 larger) recovers about $94\%$ of the gain and remains the best \emph{deployable}
-policy.
+policy (the user equilibrium is a reference that costs $T\approx20$ passes per slot,
+Table~\ref{tab:cost}).
 \item \textbf{C3 (cost that improves with scale).} We give a complexity analysis and
 wall-clock measurements showing the inference saving over UE \emph{grows} with the
 constellation, reaching $29\times$ at $1584$ satellites.
@@ -206,7 +207,7 @@ the kill-gate record and why a plain graph convolution is the right operator her
 ISL networks has been studied for low-latency routing and topology
 design~\cite{handley2018,bhattacherjee2019}. Handley showed that a $+$Grid of ISLs can
 beat terrestrial fiber on long paths because light is faster in vacuum, making the ISL
-layer worth routing carefully~\cite{handley2018}; Bhattacherjee and Snoeren explored how
+layer worth routing carefully~\cite{handley2018}; Bhattacherjee and Singla explored how
 the choice of which satellites to interconnect shapes path length and
 churn~\cite{bhattacherjee2019}. The broader push toward non-terrestrial networks in the
 $6$G era is surveyed in~\cite{kodheli,giordani}, and the design space of competing LEO
@@ -246,12 +247,39 @@ software-driven wide-area networks~\cite{swan,b4}. These solve an optimization p
 measurement epoch; the novelty in LEO is that the topology is large and changes every few
 seconds, so a per-slot solve is the bottleneck and amortizing it is the prize.
 
-\textbf{Learning-based control.} Deep reinforcement learning has been applied to resource
-management~\cite{deeprm}, datacenter traffic optimization~\cite{auto}, and routing over a
-fixed topology~\cite{valadarsky,xu}. Such policies are powerful but require online
-exploration and are tied to the training topology. We instead supervise on a computable
-equilibrium and exploit the predictable demand drift for proactivity, which removes
-exploration at deployment and makes the learned map transfer across constellation size.
+\textbf{Learning-based control, and what it is measured against.} Deep reinforcement learning
+has been applied to resource management~\cite{deeprm}, datacenter traffic
+optimization~\cite{auto}, and routing over a fixed topology~\cite{valadarsky,xu}. Such
+policies require online exploration and are tied to the training topology, and the
+supervised alternative is to regress onto a computable optimum instead. The closest work to
+ours takes exactly that route in exactly this setting: \emph{DeepLaDu}~\cite{deepladu} trains
+a graph network to infer per-link congestion prices from the constellation state in a single
+forward pass for LEO mega-constellations, supervising on Lagrangian duality rather than on a
+traffic-assignment equilibrium, and jointly optimising ISL connectivity. Its reported
+comparison is against ``non-joint or heuristic baselines'' and against the iterative dual
+solve it amortises.
+
+That comparison structure is the norm rather than the exception, and it is what motivates this
+paper. Across this line of work the reference points are consistently a naive floor
+(shortest-path or hop-count routing) and an expensive ceiling (the iterative solve being
+amortised). What is systematically absent is the cell between them: a baseline that is
+\emph{as cheap as the learned model} and nonetheless strong. Nor do these evaluations report a
+regime in which the learned map fails, or test transfer to an unseen constellation
+\emph{against such a baseline} rather than against the floor. Our contribution is to supply
+that missing comparator and to map the boundary it reveals.
+
+\textbf{Multipath spreading as the missing comparator.} Splitting traffic over several
+near-shortest paths is the oldest and cheapest way to relieve congestion without measuring it.
+Equal-cost multipath~\cite{ecmp} hashes flows across next-hops of exactly equal cost and costs
+one shortest-path computation; responsive load balancing~\cite{texcp} and software-driven
+WANs~\cite{swan,b4} generalise the idea with feedback. Spreading is congestion-\emph{blind}: it
+consults path geometry, never load. That is usually treated as a weakness, and in a
+terrestrial network with few equal-cost alternatives it is one. A dense LEO $+$Grid is the
+opposite case, offering many near-shortest detours between any pair, and we find this changes
+the comparison qualitatively (Section~\ref{sec:results}). One caveat is specific to this
+topology and, to our knowledge, unremarked: with inter-satellite delays taking continuous
+values, exact cost ties essentially never occur, so textbook ECMP degenerates to single-path
+routing and only a tolerance-based variant is meaningful.
 
 \textbf{Quantum walks and learned operators.} Continuous-time quantum walks have been used
 as a graph propagation operator to capture long-range structure~\cite{qwnn}, and recent
@@ -288,7 +316,7 @@ $\TTT(\pi)$ & total travel time of routing policy $\pi$ \\
 A Walker shell of $S$ satellites in $P$ planes is propagated on circular orbits. Each
 satellite holds two intra-plane ISLs and up to two cross-plane ISLs, forming a $+$Grid
 (Fig.~\ref{fig:topo}). The topology over a horizon is a known sequence
-$\{G_t\}_{t=0}^{T-1}$, $G_t=(V,E_t)$, with $|V|=S$. Each ISL $(u,v)\in E_t$ has a
+$\{G_t\}_{t}$, $G_t=(V,E_t)$, with $|V|=S$. Each ISL $(u,v)\in E_t$ has a
 propagation delay $\prop_{uv}=\lVert p_u-p_v\rVert/c$ from the known positions $p$, and
 a capacity $\cpc$. Cross-plane links above a polar cutoff latitude are deactivated, as
 in operational designs; for a $53^\circ$ shell the cutoff is never reached, so the ISL
@@ -490,7 +518,7 @@ hotspot region, which drifts by a known $\Delta$ per slot.}
 \section{Method}\label{sec:method}
 \subsection{Observable features (input to SP1)}
 For a slot we form per-node features
-$\phi_v=[\,\mathrm{out}_v,\,\mathrm{in}_v,\,x^{0,\mathrm{out}}_v,\,x^{0,\mathrm{in}}_v\,]$,
+$\xi_v=[\,\mathrm{out}_v,\,\mathrm{in}_v,\,x^{0,\mathrm{out}}_v,\,x^{0,\mathrm{in}}_v\,]$,
 where $\mathrm{out}_v,\mathrm{in}_v$ are the rate originating and terminating at $v$, and
 $x^{0,\cdot}_v$ aggregate the \emph{blind load} $x^{0}=\AoN(\prop)$ leaving and entering
 $v$. Per-edge features are $[\,\prop_{uv},\,x^{0}_{uv}\,]$. The blind load is one $\AoN$
@@ -501,7 +529,7 @@ invariant, so the model does not see absolute coordinates or counts and cannot s
 on them.
 
 \subsection{Edge-price GNN (model for SP1)}
-Node embeddings are initialized $h_v^{(0)}=\mathrm{ReLU}(W_{\mathrm{in}}\phi_v)$ and
+Node embeddings are initialized $h_v^{(0)}=\mathrm{ReLU}(W_{\mathrm{in}}\xi_v)$ and
 updated for $l=0,\dots,K-1$ by a symmetric-normalized graph convolution
 \begin{equation}
 h_v^{(l+1)}=\mathrm{ReLU}\!\Big(W^{(l)}\!\!\sum_{u}\hat A_{vu}\,h_u^{(l)}\Big),
@@ -540,9 +568,9 @@ offline supervision is paid once and amortized over every deployment slot
 \Require training shells, demand sampler, epochs $N$
 \State $\mathcal{I}\gets\emptyset$
 \For{each (shell, demand) instance}
-  \State $x^{0}\gets\AoN(\prop)$;\ \ $\phi\gets\textsc{Features}(\mathcal{D},x^{0})$
+  \State $x^{0}\gets\AoN(\prop)$;\ \ $\xi\gets\textsc{Features}(\mathcal{D},x^{0})$
   \State $x^{\mathrm{UE}}\gets$ MSA \eqref{eq:msa};\ \ $g^{*}\gets \cost(x^{\mathrm{UE}})/\prop-1$
-  \State add $(\phi,g^{*})$ to $\mathcal{I}$
+  \State add $(\xi,g^{*})$ to $\mathcal{I}$
 \EndFor
 \For{$N$ epochs}
   \State update $\theta$ by gradient descent on $\mathcal{L}(\theta)$ \eqref{eq:loss}
@@ -585,7 +613,7 @@ w_{uv}&\propto \exp\!\big(-\,\mathrm{slack}_{uv}/(\tau\,\bar c)\big),\\
 \label{eq:split}
 \end{equation}
 where $\bar c$ is the mean edge cost and $\mathrm{slack}_{uv}=0$ on a shortest path. The
-downhill edges form a DAG, so the split is loop free and computed in one
+downhill edges form a directed acyclic graph (DAG), so the split is loop free and computed in one
 decreasing-$\mu_d$ sweep; $\tau\to 0$ recovers $\pi_{\mathrm{sp}}$, larger $\tau$ spreads
 load. The cost is one Dijkstra per destination, the same class as $\pi_{\mathrm{sp}}$,
 \emph{not} the $T$-iteration equilibrium solve. Algorithm~\ref{alg:infer} states one-slot
@@ -597,8 +625,8 @@ inference with this decode.
 \begin{algorithmic}[1]
 \Require graph $G_t$, demand $\mathcal{D}$ (or forecast $\hat{\mathcal{D}}$), weights $\theta$
 \State $x^{0}\gets \AoN(\prop)$ \Comment{one blind pass = features}
-\State $\phi\gets \textsc{Features}(\mathcal{D},x^{0})$
-\State $\hat g\gets f_\theta(\phi,G_t)$ \Comment{one GNN forward, Eq.~\eqref{eq:readout}}
+\State $\xi\gets \textsc{Features}(\mathcal{D},x^{0})$
+\State $\hat g\gets f_\theta(\xi,G_t)$ \Comment{one GNN forward, Eq.~\eqref{eq:readout}}
 \State $\pi\gets \textsc{MultipathDecode}\big(\prop(1{+}\hat g),\mathcal{D}\big)$ \Comment{Eq.~\eqref{eq:split}}
 \State \Return $\pi$
 \end{algorithmic}
@@ -622,15 +650,31 @@ free-flow delays, and $\delta_{\mathrm{dec}}\ge 0$ is the decoder's gap at exact
 
 \begin{IEEEproof}[Proof sketch]
 Per edge, $\lvert c_{uv}-c^{*}_{uv}\rvert=\prop_{uv}\lvert\hat g_{uv}-g^{*}_{uv}\rvert\le
-\prop_{\max}\varepsilon$. A path that is shortest under $c$ therefore has cost under the
-equilibrium cost $c^{*}$ exceeding the $c^{*}$-shortest by at most $2H\prop_{\max}\varepsilon$
-(additive shortest-path perturbation). The multipath split \eqref{eq:split} only uses
-distance-decreasing edges, so this per-demand cost inflation is preserved under
-aggregation. Mapping path cost to realized travel time through the $L$-Lipschitz BPR
-response on the operating range yields the multiplicative factor $c_1 H\varepsilon$ with
-$c_1=\Theta(L\,\prop_{\max}/\bar{\prop})$. Setting $\hat g=g^{*}$ ($\varepsilon=0$) leaves
-only $\delta_{\mathrm{dec}}$, the residual between the softmin split and the exact
-equilibrium splitting, which the experiments measure at a few percent.
+\prop_{\max}\varepsilon$. Let $P_c$ be a path shortest under the predicted cost $c$ and
+$P^{*}$ one shortest under the equilibrium cost $c^{*}$, each of at most $H$ hops. Since the
+per-edge costs differ by at most $\prop_{\max}\varepsilon$, accumulating over at most $H$
+hops on each path gives the two-sided additive perturbation
+\begin{equation*}
+\begin{aligned}
+c^{*}(P_c)-c^{*}(P^{*})
+&\le [c^{*}(P_c)-c(P_c)]+[c(P_c)-c(P^{*})]\\
+&\quad{}+[c(P^{*})-c^{*}(P^{*})]\ \le\ 2H\prop_{\max}\varepsilon,
+\end{aligned}
+\end{equation*}
+where the first and third bracketed terms are each at most $H\prop_{\max}\varepsilon$ (at
+most $H$ hops, each edge perturbed by at most $\prop_{\max}\varepsilon$) and the middle term
+is non-positive because $P_c$ is $c$-shortest. The multipath split
+\eqref{eq:split} only uses distance-decreasing edges, so this per-demand cost inflation is
+preserved under aggregation, and on the bounded operating range the induced load
+displacement is $O(\varepsilon)$. Mapping path cost to realized travel time through the
+$L$-Lipschitz BPR response on that range then gives, under the stated bounded-range
+assumption, a multiplicative factor of order $c_1 H\varepsilon$ with
+$c_1=\Theta(L\,\prop_{\max}/\bar{\prop})$; here $L$ is finite because the utilizations stay
+in a fixed range, but it grows in the heavily congested regime, so $c_1$ is taken on the
+measured operating range rather than as a universal constant. Setting $\hat g=g^{*}$
+($\varepsilon=0$) leaves only $\delta_{\mathrm{dec}}$, the residual between the softmin
+split (itself a function of the temperature $\tau$) and the exact equilibrium splitting,
+which the experiments measure at a few percent.
 \end{IEEEproof}
 
 Section~\ref{sec:results-decode} validates \eqref{eq:bound} empirically: the travel-time
@@ -851,8 +895,8 @@ std over seeds and instances). In distribution, the GNN ($0.42$) closely approac
 coincide, so the target is essentially the system optimum. The cheap alternatives fail:
 one-step correction overshoots and oscillates (relative travel time $1.04$, \emph{worse}
 than blind, because rerouting onto the apparently idle alternates creates fresh hotspots),
-and geographic greedy stalls on the ISL grid, needing the fallback for $53\%$ of flows and
-still reaching only $0.78$. The contrast
+and geographic greedy stalls on the ISL grid, needing the fallback for $53$ to $70\%$ of
+flows ($53\%$ at the reported operating point) and still reaching only $0.78$. The contrast
 between the GNN and one-step is the central evidence that the problem is not trivial: a
 single congestion-blind pass tells you where the hotspots are, but reacting to it by
 rerouting everyone onto the apparent alternates simply relocates the hotspots, a
@@ -909,7 +953,7 @@ than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 \caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean over
 instances and seeds. SO/UE are references; the GNN is the deployable policy.}
 \label{tab:baselines}
-\setlength{\tabcolsep}{4pt}\footnotesize
+\setlength{\tabcolsep}{3pt}\footnotesize
 \begin{tabular}{lccccc}
 \toprule
 split & SO & UE & geographic & one-step & \textbf{GNN} \\
@@ -998,7 +1042,14 @@ produce a near-equilibrium price field on it. This works because the learned map
 local load structure to a local price, a relation that is scale invariant in a way the
 absolute routing is not, and because the multipath decode realizes the predicted
 equilibrium faithfully; the recovered fraction stays near $94\%$ and its variance stays
-low ($\pm 2$) all the way to the largest shell.
+low ($\pm 2$) all the way to the largest shell. The $264$-shell recovered fraction reads
+$93\%$ here (Table~\ref{tab:scale}) and $94\%$ in the decoder and operator tables
+(Tables~\ref{tab:decode},~\ref{tab:ablation}); the one-point spread is the same
+independent-run variation as the $0.11$-versus-$0.12$ travel time noted in
+Section~\ref{sec:results-decode}, not a discrepancy. We report the $1584$ result as a
+recovered fraction rather than a travel-time ratio because at that scale blind travel time
+is far off the range that frames the smaller shells, so the fraction of the blind-to-UE
+gain is the meaningful, scale-free figure.
 
 \begin{table}[t]
 \centering
@@ -1273,40 +1324,49 @@ shortcut on absolute coordinates or counts.
 
 \begin{thebibliography}{99}
 \bibitem{handley2018} M. Handley, ``Delay is not an option: Low latency routing in
-space,'' in \emph{Proc. ACM HotNets}, 2018.
-\bibitem{bhattacherjee2019} D. Bhattacherjee and A. C. Snoeren, ``Network topology
-design at 27,000 km/hour,'' in \emph{Proc. ACM CoNEXT}, 2019.
+space,'' in \emph{Proc. ACM HotNets}, 2018, pp. 85--91.
+\bibitem{bhattacherjee2019} D. Bhattacherjee and A. Singla, ``Network topology
+design at 27,000 km/hour,'' in \emph{Proc. ACM CoNEXT}, 2019, pp. 341--354.
 \bibitem{hypatia} S. Kassing, D. Bhattacherjee, A. B. Águas, J. E. Saethre, and
 A. Singla, ``Exploring the `Internet from space' with Hypatia,'' in \emph{Proc. ACM
-IMC}, 2020.
+IMC}, 2020, pp. 214--229.
 \bibitem{starperf} Z. Lai, H. Li, and J. Li, ``StarPerf: Characterizing network
-performance for emerging mega-constellations,'' in \emph{Proc. IEEE ICNP}, 2020.
+performance for emerging mega-constellations,'' in \emph{Proc. IEEE ICNP}, 2020, pp. 1--11.
 \bibitem{gcn} T. N. Kipf and M. Welling, ``Semi-supervised classification with graph
 convolutional networks,'' in \emph{Proc. ICLR}, 2017.
-\bibitem{gat} P. Veli\v{c}kovi\'c \emph{et al.}, ``Graph attention networks,'' in
-\emph{Proc. ICLR}, 2018.
+\bibitem{gat} P. Veli\v{c}kovi\'c, G. Cucurull, A. Casanova, A. Romero, P. Li\`o, and
+Y. Bengio, ``Graph attention networks,'' in \emph{Proc. ICLR}, 2018.
 \bibitem{graphsage} W. L. Hamilton, R. Ying, and J. Leskovec, ``Inductive
 representation learning on large graphs,'' in \emph{Proc. NeurIPS}, 2017.
-\bibitem{routenet} K. Rusek \emph{et al.}, ``RouteNet: Leveraging graph neural networks
-for network modeling and optimization in SDN,'' \emph{IEEE J. Sel. Areas Commun.}, vol.
-38, no. 10, 2020.
-\bibitem{almasan} P. Almasan \emph{et al.}, ``Deep reinforcement learning meets graph
-neural networks: Exploring a routing optimization use case,'' \emph{Computer
-Communications}, vol. 196, 2022.
+\bibitem{routenet} K. Rusek, J. Su\'arez-Varela, P. Almasan, P. Barlet-Ros, and
+A. Cabellos-Aparicio, ``RouteNet: Leveraging graph neural networks for network modeling
+and optimization in SDN,'' \emph{IEEE J. Sel. Areas Commun.}, vol. 38, no. 10,
+pp. 2260--2270, 2020.
+\bibitem{almasan} P. Almasan, J. Su\'arez-Varela, K. Rusek, P. Barlet-Ros, and
+A. Cabellos-Aparicio, ``Deep reinforcement learning meets graph neural networks:
+Exploring a routing optimization use case,'' \emph{Comput. Commun.}, vol. 196,
+pp. 184--194, 2022.
 \bibitem{wardrop} J. G. Wardrop, ``Some theoretical aspects of road traffic research,''
-\emph{Proc. Institution of Civil Engineers}, 1952.
-\bibitem{bpr} Bureau of Public Roads, \emph{Traffic Assignment Manual}, U.S. Dept. of
-Commerce, 1964.
+\emph{Proc. Inst. Civil Eng., Part II}, vol. 1, no. 3, pp. 325--362, 1952.
+\bibitem{bpr} Bureau of Public Roads, \emph{Traffic Assignment Manual}. Washington, DC,
+USA: U.S. Dept. of Commerce, 1964.
 \bibitem{beckmann} M. Beckmann, C. B. McGuire, and C. B. Winsten, \emph{Studies in the
-Economics of Transportation}, Yale Univ. Press, 1956.
+Economics of Transportation}. New Haven, CT, USA: Yale Univ. Press, 1956.
 \bibitem{poa} T. Roughgarden and \'E. Tardos, ``How bad is selfish routing?''
-\emph{Journal of the ACM}, vol. 49, no. 2, 2002.
+\emph{J. ACM}, vol. 49, no. 2, pp. 236--259, 2002.
 \bibitem{valadarsky} A. Valadarsky, M. Schapira, D. Shahaf, and A. Tamar, ``Learning to
-route,'' in \emph{Proc. ACM HotNets}, 2017.
+route,'' in \emph{Proc. ACM HotNets}, 2017, pp. 185--191.
 \bibitem{xu} Z. Xu \emph{et al.}, ``Experience-driven networking: A deep reinforcement
-learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018.
+learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018, pp. 1871--1879.
+\bibitem{deepladu} Z. Gu, J. Choi, T. Q. S. Quek, and J. Park, ``Duality-guided graph
+learning for real-time joint connectivity and routing in LEO mega-constellations,''
+arXiv:2601.21921v1 [eess.SP], Jan. 2026. Submitted to an IEEE journal for possible publication.
+\bibitem{ecmp} C. Hopps, ``Analysis of an equal-cost multi-path algorithm,'' RFC 2992,
+Internet Engineering Task Force, Nov. 2000.
 \bibitem{qwnn} S. Dernbach, A. Mohseni-Kabir, S. Pal, and D. Towsley, ``Quantum walk
-neural networks,'' in \emph{Complex Networks}, 2018.
+neural networks for graph-structured data,'' in \emph{Complex Networks and Their
+Applications VII} (Stud. Comput. Intell., vol. 813).\ Cham, Switzerland: Springer, 2018,
+pp. 182--193.
 \bibitem{kodheli} O. Kodheli \emph{et al.}, ``Satellite communications in the new space
 era: A survey and future challenges,'' \emph{IEEE Commun. Surveys Tuts.}, vol. 23, no. 1,
 pp. 70--109, 2021.
@@ -1314,42 +1374,44 @@ pp. 70--109, 2021.
 Challenges and opportunities,'' \emph{IEEE Network}, vol. 35, no. 2, pp. 244--251, 2021.
 \bibitem{delportillo} I. del Portillo, B. G. Cameron, and E. F. Crawley, ``A technical
 comparison of three low Earth orbit satellite constellation systems to provide global
-broadband,'' \emph{Acta Astronautica}, vol. 159, pp. 123--135, 2019.
+broadband,'' \emph{Acta Astronaut.}, vol. 159, pp. 123--135, 2019.
 \bibitem{michel} F. Michel, M. Trevisan, D. Giordano, and O. Bonaventure, ``A first look
-at Starlink performance,'' in \emph{Proc. ACM IMC}, 2022.
+at Starlink performance,'' in \emph{Proc. ACM IMC}, 2022, pp. 130--136.
 \bibitem{mpnn} J. Gilmer, S. S. Schoenholz, P. F. Riley, O. Vinyals, and G. E. Dahl,
-``Neural message passing for quantum chemistry,'' in \emph{Proc. ICML}, 2017.
+``Neural message passing for quantum chemistry,'' in \emph{Proc. ICML}, 2017, pp. 1263--1272.
 \bibitem{gin} K. Xu, W. Hu, J. Leskovec, and S. Jegelka, ``How powerful are graph neural
 networks?'' in \emph{Proc. ICLR}, 2019.
 \bibitem{battaglia} P. W. Battaglia \emph{et al.}, ``Relational inductive biases, deep
-learning, and graph networks,'' \emph{arXiv:1806.01261}, 2018.
+learning, and graph networks,'' arXiv:1806.01261, 2018.
 \bibitem{suarez} J. Su\'arez-Varela \emph{et al.}, ``Graph neural networks for
 communication networks: Context, use cases and opportunities,'' \emph{IEEE Network}, vol.
 37, no. 3, pp. 146--153, 2023.
 \bibitem{geyer} F. Geyer and G. Carle, ``Learning and generating distributed routing
-protocols using graph-based deep learning,'' in \emph{Proc. ACM SIGCOMM Workshop on Big
-Data Analytics and Machine Learning for Data Communication Networks (Big-DAMA)}, 2018.
+protocols using graph-based deep learning,'' in \emph{Proc. ACM SIGCOMM Big-DAMA
+Workshop}, 2018, pp. 40--45.
 \bibitem{gddr} O. Hope and E. Yoneki, ``GDDR: GNN-based data-driven routing,'' in
-\emph{Proc. IEEE ICDCS}, 2021.
+\emph{Proc. IEEE ICDCS}, 2021, pp. 517--527.
 \bibitem{sheffi} Y. Sheffi, \emph{Urban Transportation Networks: Equilibrium Analysis with
 Mathematical Programming Methods}. Englewood Cliffs, NJ, USA: Prentice-Hall, 1985.
 \bibitem{frankwolfe} M. Frank and P. Wolfe, ``An algorithm for quadratic programming,''
 \emph{Naval Research Logistics Quarterly}, vol. 3, no. 1--2, pp. 95--110, 1956.
 \bibitem{fortz} B. Fortz and M. Thorup, ``Internet traffic engineering by optimizing OSPF
-weights,'' in \emph{Proc. IEEE INFOCOM}, 2000.
+weights,'' in \emph{Proc. IEEE INFOCOM}, 2000, pp. 519--528.
 \bibitem{texcp} S. Kandula, D. Katabi, B. Davie, and A. Charny, ``Walking the tightrope:
-Responsive yet stable traffic engineering,'' in \emph{Proc. ACM SIGCOMM}, 2005.
+Responsive yet stable traffic engineering,'' in \emph{Proc. ACM SIGCOMM}, 2005, pp. 253--264.
 \bibitem{swan} C.-Y. Hong \emph{et al.}, ``Achieving high utilization with software-driven
-WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013.
+WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013, pp. 15--26.
 \bibitem{b4} S. Jain \emph{et al.}, ``B4: Experience with a globally-deployed software
-defined WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013.
+defined WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013, pp. 3--14.
 \bibitem{deeprm} H. Mao, M. Alizadeh, I. Menache, and S. Kandula, ``Resource management
-with deep reinforcement learning,'' in \emph{Proc. ACM HotNets}, 2016.
+with deep reinforcement learning,'' in \emph{Proc. ACM HotNets}, 2016, pp. 50--56.
 \bibitem{auto} L. Chen, J. Lingys, K. Chen, and F. Liu, ``AuTO: Scaling deep reinforcement
 learning for datacenter-scale automatic traffic optimization,'' in \emph{Proc. ACM
-SIGCOMM}, 2018.
+SIGCOMM}, 2018, pp. 191--205.
 \bibitem{kan} Z. Liu \emph{et al.}, ``KAN: Kolmogorov-Arnold networks,''
-\emph{arXiv:2404.19756}, 2024.
+arXiv:2404.19756, 2024.
+\bibitem{amos2023} B. Amos, ``Tutorial on amortized optimization,'' \emph{Foundations and
+Trends in Machine Learning}, vol. 16, no. 5, pp. 592--732, 2023.
 \end{thebibliography}
 
 \vspace{-2mm}
@@ -1364,7 +1426,7 @@ papers in international journals and conferences on IoT malware detection, satel
 communication optimization, and deep learning architectures.
 \end{IEEEbiography}
 
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{authors/van.jpg}}]{Nguyen Nang Hung Van}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{authors/van.jpg}}]{Nang Hung Van Nguyen}
 received his Ph.D. degree in Computer Science from The University of Danang, Vietnam, in
 2021. He is currently a lecturer at The University of Danang - University of Science and
 Technology. His research interests include Artificial Intelligence, Machine Learning,
