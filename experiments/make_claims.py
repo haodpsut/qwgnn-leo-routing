@@ -100,6 +100,97 @@ def add_fair_deltas(name):
     return rows
 
 
+def emit_tables_and_figure():
+    """Sinh HAI bang va MOT hinh tu CSV.
+
+    Bay luot do sinh ra 11 file ket qua va khong mot bang hay hinh nao. Voi mot bai do dac
+    thi do la thieu sot nang: nguoi doc khong nhin duoc HINH DANG cua bat cu thu gi, chi doc
+    duoc cac con so roi rac trong van xuoi. Duong cong nhiet do la vi du ro nhat -- no QUAY DAU
+    tren vo huan luyen va TRAI PHANG tren vo lon, va khong cau van nao thay duoc mot hinh.
+    """
+    feas = load("r3_2_feasibility.csv")
+    loss = load("r3_2_loss_models.csv")
+    fair = load("r2_7_fair_tuned_wide.csv")
+    BANDS = [("le1x", "$\\le 1\\times$"), ("1to2x", "$1$--$2\\times$"),
+             ("2to4x", "$2$--$4\\times$"), ("gt4x", "$>4\\times$")]
+    rows = []
+    for key, lbl in BANDS:
+        f = [r for r in feas if r["load_band"] == key]
+        l = [r for r in loss if r["load_band"] == key]
+        if not f:
+            continue
+        m = lambda rs, c: st.median(float(r[c]) for r in rs)
+        rows.append(f"{lbl} & {len(f)} & {m(f,'gain_bpr_pct'):.1f} & {m(l,'gain_product_pct'):.1f} & "
+                    f"{m(l,'gain_bottleneck_pct'):.1f} & {m(l,'gain_maxmin_pct'):.1f} \\\\")
+    open(os.path.join(PAPER, "tab-feasibility.tex"), "w").write(
+        "% SINH TU make_claims.py -- DUNG SUA TAY\n"
+        "\\begin{table}[t]\n\\centering\\small\n"
+        "\\caption{The congestion-aware advantage measured two ways on the same configurations. "
+        "The delay column is the BPR travel-time reduction; the three loss columns are the increase "
+        "in delivered rate under three feasibility models that disagree about how multi-hop loss "
+        "compounds. Rows are bands of the offered load blind routing places on its busiest link; "
+        "median over (shell, load, seed).}\n"
+        "\\label{tab:feasibility}\n"
+        "\\begin{tabular}{@{}lrrrrr@{}}\n\\toprule\n"
+        "offered load & $n$ & delay (\\%) & \\multicolumn{3}{c}{delivered rate (\\%)} \\\\\n"
+        "\\cmidrule(l){4-6}\n & & (BPR) & product & bottleneck & max-min \\\\\n\\midrule\n"
+        + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
+
+    TAUS = sorted({k.split("tau")[1] for k in fair[0] if "recovered_gnn_tau" in k}, key=float)
+    EPSS = sorted({k.split("eps")[1] for k in fair[0] if "recovered_ecmp_eps" in k}, key=float)
+    NICE = {"w132_i53": "$132$, $53^\\circ$ (trained)", "w198_i53": "$198$, $53^\\circ$",
+            "w264_i53": "$264$, $53^\\circ$", "w264_i70": "$264$, $70^\\circ$"}
+    body, curves = [], []
+    for sh in ["w132_i53", "w198_i53", "w264_i53", "w264_i70"]:
+        sel = [r for r in fair if r["shell"] == sh]
+        mt = {t: st.median(float(r[f"recovered_gnn_tau{t}"]) for r in sel) for t in TAUS}
+        me = {e: st.median(float(r[f"recovered_ecmp_eps{e}"]) for r in sel) for e in EPSS}
+        bt, be = max(TAUS, key=lambda t: mt[t]), max(EPSS, key=lambda e: me[e])
+        w = sum(1 for r in sel if float(r[f"recovered_gnn_tau{bt}"])
+                > float(r[f"recovered_ecmp_eps{be}"]))
+        gap = st.median(float(r["gap_fair"]) for r in sel)
+        body.append(f"{NICE[sh]} & {mt['0.2']:.3f} & {mt[bt]:.3f} & {float(bt):g} & "
+                    f"{me[be]:.3f} & {float(be):g} & ${gap:+.3f}$ & {w}/{len(sel)} \\\\")
+        curves.append("\\addplot coordinates {"
+                      + " ".join(f"({float(t):g},{mt[t]:.4f})" for t in TAUS)
+                      + "};\n\\addlegendentry{" + NICE[sh] + "}")
+    open(os.path.join(PAPER, "tab-fair.tex"), "w").write(
+        "% SINH TU make_claims.py -- DUNG SUA TAY\n"
+        "\\begin{table}[t]\n\\centering\\small\n"
+        "\\caption{Learned price field against congestion-blind multipath spreading, both tuned "
+        "per shell over fixed grids, eight instances each. Recovered fraction of the "
+        "blind-to-equilibrium gap. The gap column is the median of the per-instance difference, "
+        "not the difference of the medians. $\\tau$ is the decoder temperature and "
+        "$\\varepsilon$ the path-cost tolerance.}\n"
+        "\\label{tab:fair}\n\\begin{tabular}{@{}lrrrrrrr@{}}\n\\toprule\n"
+        "shell & \\multicolumn{3}{c}{learned} & \\multicolumn{2}{c}{blind} & gap & wins \\\\\n"
+        "\\cmidrule(lr){2-4}\\cmidrule(lr){5-6}\n"
+        " & $\\tau{=}0.2$ & best & $\\tau^\\star$ & best & $\\varepsilon^\\star$ & & \\\\\n"
+        "\\midrule\n" + "\n".join(body) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
+
+    open(os.path.join(PAPER, "fig-tau.tex"), "w").write(
+        "% SINH TU make_claims.py -- DUNG SUA TAY\n"
+        "\\begin{figure}[t]\n\\centering\n"
+        "\\resizebox{0.95\\columnwidth}{!}{%\n\\begin{tikzpicture}\n\\begin{axis}[\n"
+        "  xlabel={decoder temperature $\\tau$ (log scale)},\n"
+        "  ylabel={recovered fraction},\n"
+        "  xmode=log, log basis x=10, grid=major, width=8cm, height=5.4cm,\n"
+        "  legend pos=outer north east, legend cell align=left, font=\\small,\n"
+        "  ymin=0.4, ymax=1.06, mark size=1.6pt, width=7cm]\n"
+        + "\n".join(curves) + "\n"
+        "\\draw[dashed,gray] (axis cs:0.2,0.4) -- (axis cs:0.2,1.02);\n"
+        "\\node[font=\\scriptsize,gray!60!black,anchor=south west] at (axis cs:0.21,0.42)\n"
+        "  {$\\tau{=}0.2$};\n"
+        "\\end{axis}\n\\end{tikzpicture}}\n"
+        "\\caption{The decoder temperature is not a constant of the method. On the shell the model "
+        "was trained on the curve peaks near $\\tau=0.1$ and falls away; on every larger or "
+        "differently inclined shell it rises and then plateaus one to two orders of magnitude "
+        "higher. The fixed value inherited from the training shell (dashed) sits far down the "
+        "curve everywhere else, and the loss that causes was previously charged to the learned "
+        "price field.}\n\\label{fig:tau}\n\\end{figure}\n")
+    print("  + tab-feasibility.tex, tab-fair.tex, fig-tau.tex")
+
+
 def main():
     BANDS = [("le1x", 0, 1.0), ("1to2x", 1.0, 2.0), ("2to4x", 2.0, 4.0), ("gt4x", 4.0, 1e9)]
     feas = add_band("r3_2_feasibility.csv", "blind_maxutil", BANDS)
@@ -227,6 +318,7 @@ question & quantity & value \\
 """)
     print(f"\n# {len(C)} claim -> paper/claims.json")
     print(f"# bang tom tat -> paper/tab-summary.tex")
+    emit_tables_and_figure()
     return 0
 
 

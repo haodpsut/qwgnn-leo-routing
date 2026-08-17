@@ -1,0 +1,18 @@
+% SINH TU make_claims.py -- DUNG SUA TAY
+\begin{table}[t]
+\centering\small
+\caption{The congestion-aware advantage measured two ways on the same configurations. The delay column is the BPR travel-time reduction; the three loss columns are the increase in delivered rate under three feasibility models that disagree about how multi-hop loss compounds. Rows are bands of the offered load blind routing places on its busiest link; median over (shell, load, seed).}
+\label{tab:feasibility}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+offered load & $n$ & delay (\%) & \multicolumn{3}{c}{delivered rate (\%)} \\
+\cmidrule(l){4-6}
+ & & (BPR) & product & bottleneck & max-min \\
+\midrule
+$\le 1\times$ & 6 & 0.0 & 0.0 & 0.0 & 0.0 \\
+$1$--$2\times$ & 3 & 6.2 & 29.9 & 11.8 & 12.3 \\
+$2$--$4\times$ & 9 & 45.6 & 35.4 & 22.8 & 21.6 \\
+$>4\times$ & 12 & 79.1 & 30.9 & 36.5 & 37.1 \\
+\bottomrule
+\end{tabular}
+\end{table}

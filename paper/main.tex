@@ -804,6 +804,7 @@ need $T$ passes.}
 policy & cost (\AoN{} passes) \\
 \midrule
 blind, geographic & $1$ \\
+blind multipath ($\varepsilon$-tolerant) & $1$ \\
 one-step correction & $2$ \\
 \textbf{GNN (ours)} & $2 + \text{1 forward}$ \\
 UE, SO (MSA) & $T\approx 20$ \\
@@ -1032,8 +1033,7 @@ cheaper than learning the routing end to end.
 \end{axis}
 \end{tikzpicture}}
 \caption{Travel time relative to blind (lower is better; the dashed line is the blind
-reference at $1.0$). The GNN approaches UE in distribution and is the best
-\emph{deployable} policy out of distribution; the cheap heuristics fail (one-step is worse
+reference at $1.0$). The GNN approaches UE in distribution and is the best deployable policy among the comparators shown here; the cheap heuristics fail (one-step is worse
 than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 \label{fig:baselines}
 \end{figure}
@@ -1041,7 +1041,7 @@ than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 \begin{table}[t]
 \centering
 \caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean over
-instances and seeds. SO/UE are references; the GNN is the deployable policy.}
+instances and seeds. SO/UE are references; the GNN is deployable, and so is the blind multipath baseline of Table~\ref{tab:fair}, which this table predates and does not include.}
 \label{tab:baselines}
 \setlength{\tabcolsep}{3pt}\footnotesize
 \begin{tabular}{lccccc}
@@ -1144,7 +1144,7 @@ gain is the meaningful, scale-free figure.
 \begin{table}[t]
 \centering
 \caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:decode} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds, so the $264$-shell recovered fraction differs by one point from Tables~\ref{tab:decode} and~\ref{tab:ablation}; the spread is run-to-run variation, not disagreement.}
 \label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
@@ -1239,6 +1239,7 @@ throughout.}
 \end{figure}
 
 \subsection{Does the headline survive capacity feasibility?}\label{sec:feasible}
+\input{tab-feasibility}
 The gap reported above is measured in BPR travel time, and Section~\ref{sec:pitfalls} argues that
 this charges overload in a currency the link does not use. We therefore recompute it under a hard
 capacity: a link offered $L$ with capacity $C$ carries $\min(L,C)$, each flow crossing it keeps
@@ -1258,6 +1259,7 @@ $37.1\%$. The advantage is not an artifact of any one of them. We report the ran
 most favourable member.
 
 \subsection{Against a cheap-but-strong baseline}\label{sec:vs-blind}
+\input{tab-fair}
 Sections~\ref{sec:headroom} to~\ref{sec:c2} compare against a naive floor and an expensive ceiling.
 Neither is competitive by construction. Here we place a policy in the cell between them: split each
 demand equally across the paths within $(1+\varepsilon)$ of shortest on free-flow cost. It is
@@ -1284,6 +1286,7 @@ $0.970$, because a larger grid offers more near-shortest detours between the sam
 strength grows precisely in the regime where a learned map is asked to generalize.
 
 \subsection{Two causes of the off-distribution gap, and they are separable}\label{sec:two-causes}
+\input{fig-tau}
 At the fixed decoder temperature used throughout the earlier sections, transfer looks much worse
 than the previous subsection reports: $0.892$, $0.885$ and $0.925$ on the three unseen shells.
 The difference is not noise and it is not one effect.
