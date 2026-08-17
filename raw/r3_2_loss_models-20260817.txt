@@ -1,0 +1,58 @@
+R3.2b -- MOT phat hien, BA mo hinh mat mat. Dau cua khoang cach co doi khong?
+
+shell             pairs sd   util |      product |   bottleneck |       maxmin
+starlink_mini132    100  0   0.57 |          0.0 |          0.0 |          0.0
+starlink_mini132    100  1   0.64 |          0.0 |          0.0 |          0.0
+starlink_mini132    100  2   0.85 |          0.0 |          0.0 |          0.0
+starlink_mini132    300  0   1.91 |         29.9 |         18.3 |         18.5
+starlink_mini132    300  1   2.06 |         35.4 |         22.8 |         21.5
+starlink_mini132    300  2   2.02 |         32.2 |         18.5 |         18.9
+starlink_mini132    600  0   3.47 |         63.9 |         44.7 |         44.2
+starlink_mini132    600  1   3.37 |         63.5 |         37.4 |         36.1
+starlink_mini132    600  2   3.56 |         52.5 |         36.5 |         35.7
+starlink_mini132   1000  0   6.65 |        101.1 |         71.6 |         70.9
+starlink_mini132   1000  1   6.23 |         92.9 |         62.8 |         63.7
+starlink_mini132   1000  2   5.84 |        102.6 |         69.0 |         68.4
+starlink_mini132   1600  0   9.26 |         76.3 |         83.9 |         84.8
+starlink_mini132   1600  1   9.41 |         63.8 |         74.0 |         73.3
+starlink_mini132   1600  2   8.96 |         67.2 |         80.3 |         78.1
+starlink_mini264    100  0   0.69 |          0.0 |          0.0 |          0.0
+starlink_mini264    100  1   0.64 |          0.0 |          0.0 |          0.0
+starlink_mini264    100  2   0.73 |          0.0 |          0.0 |          0.0
+starlink_mini264    300  0   1.72 |         37.0 |         11.8 |         12.3
+starlink_mini264    300  1   1.84 |         25.9 |         10.0 |          8.9
+starlink_mini264    300  2   2.00 |         53.2 |         18.1 |         17.8
+starlink_mini264    600  0   3.47 |         31.9 |         31.7 |         32.1
+starlink_mini264    600  1   3.45 |         10.2 |         14.7 |         15.1
+starlink_mini264    600  2   3.77 |         22.9 |         20.9 |         21.6
+starlink_mini264   1000  0   5.47 |        -21.9 |         -2.2 |         -1.4
+starlink_mini264   1000  1   5.17 |        -13.8 |         10.2 |         10.5
+starlink_mini264   1000  2   5.55 |         -7.5 |          9.7 |          9.7
+starlink_mini264   1600  0   8.24 |        -22.9 |          0.8 |          0.1
+starlink_mini264   1600  1   8.93 |        -15.9 |          3.9 |          4.7
+starlink_mini264   1600  2   7.99 |         -1.9 |          9.5 |          9.7
+
+# da ghi results/r3_2_loss_models.csv (30 dong)
+
+=== TRUNG VI theo mien tai, ba mo hinh canh nhau ===
+tai dua vao              n      product   bottleneck       maxmin
+<= dung luong            6          0.0          0.0          0.0
+1-2x                     3         29.9         11.8         12.3
+2-4x                     9         35.4         22.8         21.6
+>4x                     12         30.9         36.5         37.1
+
+=== PHAN QUYET 1: tuyen bo DUONG -- UE co thang khong, va bao nhieu? ===
+  product     trung vi   +30.9%
+  bottleneck  trung vi   +36.5%
+  maxmin      trung vi   +37.1%
+  => BEN VUNG: ca ba mo hinh cho UE thang, khoang 31-37%.
+     Bao con so thi phai bao CA KHOANG nay, dung chon mo hinh cho so dep nhat.
+
+=== PHAN QUYET 2: tuyen bo AM -- 'UE co the THUA o qua tai cuc doan' ===
+  product     6/12 cau hinh UE thua
+  bottleneck  1/12 cau hinh UE thua
+  maxmin      1/12 cau hinh UE thua
+  => KHONG song sot. Voi 'product' thi 6/12, voi 'bottleneck' chi 1/12.
+     Co che 'duong dai hon mat nhieu hon' la thu ma phep NHAN DON theo chang
+     duoc dung de sinh ra. Bo phep nhan do di thi hien tuong gan nhu bien mat.
+     ⛔ KHONG duoc dua phat hien am nay vao bai nhu mot tinh chat cua he thong.
