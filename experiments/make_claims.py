@@ -192,6 +192,26 @@ def claim_r4():
                       f"so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong {kind}, {sh}")
 
     # 3.5: proactive so voi blind tot nhat, GHEP CAP theo tung don vi, o TUNG muc troi.
+    # 2.1a/2.1b: vo 1584, quet tau + baseline blind. Truoc do CA HAI deu vang mat o dung vo
+    # cho con so headline, va bai tu neu luat "giu tau co dinh la dang do bo giai ma" o muc VI-I.
+    r4 = list(csv.DictReader(open(os.path.join(RES, "r4_1_shell1584_controls.csv"))))
+    for r in r4:
+        r["gap_1584"] = round(float(r["recovered_gnn_tau8.0"]) - float(r["recovered_ecmp_eps0.2"]), 4)
+    with open(os.path.join(RES, "r4_1_shell1584_controls.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(r4[0].keys())); w.writeheader(); w.writerows(r4)
+    for cid, col in (("s1584_gnn_fixedtau", "recovered_gnn_tau0.2"),
+                     ("s1584_gnn_besttau", "recovered_gnn_tau8.0"),
+                     ("s1584_ecmp_best", "recovered_ecmp_eps0.2"),
+                     ("s1584_gap", "gap_1584")):
+        claim(cid, r4, "r4_1_shell1584_controls.csv", col, {"shell": "w1584_i53"},
+              f"vo 1584: {col}")
+    claim_raw("s1584_blind_over_ue", "r4_1_shell1584_controls.csv", "blind_over_ue",
+              {"shell": "w1584_i53"}, "median", 0, "blind te hon can bang bao nhieu lan o 1584")
+    claim_raw("s1584_ratio_fixedtau", "r4_1_shell1584_controls.csv", "ratio_ue_gnn_tau0.2",
+              {"shell": "w1584_i53"}, "median", 1, "GNN o tau=0.2 cach can bang bao nhieu lan")
+    claim_raw("s1584_ratio_besttau", "r4_1_shell1584_controls.csv", "ratio_ue_gnn_tau8.0",
+              {"shell": "w1584_i53"}, "median", 1, "GNN o tau tot nhat cach can bang bao nhieu lan")
+
     pool = pool_264_fixedtau()
     claim("pooled_w264_fixedtau", pool, "pooled_w264_fixedtau.csv", "recovered",
           {"shell": "w264_i53"}, "gop MOI run set do cung dai luong nay")

@@ -86,37 +86,25 @@ University of Danang under project number B2025-DN02-26.}}
 \maketitle
 
 \begin{abstract}
-Low Earth orbit (LEO) mega-constellations carry traffic over a dense mesh of inter-satellite
-links whose topology, although time varying, is known in advance from orbital ephemeris. Under
-load, routing on propagation delay alone concentrates traffic on a few bottleneck links while
-alternative paths sit idle. The congestion-aware optimum, the user equilibrium, removes this
-waste but needs the full demand matrix and an iterative solve every slot, and a growing
-literature amortizes it by learning to predict per-link congestion prices in one forward pass.
-This paper asks what that buys, and measures it against the baseline the literature has not
-used: a congestion-blind multipath split costing a single pass, whose path-cost tolerance we
-sweep rather than fix. With both sides tuned per shell, the learned price field recovers
-$0.977$ of the blind-to-equilibrium gap on the shell it was trained on against $0.668$ for the
-blind split, a paired median difference of $0.317$. On three shells it never saw, the paired
-differences are $0.008$, $0.002$ and $0.020$: the honest reading is parity, not advantage. The same
-boundary appears on a third axis: under drifting hotspots the proactive variant leads the blind
-split by $0.159$ on the training shell and trails it by $0.247$ on an unseen one.
-Two further results qualify the setting rather than the method. First, the headline gap is
-usually reported in Bureau of Public Roads travel time, which charges overload in a currency a
-packet link does not use; under a hard capacity the advantage is an increase in delivered rate
-of $30.9\%$ rather than a delay reduction of $79.1\%$, and it survives three loss models
-($30.9\%$, $36.5\%$, $37.1\%$). Second, the softmin temperature that decodes prices into split
-flows is treated as a constant of the method and is not one: the setting that maximises recovery
-moves by one to two orders of magnitude with constellation size, and holding it at the value
-chosen on the smallest shell costs $0.094$, $0.089$ and $0.065$ per instance elsewhere while
-costing $0.007$ where it was chosen. That loss has been charged to the price field, which did
-not cause it, so any evaluation of transfer that holds the decoder fixed measures the decoder as
-much as the model. The inference saving over the iterative solve is real, from $21$ to $29\times$, but only
-against a solver started from scratch: warm-started from the previous slot the solver needs $2$ to
-$6$ iterations rather than $20$, which cuts the saving to roughly $2$ to $9\times$ and reverses its
-trend with scale. We also report a negative result: a quantum-walk propagation operator
-that motivated this study offers no benefit once load features are available, and a plain graph
-convolution is preferable. Every number is tied to the file, column and aggregation that produce
-it, and a script recomputes all of them.
+Low Earth orbit mega-constellations route traffic over a dense inter-satellite mesh whose topology,
+though time varying, is known in advance. Under load, routing on propagation delay alone
+concentrates traffic on a few links, and a growing literature amortizes the congestion-aware
+optimum by learning to predict per-link congestion prices in a single forward pass. This paper
+measures what that buys, against the baseline that literature omits: a congestion-blind multipath
+split costing one pass, with its path-cost tolerance swept rather than fixed. With both sides tuned
+per shell, the learned price field recovers $0.977$ of the blind-to-equilibrium gap on the shell it
+was trained on, against $0.668$ for the blind split. On unseen shells the paired differences fall
+to $0.020$ and below, on the largest shell the blind split is ahead, and under drifting hotspots
+the learned router trails it by $0.247$ off distribution. The advantage is decisive in distribution
+and no better than parity outside it. Three results qualify the setting rather than the method.
+Enforcing a hard link capacity turns a $79.1\%$ delay reduction into a $30.9\%$ gain in delivered
+rate. The softmin temperature that decodes prices is not a constant of the method: its best value
+moves one to two orders of magnitude with constellation size, and holding it fixed costs up to
+$0.089$ per instance, a loss the literature charges to the price field. And the recovered-fraction
+metric saturates, because blind routing costs $2.51$ times the equilibrium on the smallest shell
+and $20.42$ times on a shell twice its size; travel time relative to equilibrium should be reported
+beside it. A quantum-walk operator, which motivated this study, offers no benefit once load
+features are present.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -1061,7 +1049,7 @@ cheaper than learning the routing end to end.
 \end{axis}
 \end{tikzpicture}
 \caption{Travel time relative to blind (lower is better; the dashed line is the blind
-reference at $1.0$). The GNN approaches UE in distribution and is the best deployable policy among the comparators shown here; the cheap heuristics fail (one-step is worse
+reference at $1.0$). The GNN approaches UE in distribution and is the best deployable policy among the comparators shown here, which do not include the blind multipath split of Table~\ref{tab:fair}; the cheap heuristics fail (one-step is worse
 than blind in distribution, geographic stalls). UE and SO nearly coincide.}
 \label{fig:baselines}
 \end{figure}
@@ -1148,15 +1136,20 @@ error vanishes. The multipath decode is both lower and far less error-sensitive.
 Trained only on the $132$-satellite shell, the model is applied zero shot to the
 $264$- and $1584$-satellite shells. Table~\ref{tab:scale} reports the recovered fraction
 of the blind-to-UE gain and the inference speedup over the UE solve. The GNN recovers
-$0.93$ at $264$ and $0.94{\scriptstyle\pm.02}$ at $1584$ (a $12\times$ size jump), remaining the best
-deployable policy throughout, while the speedup over MSA is $21$--$22\times$ at the small
+$0.93$ at $264$ and $0.94{\scriptstyle\pm.02}$ at $1584$ (a $12\times$ size jump), which is the
+best of the comparators this table contains; Section~\ref{sec:s1584} adds the two controls it does
+not contain, a temperature sweep and the blind multipath split, and on that shell the blind split
+comes out ahead. The speedup over MSA is $21$--$22\times$ at the small
 shells and \emph{rises} to $29\times$ at $1584$ (Fig.~\ref{fig:speedup}). Against a
 cold-started solver the amortization therefore appears to pay off more, not less, at the
 mega-constellation scale that matters operationally. Section~\ref{sec:warmstart} shows that
 this reading does not survive the comparator an operator would actually run. The transfer
 is genuinely zero shot: the $1584$-shell is never seen during training, has a different
 number of planes and satellites per plane, and a larger diameter, yet the same weights
-produce a near-equilibrium price field on it. This works because the learned map is from
+produce a price field that recovers most of the blind-to-equilibrium gap on it. Whether
+\emph{near-equilibrium} is the right word is precisely what Section~\ref{sec:s1584} takes back:
+read as a ratio rather than a fraction, the field is $14$ to $64$ times the equilibrium there,
+depending on the decoder setting. This scale invariance works because the learned map is from
 local load structure to a local price, a relation that is scale invariant in a way the
 absolute routing is not, and because the multipath decode realizes the predicted
 equilibrium faithfully; the recovered fraction stays near $0.94$ and its variance stays
@@ -1172,7 +1165,7 @@ gain is the meaningful, scale-free figure.
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}). $^{\dagger}$Measured at the fixed $\tau=0.2$ and without the blind multipath comparator. Section~\ref{sec:s1584} supplies both on this shell: a temperature sweep raises the learned field to $0.983$, the blind split reaches $0.994$, and the equilibrium reference itself has not converged at this scale.}
 \label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
@@ -1180,7 +1173,7 @@ shell & sats & recovered & GNN (s) & speedup vs UE \\
 \midrule
 in-dist & $132$ & $0.97{\scriptstyle\pm.02}$ & $0.05$ & $22\times$ \\
 OOD & $264$ & $0.93{\scriptstyle\pm.02}$ & $0.23$ & $21\times$ \\
-OOD & $1584$ & $0.94{\scriptstyle\pm.02}$ & $8.4$ & $29\times$ \\
+OOD & $1584$ & $0.94{\scriptstyle\pm.02}$$^{\dagger}$ & $8.4$ & $29\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1386,6 +1379,41 @@ not thereby free anywhere else. A temperature tuned on a small constellation und
 one, and the resulting loss is charged to the price field, which did not cause it. Any evaluation
 of transfer that holds the decoder fixed is measuring the decoder as much as the model.
 
+\subsection{The largest shell, with the controls the rest of the paper requires}\label{sec:s1584}
+The $1584$-satellite result quoted above, and in earlier versions of this work as its headline, was
+obtained at the fixed decoder temperature and without the blind comparator. Section~\ref{sec:two-causes}
+argues that a transfer number measured at a fixed decoder is measuring the decoder, and
+Section~\ref{sec:vs-blind} argues that a transfer number without a cheap-and-strong baseline is
+measuring nothing in particular. Both arguments apply to our own largest number, so we ran the
+controls there.
+
+They change it. Sweeping the temperature raises the recovered fraction from $0.920$ at $\tau=0.2$ to
+$0.983$, so most of what looked like degradation at scale was the decoder, exactly as the smaller
+shells predicted. But the blind multipath split, tuned over the same grid, reaches $0.994$. Paired
+per instance the learned field is behind by $0.012$, and it is behind on all three instances. On the
+constellation this paper is ostensibly about, the one-pass congestion-blind policy is the better of
+the two.
+
+We flag two limits on this result rather than lean on it. The temperature optimum sits at the edge
+of our grid, so $0.983$ is a lower bound on what a wider sweep would give, and we do not claim to
+have found the best setting. And three instances cannot separate $0.012$ from noise; what the data
+supports is that the learned field is not ahead here, not that it is behind by a specific amount.
+
+The same run makes the saturation of Section~\ref{sec:pitfalls} concrete. On this shell blind
+routing costs about $770$ times the equilibrium, so the denominator of the recovered fraction is
+enormous and every policy that spreads load at all scores above $0.9$. Read as a ratio instead, the
+learned field at $\tau=0.2$ is $63.5$ times the equilibrium and at its best temperature is $14.2$
+times it. A number that reads as $0.92$ and a number that reads as $0.98$ are, operationally, a
+factor of four apart. We would not have seen this from the fraction alone.
+
+One further caveat belongs on the record. At this scale the fixed twenty-iteration solve that
+supplies our equilibrium reference has not converged: the price of anarchy comes out below one on
+all three instances, which is impossible and is how we detected it, and the reference travel time
+falls by roughly a third when the solve is extended. Every quantity on this shell that uses the
+equilibrium as its reference inherits that uncertainty. The saturation above is the reason it went
+unnoticed: a fraction whose denominator is dominated by a pathological blind reference is almost
+unchanged by a third-order error in the other term.
+
 \subsection{Reconciling the numbers that appear more than once}\label{sec:pooled}
 Several quantities in this paper were measured more than once, by experiments written at different
 times for different questions, and the resulting entries do not agree exactly. The clearest case is
@@ -1567,18 +1595,30 @@ could recover the few points of optimality lost in zero-shot transfer while pres
 one-shot inference cost.
 
 \section{Conclusion}
-We presented an inductive graph network that amortizes congestion-aware traffic
-engineering for LEO mega-constellations. After formalizing routing under load as the
-amortization of a traffic-assignment equilibrium and decomposing it into four
-sub-problems, we solved the price-prediction core with a GNN that predicts the
-user-equilibrium congestion price on every ISL in one forward pass from cheap load
-features. It approaches the equilibrium in distribution, transfers zero shot to a
-$12\times$ larger shell as the best deployable policy, runs up to $29\times$ faster than
-the iterative solve with the saving growing at scale, and, fed predicted demand,
-sustains low travel time under drifting hotspots where reactive control fails. We
-documented four evaluation pitfalls and a protocol to avoid them, and we reported why
-an initially appealing quantum-walk operator did not earn its place. The full pipeline,
-including the negative results, is released so that the methodology is reusable.
+We set out to measure what learned congestion prices buy in LEO routing, and where a
+congestion-blind policy is already enough. The answer has a boundary in it. On the shell the
+model is trained on, the learned price field is decisively better than a one-pass blind
+multipath split and close to the equilibrium it was trained to imitate. On shells it has not
+seen, the two are level, and on the largest shell we tested the blind split is ahead. Three
+axes chosen to probe different things, steady load, inductive transfer and drifting hotspots,
+place the boundary in the same place, and we take the agreement between them as the result.
+
+Three findings about measurement travelled further than the method. Enforcing a hard link
+capacity roughly halves the reported advantage, because a road-traffic cost function was being
+evaluated where a packet link cannot operate. The softmin temperature that decodes prices is a
+hyperparameter of the evaluation, not a constant of the method, and an evaluation that holds it
+fixed while changing the constellation is measuring the decoder. And a gap-recovery metric
+saturates once its blind reference becomes pathological, to the point that four points of
+recovered fraction can separate a policy two percent from the equilibrium from one that is more
+than a hundred times away. Each of these applies to the published comparisons in this line of
+work, not only to ours.
+
+We also report what did not survive. The speedup over an iterative solve is real but is measured
+against a cold start; warm-started from the previous slot, the solver needs a handful of
+iterations and the advantage shrinks and stops growing with scale. The quantum-walk propagation
+operator that motivated this study earns no place once blind-load features are present. The full
+pipeline, including the measurements that cost us claims, is released so that the protocol can be
+applied to work other than our own.
 
 \section*{Data and Code Availability}
 The simulator, models, experiments, and figure-generation scripts are released at

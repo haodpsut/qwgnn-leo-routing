@@ -907,6 +907,97 @@
     "note": "so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong warm, w264"
   },
   {
+    "id": "s1584_gnn_fixedtau",
+    "paper_value": "0.920",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "recovered_gnn_tau0.2",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "vo 1584: recovered_gnn_tau0.2"
+  },
+  {
+    "id": "s1584_gnn_besttau",
+    "paper_value": "0.983",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "recovered_gnn_tau8.0",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "vo 1584: recovered_gnn_tau8.0"
+  },
+  {
+    "id": "s1584_ecmp_best",
+    "paper_value": "0.994",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "recovered_ecmp_eps0.2",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "vo 1584: recovered_ecmp_eps0.2"
+  },
+  {
+    "id": "s1584_gap",
+    "paper_value": "-0.012",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "gap_1584",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "vo 1584: gap_1584"
+  },
+  {
+    "id": "s1584_blind_over_ue",
+    "paper_value": "770",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "blind_over_ue",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "blind te hon can bang bao nhieu lan o 1584"
+  },
+  {
+    "id": "s1584_ratio_fixedtau",
+    "paper_value": "63.5",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "ratio_ue_gnn_tau0.2",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o tau=0.2 cach can bang bao nhieu lan"
+  },
+  {
+    "id": "s1584_ratio_besttau",
+    "paper_value": "14.2",
+    "csv": "../code/results/r4_1_shell1584_controls.csv",
+    "column": "ratio_ue_gnn_tau8.0",
+    "filter": {
+      "shell": "w1584_i53"
+    },
+    "agg": "median",
+    "places": 1,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "GNN o tau tot nhat cach can bang bao nhieu lan"
+  },
+  {
     "id": "pooled_w264_fixedtau",
     "paper_value": "0.889",
     "csv": "../code/results/pooled_w264_fixedtau.csv",
