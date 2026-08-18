@@ -133,18 +133,7 @@ iterating shortest-path assignment against a load-dependent cost. UE is the righ
 target but expensive: it needs the entire demand matrix and many shortest-path rounds
 per slot. At constellation scale this is expensive: on the $1584$-satellite shell a cold solve takes minutes against a $60$~s slot, the interval we use throughout.
 
-This tension, a cheap-but-blind heuristic versus an expensive-but-optimal solve,
-motivates our approach: \emph{amortize} the equilibrium~\cite{amos2023}. A graph neural network (GNN)
-observes cheap features (per-node traffic intensity and the load that one
-congestion-blind pass would induce) and predicts, in a single forward pass, the
-equilibrium congestion price on every ISL. Routing on the predicted cost recovers
-most of the congestion-aware gain at a fraction of the cost of solving UE. Because the
-model's parameters do not depend on the number of satellites, the map is \emph{inductive} in
-the architectural sense and can be applied unchanged to a larger shell; whether it remains
-\emph{competitive} there is a separate question and one of the questions we measure. And
-because the demand pattern drifts predictably (the dense-traffic band rotates under the
-constellation), feeding the predicted near future demand lets the router act
-\emph{proactively}, before congestion forms. Figure~\ref{fig:pipeline} summarizes the pipeline.
+This tension, a cheap-but-blind heuristic versus an expensive-but-optimal solve, motivates \emph{amortizing} the equilibrium~\cite{amos2023}. A graph neural network observes cheap features, per-node traffic intensity and the load one congestion-blind pass would induce, and predicts the equilibrium congestion price on every ISL in a single forward pass (Fig.~\ref{fig:pipeline}). Because its parameters do not depend on the number of satellites, the map is \emph{inductive} in the architectural sense and applies unchanged to a larger shell; whether it stays \emph{competitive} there is one of the questions this paper measures.
 
 This paper asks what that third option actually buys, and the answer turns out to depend
 sharply on a comparison the literature does not make. Evaluations of learned routing in this
@@ -205,9 +194,7 @@ of every headline number and its source. Section~\ref{sec:disc} discusses deploy
 validity, what the measurements do and do not license, and future work.
 
 \section{Related Work}
-\textbf{LEO routing and topology.} The deterministic, time-varying structure of LEO
-ISL networks has been studied for low-latency routing and topology
-design~\cite{handley2018,bhattacherjee2019}. Handley showed a $+$Grid of ISLs can beat terrestrial fiber on long paths, and Bhattacherjee and Singla showed how the choice of interconnections shapes path length and churn~\cite{handley2018,bhattacherjee2019}. The broader push toward non-terrestrial networks in the
+\textbf{LEO routing and topology.} The deterministic, time-varying structure of LEO ISL networks has been studied for low-latency routing and topology design. Handley showed a $+$Grid of ISLs can beat terrestrial fiber on long paths, and Bhattacherjee and Singla showed how the choice of interconnections shapes path length and churn~\cite{handley2018,bhattacherjee2019}. The broader push toward non-terrestrial networks in the
 $6$G era is surveyed in~\cite{kodheli,giordani}, and the design space of competing LEO
 constellations is compared in~\cite{delportillo}; measurement studies of operational
 systems such as Starlink confirm that capacity, not only geometry, shapes the user
@@ -414,13 +401,7 @@ decoder that turns prices into paths, is charged to $f_\theta$ as well. A method
 of loss off distribution than the prediction is.
 
 \subsection{Decomposition into sub-problems}
-We split \eqref{eq:amort} into four stages that fail for unrelated reasons and can therefore be
-measured separately: a price field can be accurate and still decode into a poor routing, a decode
-can be faithful and the prediction still collapse on an unseen constellation, and all of that can
-hold at a fixed demand pattern and give way once the pattern moves. The stages compose in one
-direction, and every one is scored on the same end-to-end realized travel time rather than on an
-intermediate such as price error, so a gain at one stage cannot be claimed unless it survives the
-stages after it.
+We split \eqref{eq:amort} into four stages that fail for unrelated reasons and can therefore be measured separately: a price field can be accurate and decode poorly, a decode can be faithful and the prediction still collapse on an unseen constellation, and all of that can hold until the demand pattern moves. Every stage is scored on the same end-to-end realized travel time rather than on an intermediate such as price error, so a gain at one stage counts only if it survives the stages after it.
 
 \noindent\textbf{(SP1) Price prediction.} Approximate the UE congestion price field
 \begin{equation}
@@ -1037,8 +1018,7 @@ proactive gain is genuinely due to anticipating the hotspot and not to any artif
 the two pipelines, which are identical when there is nothing to anticipate. The crossover
 where the reactive router passes blind (around a per-slot drift of one radian in our
 sweep) marks the operating point beyond which a stale congestion estimate is worse than
-ignoring congestion altogether, a concrete criterion for when proactivity stops being
-optional. Because the GNN's input is just a demand-derived feature, switching from
+ignoring congestion altogether, a concrete criterion for when proactivity stops being optional. Because the GNN's input is just a demand-derived feature, switching from
 reactive to proactive requires no change to the model, only feeding it the forecast
 instead of the last slot.
 
@@ -1212,29 +1192,10 @@ inviting a cross-table comparison the two estimators do not support. Each table 
 estimator.
 
 \subsection{Operating regime}\label{sec:regime}
-The value of the method is regime dependent, and Table~\ref{tab:headroom} makes the boundary
-explicit. Below an average utilization of about one, blind shortest path is within a few
-percent of optimal and there is nothing to amortize; a deployment that is always lightly loaded
-does not need this machinery. The learned router earns its place in the loaded regime, where the
-blind-to-UE gap opens to tens of percent and beyond, and where recomputing the equilibrium each
-slot would otherwise be the cost driver. This is also the regime a capacity-planned network
-spends its busy hours in, and the regime a moving hotspot creates locally even when the network
-as a whole is moderately loaded, since the hotspot concentrates demand onto a small cut. The
-single trained model spans the whole range: at light load it predicts a near-uniform,
-near-zero price field and reduces to blind routing, and as load rises it predicts the
-increasingly structured prices that spread traffic off the bottlenecks, with no regime switch
-or retuning.
+The value of the method is regime dependent, and Table~\ref{tab:headroom} makes the boundary explicit. Below an average utilization of about one there is nothing to amortize: blind shortest path is within a few percent of optimal, and a lightly loaded deployment does not need this machinery. The learned router earns its place in the loaded regime, where the blind-to-UE gap opens to tens of percent and recomputing the equilibrium each slot would otherwise drive the cost. That is the regime a capacity-planned network spends its busy hours in, and the one a moving hotspot creates locally even when the network as a whole is moderately loaded. One trained model spans the range: at light load it predicts a near-uniform, near-zero field and reduces to blind routing; as load rises it predicts the structured prices that spread traffic off the bottlenecks, with no regime switch.
 
 \subsection{Feature ablation}\label{sec:ablate-feat}
-The blind-load feature is what makes the price predictable. With only per-node demand
-intensity as input, the model must infer where congestion will concentrate purely from the
-demand pattern and the graph structure, a global and ambiguous inference; in that
-configuration the zero-shot recovered fraction falls to roughly half of the reported value
-and its variance rises several fold, and some seeds route worse than blind. Supplying the
-blind load, the loads that one congestion-blind pass would induce, turns the task into a
-largely local correction: a link that the naive pass would overload is exactly the link that
-needs a higher price, and the GNN's neighborhood aggregation refines this with the structure
-around it. The feature costs a single $\AoN$ pass to compute, the same pass already used to
+The blind-load feature is what makes the price predictable. Given only per-node demand intensity, the model must infer where congestion concentrates from the demand pattern and the graph alone, a global and ambiguous inference: the zero-shot recovered fraction falls to roughly half, its variance rises several fold, and some seeds route worse than blind. Supplying the blind load turns the task into a largely local correction: a link the naive pass would overload is exactly the link needing a higher price, and neighbourhood aggregation refines that with the structure around it. The feature costs a single $\AoN$ pass to compute, the same pass already used to
 build the node features, so it is effectively free. This also explains why the global
 propagation operators of Section~\ref{sec:ablation} do not help once the feature is present:
 the long-range information they were meant to gather is already summarized, locally, by the
@@ -1293,19 +1254,12 @@ shortcut on absolute coordinates; the operator ablation isolates the propagation
 at a fixed parameter budget. Two internal threats deserve naming. The decoder temperature was held fixed while the constellation changed, confounding decoder with model and worth $0.053$ to $0.077$ in recovered fraction (Section~\ref{sec:two-causes}); every comparison in this literature that holds it fixed carries the same confound. And on the $1584$-shell the twenty-iteration solve
 that supplies our equilibrium reference has not converged, which we detected only because the
 price of anarchy came out below one (Section~\ref{sec:s1584}); every quantity on that shell
-referenced to equilibrium inherits the uncertainty. \emph{External validity}: results are on synthetic Walker
-shells with a uniform capacity and a gravity demand model, and the zero-shot transfer was
-tested up to a $12\times$ size jump and one shell geometry; other geometries,
-heterogeneous link capacities, and real traffic traces remain to be studied. Only one of the five
-shells we use has an inclination at which the polar cutoff activates, so the time-varying part of
-the topology is exercised far less than the phrase ``time-varying'' suggests.
+referenced to equilibrium inherits the uncertainty. \emph{External validity}: results are on synthetic Walker shells with uniform capacity and a gravity demand model, and transfer was tested up to a $12\times$ size jump on one shell geometry; other geometries, heterogeneous capacities and real traces remain. Only one of five shells has an inclination at which the polar cutoff activates, so the time-varying part of the topology is exercised far less than ``time-varying'' suggests.
 \emph{Reproducibility}: every number in the text is tied by a manifest to the file, column,
 filter and aggregation that produce it, with a script that recomputes all of them. The pipeline is deterministic \emph{on a given machine}, not across machines: re-running every
 experiment on a different host with identical scripts and seeds moved $66$ of $116$ manifest
 entries, one far enough to reverse a reported sign (Section~\ref{sec:two-causes}), while every
-quantity avoiding the network agreed to the printed digit. All numbers here come from one host. That was not true of an earlier version: the $1584$-shell
-entries existed only in the console log of a run on another machine, so no gate could reach them.
-They are now extracted to a CSV that records the log it came from.
+quantity avoiding the network agreed to the printed digit. All numbers here come from one host. That was not true of an earlier version: the $1584$-shell entries existed only in a console log from another machine, beyond any gate. They are now extracted to a CSV that records which log they came from.
 
 \subsection{What the measurements do and do not license}
 The simulator is kinematic and flow level, not packet level; it captures
@@ -1378,94 +1332,94 @@ shortcut on absolute coordinates or counts.
 
 \begin{thebibliography}{99}
 \bibitem{handley2018} M. Handley, ``Delay is not an option: Low latency routing in
-space,'' in \emph{Proc. ACM HotNets}, 2018, pp. 85--91.
+space,'' in \emph{Proc. ACM HotNets}, 2018, pp. 85--91. doi:10.1145/3286062.3286075
 \bibitem{bhattacherjee2019} D. Bhattacherjee and A. Singla, ``Network topology
-design at 27,000 km/hour,'' in \emph{Proc. ACM CoNEXT}, 2019, pp. 341--354.
+design at 27,000 km/hour,'' in \emph{Proc. ACM CoNEXT}, 2019, pp. 341--354. doi:10.1145/3359989.3365407
 \bibitem{hypatia} S. Kassing, D. Bhattacherjee, A. B. Águas, J. E. Saethre, and
 A. Singla, ``Exploring the `Internet from space' with Hypatia,'' in \emph{Proc. ACM
-IMC}, 2020, pp. 214--229.
+IMC}, 2020, pp. 214--229. doi:10.1145/3419394.3423635
 \bibitem{starperf} Z. Lai, H. Li, and J. Li, ``StarPerf: Characterizing network
-performance for emerging mega-constellations,'' in \emph{Proc. IEEE ICNP}, 2020, pp. 1--11.
+performance for emerging mega-constellations,'' in \emph{Proc. IEEE ICNP}, 2020, pp. 1--11. doi:10.1109/icnp49622.2020.9259357
 \bibitem{gcn} T. N. Kipf and M. Welling, ``Semi-supervised classification with graph
 convolutional networks,'' in \emph{Proc. ICLR}, 2017.
 \bibitem{gat} P. Veli\v{c}kovi\'c, G. Cucurull, A. Casanova, A. Romero, P. Li\`o, and
-Y. Bengio, ``Graph attention networks,'' in \emph{Proc. ICLR}, 2018.
+Y. Bengio, ``Graph attention networks,'' in \emph{Proc. ICLR}, 2018. doi:10.1021/acsomega.5c02173.s001
 \bibitem{graphsage} W. L. Hamilton, R. Ying, and J. Leskovec, ``Inductive
 representation learning on large graphs,'' in \emph{Proc. NeurIPS}, 2017.
 \bibitem{routenet} K. Rusek, J. Su\'arez-Varela, P. Almasan, P. Barlet-Ros, and
 A. Cabellos-Aparicio, ``RouteNet: Leveraging graph neural networks for network modeling
 and optimization in SDN,'' \emph{IEEE J. Sel. Areas Commun.}, vol. 38, no. 10,
-pp. 2260--2270, 2020.
+pp. 2260--2270, 2020. doi:10.1109/jsac.2020.3000405
 \bibitem{almasan} P. Almasan, J. Su\'arez-Varela, K. Rusek, P. Barlet-Ros, and
 A. Cabellos-Aparicio, ``Deep reinforcement learning meets graph neural networks:
 Exploring a routing optimization use case,'' \emph{Comput. Commun.}, vol. 196,
-pp. 184--194, 2022.
+pp. 184--194, 2022. doi:10.1016/j.comcom.2022.09.029
 \bibitem{wardrop} J. G. Wardrop, ``Some theoretical aspects of road traffic research,''
-\emph{Proc. Inst. Civil Eng., Part II}, vol. 1, no. 3, pp. 325--362, 1952.
+\emph{Proc. Inst. Civil Eng., Part II}, vol. 1, no. 3, pp. 325--362, 1952. doi:10.1680/ipeds.1952.11259
 \bibitem{bpr} Bureau of Public Roads, \emph{Traffic Assignment Manual}. Washington, DC,
 USA: U.S. Dept. of Commerce, 1964.
 \bibitem{beckmann} M. Beckmann, C. B. McGuire, and C. B. Winsten, \emph{Studies in the
 Economics of Transportation}. New Haven, CT, USA: Yale Univ. Press, 1956.
 \bibitem{poa} T. Roughgarden and \'E. Tardos, ``How bad is selfish routing?''
-\emph{J. ACM}, vol. 49, no. 2, pp. 236--259, 2002.
+\emph{J. ACM}, vol. 49, no. 2, pp. 236--259, 2002. doi:10.1109/sfcs.2000.892069
 \bibitem{valadarsky} A. Valadarsky, M. Schapira, D. Shahaf, and A. Tamar, ``Learning to
 route,'' in \emph{Proc. ACM HotNets}, 2017, pp. 185--191.
 \bibitem{xu} Z. Xu \emph{et al.}, ``Experience-driven networking: A deep reinforcement
-learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018, pp. 1871--1879.
+learning based approach,'' in \emph{Proc. IEEE INFOCOM}, 2018, pp. 1871--1879. doi:10.1109/infocom.2018.8485853
 \bibitem{deepladu} Z. Gu, J. Choi, T. Q. S. Quek, and J. Park, ``Duality-guided graph
 learning for real-time joint connectivity and routing in LEO mega-constellations,''
 arXiv:2601.21921v1 [eess.SP], Jan. 2026. Submitted to an IEEE journal for possible publication.
 \bibitem{ecmp} C. Hopps, ``Analysis of an equal-cost multi-path algorithm,'' RFC 2992,
-Internet Engineering Task Force, Nov. 2000.
+Internet Engineering Task Force, Nov. 2000. doi:10.17487/rfc2992
 \bibitem{qwnn} S. Dernbach, A. Mohseni-Kabir, S. Pal, and D. Towsley, ``Quantum walk
 neural networks for graph-structured data,'' in \emph{Complex Networks and Their
 Applications VII} (Stud. Comput. Intell., vol. 813).\ Cham, Switzerland: Springer, 2018,
-pp. 182--193.
+pp. 182--193. doi:10.1007/978-3-030-05414-4\_15
 \bibitem{kodheli} O. Kodheli \emph{et al.}, ``Satellite communications in the new space
 era: A survey and future challenges,'' \emph{IEEE Commun. Surveys Tuts.}, vol. 23, no. 1,
-pp. 70--109, 2021.
+pp. 70--109, 2021. doi:10.20944/preprints202501.0581.v1
 \bibitem{giordani} M. Giordani and M. Zorzi, ``Non-terrestrial networks in the 6G era:
-Challenges and opportunities,'' \emph{IEEE Network}, vol. 35, no. 2, pp. 244--251, 2021.
+Challenges and opportunities,'' \emph{IEEE Network}, vol. 35, no. 2, pp. 244--251, 2021. doi:10.1109/mnet.011.2000493
 \bibitem{delportillo} I. del Portillo, B. G. Cameron, and E. F. Crawley, ``A technical
 comparison of three low Earth orbit satellite constellation systems to provide global
-broadband,'' \emph{Acta Astronaut.}, vol. 159, pp. 123--135, 2019.
+broadband,'' \emph{Acta Astronaut.}, vol. 159, pp. 123--135, 2019. doi:10.1016/j.actaastro.2019.03.040
 \bibitem{michel} F. Michel, M. Trevisan, D. Giordano, and O. Bonaventure, ``A first look
-at Starlink performance,'' in \emph{Proc. ACM IMC}, 2022, pp. 130--136.
+at Starlink performance,'' in \emph{Proc. ACM IMC}, 2022, pp. 130--136. doi:10.1145/3517745.3561416
 \bibitem{mpnn} J. Gilmer, S. S. Schoenholz, P. F. Riley, O. Vinyals, and G. E. Dahl,
-``Neural message passing for quantum chemistry,'' in \emph{Proc. ICML}, 2017, pp. 1263--1272.
+``Neural message passing for quantum chemistry,'' in \emph{Proc. ICML}, 2017, pp. 1263--1272. doi:10.5555/3305381.3305512
 \bibitem{gin} K. Xu, W. Hu, J. Leskovec, and S. Jegelka, ``How powerful are graph neural
 networks?'' in \emph{Proc. ICLR}, 2019.
 \bibitem{battaglia} P. W. Battaglia \emph{et al.}, ``Relational inductive biases, deep
 learning, and graph networks,'' arXiv:1806.01261, 2018.
 \bibitem{suarez} J. Su\'arez-Varela \emph{et al.}, ``Graph neural networks for
 communication networks: Context, use cases and opportunities,'' \emph{IEEE Network}, vol.
-37, no. 3, pp. 146--153, 2023.
+37, no. 3, pp. 146--153, 2023. doi:10.1109/mnet.123.2100773
 \bibitem{geyer} F. Geyer and G. Carle, ``Learning and generating distributed routing
 protocols using graph-based deep learning,'' in \emph{Proc. ACM SIGCOMM Big-DAMA
-Workshop}, 2018, pp. 40--45.
+Workshop}, 2018, pp. 40--45. doi:10.1145/3229607.3229610
 \bibitem{gddr} O. Hope and E. Yoneki, ``GDDR: GNN-based data-driven routing,'' in
-\emph{Proc. IEEE ICDCS}, 2021, pp. 517--527.
+\emph{Proc. IEEE ICDCS}, 2021, pp. 517--527. doi:10.1109/icdcs51616.2021.00056
 \bibitem{sheffi} Y. Sheffi, \emph{Urban Transportation Networks: Equilibrium Analysis with
 Mathematical Programming Methods}. Englewood Cliffs, NJ, USA: Prentice-Hall, 1985.
 \bibitem{frankwolfe} M. Frank and P. Wolfe, ``An algorithm for quadratic programming,''
 \emph{Naval Research Logistics Quarterly}, vol. 3, no. 1--2, pp. 95--110, 1956.
 \bibitem{fortz} B. Fortz and M. Thorup, ``Internet traffic engineering by optimizing OSPF
-weights,'' in \emph{Proc. IEEE INFOCOM}, 2000, pp. 519--528.
+weights,'' in \emph{Proc. IEEE INFOCOM}, 2000, pp. 519--528. doi:10.1109/infcom.2000.832225
 \bibitem{texcp} S. Kandula, D. Katabi, B. Davie, and A. Charny, ``Walking the tightrope:
-Responsive yet stable traffic engineering,'' in \emph{Proc. ACM SIGCOMM}, 2005, pp. 253--264.
+Responsive yet stable traffic engineering,'' in \emph{Proc. ACM SIGCOMM}, 2005, pp. 253--264. doi:10.1145/1090191.1080122
 \bibitem{swan} C.-Y. Hong \emph{et al.}, ``Achieving high utilization with software-driven
-WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013, pp. 15--26.
+WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013, pp. 15--26. doi:10.1145/2486001.2486012
 \bibitem{b4} S. Jain \emph{et al.}, ``B4: Experience with a globally-deployed software
-defined WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013, pp. 3--14.
+defined WAN,'' in \emph{Proc. ACM SIGCOMM}, 2013, pp. 3--14. doi:10.1145/2486001.2486019
 \bibitem{deeprm} H. Mao, M. Alizadeh, I. Menache, and S. Kandula, ``Resource management
 with deep reinforcement learning,'' in \emph{Proc. ACM HotNets}, 2016, pp. 50--56.
 \bibitem{auto} L. Chen, J. Lingys, K. Chen, and F. Liu, ``AuTO: Scaling deep reinforcement
 learning for datacenter-scale automatic traffic optimization,'' in \emph{Proc. ACM
-SIGCOMM}, 2018, pp. 191--205.
+SIGCOMM}, 2018, pp. 191--205. doi:10.1145/3230543.3230551
 \bibitem{kan} Z. Liu \emph{et al.}, ``KAN: Kolmogorov-Arnold networks,''
 arXiv:2404.19756, 2024.
 \bibitem{amos2023} B. Amos, ``Tutorial on amortized optimization,'' \emph{Foundations and
-Trends in Machine Learning}, vol. 16, no. 5, pp. 592--732, 2023.
+Trends in Machine Learning}, vol. 16, no. 5, pp. 592--732, 2023. doi:10.1561/9781638282099
 \end{thebibliography}
 
 \vspace{-2mm}
