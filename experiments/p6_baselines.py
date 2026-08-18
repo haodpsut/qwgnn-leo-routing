@@ -48,6 +48,9 @@ if os.environ.get("QWGNN_FULL") == "1":
 OUT = os.path.join(ROOT, "results", "p6_baselines.csv")
 
 
+from r2_7_warmstart_ecmp import ecmp_ttt                          # noqa: E402
+
+
 def all_policies(model, ins):
     A, W, dem, cap = ins["A_np"], ins["W_np"], ins["dem"], ins["cap"]
     blind = route_and_measure(A, W, dem, cap, W)["total_ttt"]
@@ -58,12 +61,15 @@ def all_policies(model, ins):
     gpaths, gstuck = geographic_paths(A, ins["pos"], dem, W)
     geo = measure_paths(W, cap, dem, gpaths)["total_ttt"]
     gnn = eval_instance(model, ins)["gnn"]
-    # primary metric: TTT relative to blind (lower is better); UE/SO are references
+    # Blind multipath (eps-tolerant split). PHAN BIEN NGOAI y 2.6: bang ket qua CHINH cua bai
+    # thieu dung doi thu manh nhat, va caption chi thua nhan thieu chu khong bu. Do o DAY, tren
+    # CUNG instance, de khoi phai ghep so tu mot run set khac -- dung cai loi vua sua xong.
+    ecmp = min(ecmp_ttt(A, W, dem, cap, eps=e) for e in (0.05, 0.1, 0.2, 0.35, 0.5))
     ratio = lambda x: x / blind
     return {"blind": blind, "ue": ue, "so": so, "geo_ttt": geo, "onestep": onestep,
-            "gnn": gnn, "geo_stuck_frac": gstuck / len(dem),
+            "gnn": gnn, "ecmp": ecmp, "geo_stuck_frac": gstuck / len(dem),
             "r_ue": ratio(ue), "r_so": ratio(so), "r_geo": ratio(geo),
-            "r_1step": ratio(onestep), "r_gnn": ratio(gnn)}
+            "r_1step": ratio(onestep), "r_gnn": ratio(gnn), "r_ecmp": ratio(ecmp)}
 
 
 def timing_row(model, walker, npairs, seed):
@@ -104,7 +110,7 @@ def main():
             rs = [x for x in rows if x["seed"] == seed and x["split"] == split]
             m = lambda k: np.mean([x[k] for x in rs])
             print(f"{seed:>4} {split:10s} | {m('r_ue'):>6.2f} {m('r_so'):>6.2f} "
-                  f"{m('r_geo'):>6.2f} {m('r_1step'):>6.2f} {m('r_gnn'):>6.2f} "
+                  f"{m('r_geo'):>6.2f} {m('r_1step'):>6.2f} {m('r_ecmp'):>6.2f} {m('r_gnn'):>6.2f} "
                   f"| {m('geo_stuck_frac'):>8.0%}")
 
     # timing (one model from seed 0 reused)

@@ -1102,6 +1102,32 @@
     "note": "hang so Menh de 1: prop_ratio tren w264_i53"
   },
   {
+    "id": "poa_lo",
+    "paper_value": "1.003",
+    "csv": "../code/results/poa.csv",
+    "column": "poa",
+    "filter": {
+      "load": "300"
+    },
+    "agg": "mean",
+    "places": 3,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "price of anarchy tai 300 nhu cau"
+  },
+  {
+    "id": "poa_hi",
+    "paper_value": "1.117",
+    "csv": "../code/results/poa.csv",
+    "column": "poa",
+    "filter": {
+      "load": "1000"
+    },
+    "agg": "mean",
+    "places": 3,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "price of anarchy tai 1000 nhu cau"
+  },
+  {
     "id": "pooled_w264_fixedtau",
     "paper_value": "0.889",
     "csv": "../code/results/pooled_w264_fixedtau.csv",

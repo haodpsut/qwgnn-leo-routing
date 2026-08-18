@@ -221,6 +221,10 @@ def claim_r4():
             claim_raw(cid, "r4_3_bound_constants.csv", col, {"shell": sh}, "median", pl,
                       f"hang so Menh de 1: {col} tren {sh}")
 
+    for load, tag in (("300", "lo"), ("1000", "hi")):
+        claim_raw(f"poa_{tag}", "poa.csv", "poa", {"load": load}, "mean", 3,
+                  f"price of anarchy tai {load} nhu cau")
+
     pool = pool_264_fixedtau()
     claim("pooled_w264_fixedtau", pool, "pooled_w264_fixedtau.csv", "recovered",
           {"shell": "w264_i53"}, "gop MOI run set do cung dai luong nay")
