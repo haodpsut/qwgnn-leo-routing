@@ -32,3 +32,6 @@ paper/*.synctex.gz
 paper/*.bbl
 paper/*.blg
 paper/*.png
+*.env
+qwgnn-vps.env
+!*.env.template

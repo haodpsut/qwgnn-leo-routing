@@ -136,8 +136,7 @@ The congestion-aware optimum is classical. Routing every flow so that none can
 unilaterally lower its cost yields the \emph{user equilibrium} (UE), computed by
 iterating shortest-path assignment against a load-dependent cost. UE is the right
 target but expensive: it needs the entire demand matrix and many shortest-path rounds
-per slot. At constellation scale, with topology changing every few seconds,
-recomputing UE from scratch each slot is impractical.
+per slot. At constellation scale this is expensive: on the $1584$-satellite shell a cold solve takes minutes against a $60$~s slot, the interval we use throughout.
 
 This tension, a cheap-but-blind heuristic versus an expensive-but-optimal solve,
 motivates our approach: \emph{amortize} the equilibrium~\cite{amos2023}. A graph neural network (GNN)
@@ -836,9 +835,7 @@ points nearly coincide, so the learned router's target (UE) is within a few perc
 the true system optimum, and matching UE is matching the optimum for practical purposes.
 
 \subsection{The GNN approaches UE and beats every cheap baseline}
-Table~\ref{tab:baselines} reports TTT relative to blind (the
-GNN uses the multipath decode of Section~\ref{sec:results-decode}; all values are mean $\pm$
-std over seeds and instances). In distribution, the GNN ($0.42$) closely approaches UE
+Table~\ref{tab:baselines} reports TTT relative to blind, all policies on the same instances, with the blind multipath split included rather than deferred to Table~\ref{tab:fair}. In distribution, the GNN ($0.42$) closely approaches UE
 ($0.40$), recovering about $0.97$ of the blind-to-UE gain; SO ($0.39$) and UE nearly
 coincide, so the target is essentially the system optimum. The cheap alternatives fail:
 one-step correction overshoots and oscillates (relative travel time $1.04$, \emph{worse}
@@ -872,18 +869,15 @@ cheaper than learning the routing end to end.
 
 \begin{table}[t]
 \centering
-\caption{Total travel time relative to blind (lower is better; blind $=1.00$). Mean $\pm$ std over
-$n{=}9$ instance-seed units per split. SO/UE are references; the GNN is deployable, and so is the blind multipath baseline of Table~\ref{tab:fair}, which this table predates and does not include.}
+\caption{Total travel time relative to blind (lower is better; blind $=1.00$), mean over $n{=}9$ instance-seed units per split. SO and UE are references; the rest are deployable. Bold marks the best deployable policy in each row, and it changes: the learned field in distribution, the one-pass blind multipath split out of it.}
 \label{tab:baselines}
 \setlength{\tabcolsep}{3pt}\footnotesize
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-split & SO & UE & geographic & one-step & \textbf{GNN} \\
+split & SO & UE & geographic & one-step & blind mp & \textbf{GNN} \\
 \midrule
-in-distribution & $0.39{\scriptstyle\pm.03}$ & $0.40{\scriptstyle\pm.03}$ &
- $0.78{\scriptstyle\pm.04}$ & $1.04{\scriptstyle\pm.14}$ & $\mathbf{0.42{\scriptstyle\pm.03}}$ \\
-OOD ($264$) & $0.05{\scriptstyle\pm.01}$ & $0.05{\scriptstyle\pm.01}$ &
- $0.80{\scriptstyle\pm.03}$ & $0.55{\scriptstyle\pm.09}$ & $\mathbf{0.12{\scriptstyle\pm.02}}$ \\
+in-distribution & $0.39$ & $0.40$ & $0.78$ & $1.04$ & $0.60$ & $\mathbf{0.42}$ \\
+OOD ($264$) & $0.05$ & $0.05$ & $0.80$ & $0.55$ & $\mathbf{0.08}$ & $0.11$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1052,22 +1046,12 @@ optional. Because the GNN's input is just a demand-derived feature, switching fr
 reactive to proactive requires no change to the model, only feeding it the forecast
 instead of the last slot.
 
-That is the whole of the story on the shell the model was trained on. Off it, the story is the
-one the previous subsections have already told twice. Placing the same blind multipath baseline
-against the proactive router, with its tolerance tuned per shell and the comparison paired per
-unit, the proactive router is ahead by $0.166$ at zero drift and $0.159$ at the largest drift on
-the training shell, winning every unit; on the unseen $264$-satellite shell it is \emph{behind} by
-$0.209$ and $0.247$ at those same two settings, and it loses every unit at every drift level we
-swept. The zero-drift column is the informative one: the deficit is already there when there is
+That is the story on the training shell. Off it, it is the one the previous subsections have told twice. Against the same blind multipath baseline, tuned per shell and paired per unit, the proactive router leads by $0.166$ at zero drift and $0.159$ at the largest on the training shell, winning every unit; on the unseen $264$-shell it trails by $0.209$ and $0.247$, losing every unit at every drift level swept. The zero-drift column is the informative one: the deficit is already there when there is
 nothing to anticipate, so it is not a failure of the forecast but the same effect seen in
 Section~\ref{sec:vs-blind}, namely that blind spreading has more room to work on a larger grid.
 Proactivity buys what we claimed it buys, and it buys it only where the price field was learned.
 
-This is the third axis to give the same answer. The steady-load comparison, the transfer
-comparison and the drift comparison were designed to probe different things, and all three place
-the boundary in the same place: decisive on the training shell, level or behind a one-pass blind
-policy off it. We take the consistency as the finding rather than as three separate
-disappointments.
+This is the third axis to give the same answer. Steady load, transfer and drift were designed to probe different things and place the boundary identically: decisive on the training shell, level or behind a one-pass blind policy off it. The consistency is the finding.
 
 \begin{figure}[t]
 \centering
@@ -1224,17 +1208,9 @@ unchanged by a third-order error in the other term.
 \subsection{Reconciling the numbers that appear more than once}\label{sec:pooled}
 Several quantities here were measured more than once, by experiments written at different times, and the entries do not agree exactly. The recovered fraction of the $264$-shell at the fixed decoder temperature appears three times: $0.915$ from the transfer sweep, $0.885$ from the tuned comparison, $0.93$ from the scaling table. Each traces correctly to its CSV, and the pipeline checking every number against its source passed all three: provenance and consistency are different properties and only the first was checked.
 
-Pooling all $17$ units we have measured for that quantity gives a median of $0.889$ over a range of
-$0.838$ to $0.923$. That range, not any single entry, is the honest summary. We report it here
-rather than quietly selecting one value, and we have added a check that flags any quantity carrying
-two entries whose difference is not accounted for by a declared run set.
+Pooling all $17$ units gives a median of $0.889$ over $0.838$ to $0.923$. That range, not any single entry, is the honest summary, and a check now flags any quantity carrying two entries whose difference no declared run set accounts for.
 
-The spread matters for one claim and not for the others. It does not affect the decoder-temperature
-result of Section~\ref{sec:two-causes}, because that comparison is paired within a single instance:
-both arms use the same seed, the same slot and the same demand matrix, so between-run variation
-cannot enter it. Measured that way the cost of holding $\tau$ at $0.2$ on this shell is $0.089$ and
-every one of the eight units is on the same side, against a between-run standard deviation of
-$0.020$. It does affect any reading that compares an entry in one table with an entry in another,
+The spread matters for one claim and not the others. It does not touch the decoder-temperature result of Section~\ref{sec:two-causes}, which is paired within an instance: both arms share seed, slot and demand matrix, so between-run variation cannot enter. Measured that way, holding $\tau$ at $0.2$ costs $0.089$ with all eight units on the same side, against a between-run standard deviation of $0.020$. It does affect any reading that compares an entry in one table with an entry in another,
 which is why we now give the range wherever a quantity appears twice.
 
 A second inconsistency belongs here. Table~\ref{tab:summary} reports medians, because the comparisons it summarises are paired; Tables~\ref{tab:baselines},~\ref{tab:decode},~\ref{tab:scale} and~\ref{tab:ablation} report means with standard deviations, because they describe spread within a cell. Both are defensible, but an earlier version declared ``median throughout'' in one place while printing means in four others, inviting a cross-table comparison the two estimators do not support. Each table now states its estimator.
@@ -1299,10 +1275,7 @@ QW (global quantum walk) & $0.94{\scriptstyle\pm.04}$ & $0.90{\scriptstyle\pm.06
 \section{Discussion, Threats, and Limitations}\label{sec:disc}
 \subsection{Deployment considerations}\label{sec:deploy}
 In an operational control loop the router runs once per slot on the known next-slot
-topology. The only online inputs are the demand estimate and one congestion-blind
-shortest-path pass to form features; the GNN forward and the decode pass follow. Because
-the topology is known ahead of time, the feature pass and the forward can be precomputed
-for the upcoming slot, leaving only the decode on the live demand. The model is small (a
+topology. The online inputs are the demand estimate and one congestion-blind shortest-path pass to form features; the GNN forward and the decode follow. An earlier version claimed the feature pass and the forward could be precomputed because the topology is known ahead. That is wrong on the half that matters: the features include the blind load, an all-or-nothing pass over the \emph{live} demand. On the $1584$-shell the features cost $5.211$~s and the decode $3.573$~s, both demand dependent, while the forward costs $0.004$~s and is the only precomputable stage. The pipeline is $8.75$~s, $15\%$ of a $60$~s slot: it fits because the slot is long, not because work moved offline. The model is small (a
 few thousand parameters) and its weights are fixed across constellation sizes, so a
 single trained model serves an entire program of shells. Two safeguards follow naturally
 from our analysis. When the demand forecast is unreliable, for example during an

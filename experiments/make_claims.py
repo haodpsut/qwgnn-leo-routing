@@ -225,6 +225,18 @@ def claim_r4():
         claim_raw(f"poa_{tag}", "poa.csv", "poa", {"load": load}, "mean", 3,
                   f"price of anarchy tai {load} nhu cau")
 
+    # 2.3: phan ra thoi gian theo chang, doi chieu voi lat cat 60s cua MO PHONG (khong phai
+    # "vai giay" cua van xuoi). Chi phi nam o hai chang PHU THUOC NHU CAU, con chang duy nhat
+    # tien tinh duoc la forward, von gan nhu mien phi.
+    for sh in ("w132", "w264", "w1584"):
+        for cid, col, pl in ((f"time_total_{sh}", "t_total_s", 2),
+                             (f"time_feat_{sh}", "t_features_s", 3),
+                             (f"time_fwd_{sh}", "t_forward_s", 3),
+                             (f"time_dec_{sh}", "t_decode_s", 3),
+                             (f"time_frac_{sh}", "frac_of_slot", 3)):
+            claim_raw(cid, "r4_4_stage_timing.csv", col, {"shell": sh}, "median", pl,
+                      f"phan ra thoi gian: {col} tren {sh}")
+
     pool = pool_264_fixedtau()
     claim("pooled_w264_fixedtau", pool, "pooled_w264_fixedtau.csv", "recovered",
           {"shell": "w264_i53"}, "gop MOI run set do cung dai luong nay")
@@ -258,8 +270,11 @@ def claim_r4():
 def claim_inherited():
     """Cac so headline mang tu ban bi reject sang. Truoc do KHONG con nao duoc neo: cong bao
     49/49 xanh nhung 49 claim ay deu thuoc phan viet moi, nen con so do chi noi ve mot nua bai."""
+    # blind multipath da duoc them vao chinh thi nghiem nay (y 2.6 cua phan bien ngoai): bang
+    # ket qua CHINH truoc do thieu dung doi thu manh nhat, va caption chi thua nhan thieu.
+    # Do tren CUNG instance de khoi phai ghep so tu run set khac.
     for who, col in (("gnn", "r_gnn"), ("ue", "r_ue"), ("so", "r_so"),
-                     ("geo", "r_geo"), ("onestep", "r_1step")):
+                     ("geo", "r_geo"), ("onestep", "r_1step"), ("ecmp", "r_ecmp")):
         for split in ("in-dist", "ood"):
             claim_raw(f"rel_{who}_{split.replace('-','')}", "p6_baselines.csv", col,
                       {"split": split}, "mean", 2,

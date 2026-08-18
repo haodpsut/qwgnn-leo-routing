@@ -655,7 +655,7 @@
   },
   {
     "id": "rel_gnn_ood",
-    "paper_value": "0.12",
+    "paper_value": "0.11",
     "csv": "../code/results/p6_baselines.csv",
     "column": "r_gnn",
     "filter": {
@@ -769,6 +769,32 @@
     "places": 2,
     "unit_of_analysis": "seed-x-instance",
     "note": "thoi gian di chuyen tuong doi so voi blind, onestep, ood"
+  },
+  {
+    "id": "rel_ecmp_indist",
+    "paper_value": "0.60",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_ecmp",
+    "filter": {
+      "split": "in-dist"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, ecmp, in-dist"
+  },
+  {
+    "id": "rel_ecmp_ood",
+    "paper_value": "0.08",
+    "csv": "../code/results/p6_baselines.csv",
+    "column": "r_ecmp",
+    "filter": {
+      "split": "ood"
+    },
+    "agg": "mean",
+    "places": 2,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "thoi gian di chuyen tuong doi so voi blind, ecmp, ood"
   },
   {
     "id": "abl_gcn_indist",
@@ -1128,6 +1154,201 @@
     "note": "price of anarchy tai 1000 nhu cau"
   },
   {
+    "id": "time_total_w132",
+    "paper_value": "0.05",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_total_s",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_total_s tren w132"
+  },
+  {
+    "id": "time_feat_w132",
+    "paper_value": "0.026",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_features_s",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_features_s tren w132"
+  },
+  {
+    "id": "time_fwd_w132",
+    "paper_value": "0.000",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_forward_s",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_forward_s tren w132"
+  },
+  {
+    "id": "time_dec_w132",
+    "paper_value": "0.024",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_decode_s",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_decode_s tren w132"
+  },
+  {
+    "id": "time_frac_w132",
+    "paper_value": "0.001",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "frac_of_slot",
+    "filter": {
+      "shell": "w132"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: frac_of_slot tren w132"
+  },
+  {
+    "id": "time_total_w264",
+    "paper_value": "0.24",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_total_s",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_total_s tren w264"
+  },
+  {
+    "id": "time_feat_w264",
+    "paper_value": "0.141",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_features_s",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_features_s tren w264"
+  },
+  {
+    "id": "time_fwd_w264",
+    "paper_value": "0.001",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_forward_s",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_forward_s tren w264"
+  },
+  {
+    "id": "time_dec_w264",
+    "paper_value": "0.101",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_decode_s",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_decode_s tren w264"
+  },
+  {
+    "id": "time_frac_w264",
+    "paper_value": "0.004",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "frac_of_slot",
+    "filter": {
+      "shell": "w264"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: frac_of_slot tren w264"
+  },
+  {
+    "id": "time_total_w1584",
+    "paper_value": "8.75",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_total_s",
+    "filter": {
+      "shell": "w1584"
+    },
+    "agg": "median",
+    "places": 2,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_total_s tren w1584"
+  },
+  {
+    "id": "time_feat_w1584",
+    "paper_value": "5.211",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_features_s",
+    "filter": {
+      "shell": "w1584"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_features_s tren w1584"
+  },
+  {
+    "id": "time_fwd_w1584",
+    "paper_value": "0.004",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_forward_s",
+    "filter": {
+      "shell": "w1584"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_forward_s tren w1584"
+  },
+  {
+    "id": "time_dec_w1584",
+    "paper_value": "3.573",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "t_decode_s",
+    "filter": {
+      "shell": "w1584"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: t_decode_s tren w1584"
+  },
+  {
+    "id": "time_frac_w1584",
+    "paper_value": "0.146",
+    "csv": "../code/results/r4_4_stage_timing.csv",
+    "column": "frac_of_slot",
+    "filter": {
+      "shell": "w1584"
+    },
+    "agg": "median",
+    "places": 3,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "phan ra thoi gian: frac_of_slot tren w1584"
+  },
+  {
     "id": "pooled_w264_fixedtau",
     "paper_value": "0.889",
     "csv": "../code/results/pooled_w264_fixedtau.csv",
@@ -1194,7 +1415,7 @@
   },
   {
     "id": "ratio_gnn_ue_ood",
-    "paper_value": "2.64",
+    "paper_value": "2.29",
     "csv": "../code/results/p6_baselines.csv",
     "column": "ratio_gnn_over_ue",
     "filter": {
@@ -1207,7 +1428,7 @@
   },
   {
     "id": "ratio_blind_ue_ood",
-    "paper_value": "20.42",
+    "paper_value": "20.39",
     "csv": "../code/results/p6_baselines.csv",
     "column": "ratio_blind_over_ue",
     "filter": {
