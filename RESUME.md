@@ -1,4 +1,17 @@
-# RESUME — where we are and what's next
+# RESUME — trạng thái dự án
+
+> ⚠ **File này là bản ghi LỊCH SỬ, không phải trạng thái hiện tại.** Nó mô tả giai đoạn
+> chuyển hướng từ toán tử quantum-walk sang GNN amortize, viết khi thí nghiệm P5 còn đang
+> chạy. Mọi ngưỡng và kế hoạch bên dưới đã bị thay thế.
+>
+> **Trạng thái hiện tại đọc ở `README.md`.** Bài nay là một nghiên cứu ĐO ĐẠC
+> (*A Reality Check on Learned Traffic Engineering for LEO Mega-Constellations*), và ba
+> tuyên bố của giai đoạn dưới đây đã bị rút sau khi đo lại: chuyển giao quy nạp, tăng tốc
+> tăng theo quy mô, và lợi thế của biến thể chủ động ngoài phân phối.
+>
+> Giữ file lại vì nó ghi *vì sao* dự án chuyển hướng, và vì bản ghi thất bại là dữ liệu.
+> Các con số trong đó là NGƯỠNG KẾ HOẠCH của giai đoạn cũ, không phải kết quả đo.
+
 
 Repo: github.com/haodpsut/qwgnn-leo-routing  (run on the RTX 4090 server,
 conda env `qwgnn`, tmux). Paper target: IEEE TNSM (stretch TWC).

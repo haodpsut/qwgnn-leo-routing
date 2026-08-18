@@ -11,13 +11,29 @@ traffic-engineering solve that does not scale to mega-constellations.
 > benefit once load features exist). Quantum-walk is kept only as a negative
 > ablation. See FORMULATION.md sec 6 for the full honest record.
 
-## Status
-- **Core result (P5): solid.** A one-shot GNN with blind-load features recovers
-  ~88% (GCN) of the blind->user-equilibrium travel-time gain ZERO-SHOT on a 2x
-  larger shell; in-distribution ~100%. Headroom confirmed (P4): blind routing
-  wastes 8/50/80/90% of total travel time as load grows.
-- Next: baselines (reactive-SP, geographic) + inference-time vs MSA (scalability)
-  + proactive variant (predicted demand) + writing. See RESUME.md.
+## Status (18/08/2026)
+
+The numbers below are the ones in the manuscript, and every one of them is an entry in
+`paper/claims.json` with the CSV, column, filter and aggregation that produce it. An earlier
+version of this file quoted ~88% zero-shot and ~100% in-distribution, from a run superseded
+several times over; it drifted because nothing checked it. `code/check_artifact_claims.py` now
+does, and it is what caught this.
+
+- **In distribution**, with both sides tuned per shell, the learned price field recovers
+  `0.976` of the blind-to-equilibrium gap against `0.668` for a one-pass congestion-blind
+  multipath split. Paired per instance the median difference is `0.310`.
+- **Out of distribution** the two are level: paired differences of `0.007`, `0.002`, `0.020`
+  on three unseen shells, and on the largest shell tested the blind split is **ahead**.
+- **Under a hard link capacity** the advantage is a `29.8%` gain in delivered rate, not the
+  `80.5%` delay reduction the BPR cost reports.
+- **The decoder temperature is not a constant of the method**: holding it fixed costs `0.053`
+  to `0.077` per unit on unseen shells.
+- **Negative result kept**: the quantum-walk operator earns no place once blind-load features
+  are present.
+
+All experiments run with `python3 run_all.py` on a single machine; `results/run_all_timing.csv`
+records how long each took and on which host. Numbers from different machines differ in the
+third digit, so do not mix them.
 
 ## Layout
 - `FORMULATION.md` — system model, operators, three falsifiable pillars, prior-art

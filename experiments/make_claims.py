@@ -85,7 +85,8 @@ def claim_raw(cid, csvfile, column, flt, agg, places, note, scale=None):
     # luon tinh MEAN. Cong tinh lai theo agg da ghi, nen mot claim khai median se lech ngay.
     # Cong bat duoc, nhung dung ra ham khong duoc noi doi ngay tu dau.
     vals = [float(r[column]) for r in sel]
-    val = {"median": st.median, "mean": st.mean, "min": min, "max": max}[agg](vals)
+    val = {"median": st.median, "mean": st.mean, "min": min, "max": max,
+           "sum": sum}[agg](vals)
     if scale:
         val = eval(scale, {"__builtins__": {}}, {"x": val})
     rec = {"id": cid, "paper_value": f"{val:.{places}f}",
@@ -264,6 +265,31 @@ def claim_r4():
                              (f"time_frac_{sh}", "frac_of_slot", 3)):
             claim_raw(cid, "r4_4_stage_timing.csv", col, {"shell": sh}, "median", pl,
                       f"phan ra thoi gian: {col} tren {sh}")
+
+    # R4.5: ty le hoa chinh xac. Bai tung viet "khong mot cap nao", va do lai thi CO 527 cap
+    # tren 335709. Ket luan (ECMP sach vo gan nhu vo dung) van dung, loi khang dinh tuyet doi
+    # thi sai. Con so 2620 cu chi nam trong mot dong chu thich ma, khong co artifact nao.
+    ties = list(csv.DictReader(open(os.path.join(RES, "r4_5_exact_ties.csv"))))
+    for sh in ("w132_i53", "w264_i53", "w264_i70"):
+        claim_raw(f"tiefrac_{sh}", "r4_5_exact_ties.csv", "tie_fraction", {"shell": sh},
+                  "median", 4, f"ty le cap nut-dich co hoa chi phi chinh xac, {sh}")
+    claim_raw("tie_pairs_total", "r4_5_exact_ties.csv", "exact_tie_pairs", {}, "sum", 0,
+              "tong so cap co hoa tren moi vo va seed")
+    claim_raw("tie_pairs_examined", "r4_5_exact_ties.csv", "node_dest_pairs", {}, "sum", 0,
+              "tong so cap nut-dich da xet")
+    # Truong hop XAU NHAT tren moi vo va seed. Neu ke ca truong hop te nhat cung be thi ket
+    # luan "ECMP sach vo gan nhu vo dung" moi vung; bao trung vi la bao cho minh de.
+    claim_raw("tiefrac_worst", "r4_5_exact_ties.csv", "tie_fraction", {}, "max", 4,
+              "ty le hoa lon nhat tren moi vo va seed")
+
+    # Bang IV (tab:headroom) co 15 con so va truoc do KHONG claim nao cham toi, du chinh no cho
+    # ty so 41x ma cam bay P4 dua vao. Neo tung o.
+    for pr in ("100", "300", "600", "1000", "1600"):
+        f = {"shell": "starlink_mini132", "pairs": pr}
+        claim_raw(f"hr_blind_{pr}", "p4_headroom.csv", "blind_ttt", f, "mean", 1,
+                  f"TTT tuyet doi cua blind, vo 132, {pr} nhu cau")
+        claim_raw(f"hr_ue_{pr}", "p4_headroom.csv", "ue_ttt", f, "mean", 1,
+                  f"TTT tuyet doi cua UE, vo 132, {pr} nhu cau")
 
     pool = pool_264_fixedtau()
     claim("pooled_w264_fixedtau", pool, "pooled_w264_fixedtau.csv", "recovered",

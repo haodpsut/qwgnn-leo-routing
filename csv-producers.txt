@@ -1,0 +1,51 @@
+# Ban do CSV -> SCRIPT sinh ra no, cho check_staleness.py (--map).
+#
+# VI SAO PHAI KHAI TAY. Cong nay so tuoi cua CSV voi tuoi cua script sinh ra no, vi
+# verify_numbers chi so BAI voi CSV va khong gi so CSV voi CODE: mot con so tai lap hoan hao
+# tu mot CSV DA OI van qua duoc moi cong khac. Che do --auto suy ten theo quy uoc, va o day
+# no suy sai 9 tren 31 file, nen suy sai thi cong thanh vo nghia. Khai tay mot lan.
+#
+# Dinh dang: <ten-csv> = <ten-script-trong-experiments>
+#
+# --- suy duoc theo ten, van khai lai cho ro ---
+poa.csv = poa_check.py
+r1_1_tau_sweep.csv = r1_1_tau_sweep.py
+r2_7_budget_matched.csv = r2_7_budget_matched.py
+r2_7_eps_sweep.csv = r2_7_eps_sweep.py
+r2_7_fair_tuned.csv = r2_7_fair_tuned.py
+r2_7_fair_tuned_wide.csv = r2_7_fair_tuned_wide.py
+r2_7_matched_all.csv = r2_7_matched_all.py
+r2_7_proactive_vs_ecmp.csv = r2_7_proactive_vs_ecmp.py
+r2_7_train_mix.csv = r2_7_train_mix.py
+r2_7_warmstart_ecmp.csv = r2_7_warmstart_ecmp.py
+r3_2_feasibility.csv = r3_2_feasibility.py
+r3_2_loss_models.csv = r3_2_loss_models.py
+r4_1_shell1584_controls.csv = r4_1_shell1584_controls.py
+r4_2_warmstart_iters.csv = r4_2_warmstart_iters.py
+r4_3_bound_constants.csv = r4_3_bound_constants.py
+r4_4_stage_timing.csv = r4_4_stage_timing.py
+r4_5_exact_ties.csv = r4_5_exact_ties.py
+p6_baselines.csv = p6_baselines.py
+p7_proactive.csv = p7_proactive.py
+p8_decoder.csv = p8_decoder.py
+p9_bound.csv = p9_bound.py
+p10_learned.csv = p10_learned_baseline.py
+
+# --- KHONG suy duoc theo ten: ten CSV khac ten script ---
+p1_results.csv = p1_far_resolution.py
+p3_results.csv = p3_inductive.py
+p3b_results.csv = p3b_bellman.py
+p4_headroom.csv = p4_congestion_headroom.py
+p5_ablation.csv = p5_gnn_router.py
+p5_router.csv = p5_gnn_router.py
+
+# --- file DAN XUAT: khong do mot thi nghiem sinh ra ---
+# pooled_w264_fixedtau.csv  <- make_claims.py gop tu ba CSV khac. Tuoi cua no phai moi hon
+#                              ca ba nguon, chuyen do do chinh make_claims lo.
+# run_all_timing.csv        <- run_all.py ghi, la so lieu VAN HANH chu khong phai ket qua bai.
+# shell1584_from_logs.csv   <- extract_1584_from_logs.py boc tu LOG THO cua mot lan chay tren
+#                              may khac. Khong co script nao "sinh lai" duoc no, va do chinh la
+#                              ly do no phai ton tai o dang CSV thay vi nam trong mot file log.
+pooled_w264_fixedtau.csv = make_claims.py
+run_all_timing.csv = run_all.py
+shell1584_from_logs.csv = extract_1584_from_logs.py

@@ -1,0 +1,17 @@
+# So trong bai KHONG nam nguyen trong mot o CSV, kem LY DO. Mien tru im lang thi vo nghia.
+# Dang mot dong:  <so>  # <ly do>
+#
+# Hai loai duoc mien o day, va chi hai loai:
+#   (a) GIA TRI GOP (trung vi/trung binh) -- khong o CSV nao chua no, nhung no la mot claim
+#       trong claims.json va duoc verify_numbers tinh lai tu CSV. Hai cong do hai thu khac nhau.
+#   (b) NGUONG SUY RA tu mot claim khac -- khong thi nghiem nao sinh ra no.
+
+80.5  # (a) trung vi gain_bpr_pct tren dai tai >4x; claim bpr_gain_overload
+29.8  # (a) trung vi gain_product_pct cung dai; claim goodput_gain_overload / goodput_gain_product
+37.0  # (a) trung vi gain_bottleneck_pct; claim goodput_gain_bottleneck
+37.3  # (a) trung vi gain_maxmin_pct; claim goodput_gain_maxmin
+796.6  # (a) trung binh blind_ttt tai 1000 nhu cau, vo 132; claim hr_blind_1000
+7433.6  # (a) trung binh blind_ttt tai 1600 nhu cau; claim hr_blind_1600
+180.8  # (a) trung binh ue_ttt tai 1600 nhu cau; claim hr_ue_1600
+2e-05  # (b) nghiem cua c1*H*eps < 0.1 tai tai blind, voi c1*H=6290 (bound_c1H_blind_w264_i53)
+2e-03  # (b) cung the tai tai can bang, voi c1*H=111 (bound_c1H_ue_w264_i53)

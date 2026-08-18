@@ -1349,6 +1349,218 @@
     "note": "phan ra thoi gian: frac_of_slot tren w1584"
   },
   {
+    "id": "tiefrac_w132_i53",
+    "paper_value": "0.0021",
+    "csv": "../code/results/r4_5_exact_ties.csv",
+    "column": "tie_fraction",
+    "filter": {
+      "shell": "w132_i53"
+    },
+    "agg": "median",
+    "places": 4,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "ty le cap nut-dich co hoa chi phi chinh xac, w132_i53"
+  },
+  {
+    "id": "tiefrac_w264_i53",
+    "paper_value": "0.0014",
+    "csv": "../code/results/r4_5_exact_ties.csv",
+    "column": "tie_fraction",
+    "filter": {
+      "shell": "w264_i53"
+    },
+    "agg": "median",
+    "places": 4,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "ty le cap nut-dich co hoa chi phi chinh xac, w264_i53"
+  },
+  {
+    "id": "tiefrac_w264_i70",
+    "paper_value": "0.0016",
+    "csv": "../code/results/r4_5_exact_ties.csv",
+    "column": "tie_fraction",
+    "filter": {
+      "shell": "w264_i70"
+    },
+    "agg": "median",
+    "places": 4,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "ty le cap nut-dich co hoa chi phi chinh xac, w264_i70"
+  },
+  {
+    "id": "tie_pairs_total",
+    "paper_value": "527",
+    "csv": "../code/results/r4_5_exact_ties.csv",
+    "column": "exact_tie_pairs",
+    "filter": {},
+    "agg": "sum",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "tong so cap co hoa tren moi vo va seed"
+  },
+  {
+    "id": "tie_pairs_examined",
+    "paper_value": "335709",
+    "csv": "../code/results/r4_5_exact_ties.csv",
+    "column": "node_dest_pairs",
+    "filter": {},
+    "agg": "sum",
+    "places": 0,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "tong so cap nut-dich da xet"
+  },
+  {
+    "id": "tiefrac_worst",
+    "paper_value": "0.0021",
+    "csv": "../code/results/r4_5_exact_ties.csv",
+    "column": "tie_fraction",
+    "filter": {},
+    "agg": "max",
+    "places": 4,
+    "unit_of_analysis": "vo-x-seed",
+    "note": "ty le hoa lon nhat tren moi vo va seed"
+  },
+  {
+    "id": "hr_blind_100",
+    "paper_value": "4.8",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "blind_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "100"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua blind, vo 132, 100 nhu cau"
+  },
+  {
+    "id": "hr_ue_100",
+    "paper_value": "4.8",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "ue_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "100"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua UE, vo 132, 100 nhu cau"
+  },
+  {
+    "id": "hr_blind_300",
+    "paper_value": "17.2",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "blind_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "300"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua blind, vo 132, 300 nhu cau"
+  },
+  {
+    "id": "hr_ue_300",
+    "paper_value": "15.5",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "ue_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "300"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua UE, vo 132, 300 nhu cau"
+  },
+  {
+    "id": "hr_blind_600",
+    "paper_value": "78.6",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "blind_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "600"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua blind, vo 132, 600 nhu cau"
+  },
+  {
+    "id": "hr_ue_600",
+    "paper_value": "35.0",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "ue_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "600"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua UE, vo 132, 600 nhu cau"
+  },
+  {
+    "id": "hr_blind_1000",
+    "paper_value": "796.6",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "blind_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "1000"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua blind, vo 132, 1000 nhu cau"
+  },
+  {
+    "id": "hr_ue_1000",
+    "paper_value": "79.7",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "ue_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "1000"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua UE, vo 132, 1000 nhu cau"
+  },
+  {
+    "id": "hr_blind_1600",
+    "paper_value": "7433.6",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "blind_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "1600"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua blind, vo 132, 1600 nhu cau"
+  },
+  {
+    "id": "hr_ue_1600",
+    "paper_value": "180.8",
+    "csv": "../code/results/p4_headroom.csv",
+    "column": "ue_ttt",
+    "filter": {
+      "shell": "starlink_mini132",
+      "pairs": "1600"
+    },
+    "agg": "mean",
+    "places": 1,
+    "unit_of_analysis": "seed-x-instance",
+    "note": "TTT tuyet doi cua UE, vo 132, 1600 nhu cau"
+  },
+  {
     "id": "pooled_w264_fixedtau",
     "paper_value": "0.908",
     "csv": "../code/results/pooled_w264_fixedtau.csv",

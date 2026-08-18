@@ -414,7 +414,7 @@ decoder that turns prices into paths, is charged to $f_\theta$ as well. A method
 \eqref{eq:amort} with a perfectly accurate price field, and we find the decoder is a larger source
 of loss off distribution than the prediction is.
 
-\subsection{Decomposition into sub-problems}\label{sec:decomp}
+\subsection{Decomposition into sub-problems}
 We split \eqref{eq:amort} into four stages that fail for unrelated reasons and can therefore be
 measured separately: a price field can be accurate and still decode into a poor routing, a decode
 can be faithful and the prediction still collapse on an unseen constellation, and all of that can
@@ -697,7 +697,7 @@ UE, SO (MSA), warm start (Section~\ref{sec:warmstart}) & $T\approx 2$--$6$ \\
 \end{tabular}
 \end{table}
 
-\subsection{Design rationale: why a supervised price field}\label{sec:rationale}
+\subsection{Design rationale: why a supervised price field}
 Three design choices distinguish this approach from the alternatives. First, we predict
 a \emph{price field} rather than a routing directly: a single $|E|$-dimensional field is
 shared by every demand and decoded by an existing, trusted shortest-path router, so the
@@ -751,7 +751,7 @@ we use it throughout. Its denominator is the blind reference, and on this topolo
 degrades far faster than the equilibrium as the constellation grows: blind routing costs $2.51$
 times the equilibrium on the $132$-shell, $20.4$ times on the $264$-shell, and about $786$ times on
 the $1584$-shell, because a BPR cost with a fourth power is being evaluated at ever more extreme
-overload. A denominator that grows by two orders of magnitude makes the fraction insensitive: our router sits at $1.03$ times the equilibrium on the $132$-shell and scores $0.97$, and at $2.64$ times on the $264$-shell and still scores $0.93$. Four points of the fraction separate a policy two percent from equilibrium from one more than one hundred and sixty percent away; on the $1584$-shell $0.94$ corresponds to roughly $47$ times it. \emph{Fix:} report $\TTT_\pi/\TTT_{\mathrm{UE}}$ beside every recovered fraction; it does not saturate and it is what an operator experiences. We caught this only when a reader asked what the metric compressed, after the fraction had already been a headline of this work.
+overload. Section~\ref{sec:feasible} recomputes the gap under a hard capacity. A denominator that grows by two orders of magnitude makes the fraction insensitive: our router sits at $1.03$ times the equilibrium on the $132$-shell and scores $0.97$, and at $2.64$ times on the $264$-shell and still scores $0.93$. Four points of the fraction separate a policy two percent from equilibrium from one more than a hundred and sixty percent away, and on the $1584$-shell $0.94$ means roughly $47$ times it. \emph{Fix:} report $\TTT_\pi/\TTT_{\mathrm{UE}}$ beside every recovered fraction; it does not saturate and it is what an operator experiences. We caught this only when a reader asked what the metric compressed.
 
 None of these four pitfalls is specific to LEO or to graph networks. P1 arises whenever a
 baseline can decline to act and the metric ignores the declined cases; P2 arises whenever a
@@ -764,7 +764,7 @@ price-of-anarchy ordering) that a corrupted estimator will fail. We surface thes
 reusable evaluation protocol for learned traffic engineering, since each silently produced a
 publishable-looking but wrong number before it was caught.
 
-\subsection{Setup}\label{sec:setup}
+\subsection{Setup}
 We evaluate in the flow-level traffic-assignment framework (BPR cost, user equilibrium),
 the standard model in which congestion-aware routing is defined and analyzed; this is a
 deliberate choice that isolates the load-balancing mechanism our method targets, cleanly
@@ -817,9 +817,9 @@ offered load grows, and their ratio. Mean over seeds.}
 \toprule
 demands & $100$ & $300$ & $600$ & $1000$ & $1600$ \\
 \midrule
-blind & $4.8$ & $17.2$ & $78.6$ & $796.6$ & $7433.5$ \\
-UE    & $4.8$ & $15.5$ & $35.0$ & $79.7$  & $180.6$ \\
-ratio & $1.0$ & $1.1$  & $2.2$  & $10.0$  & $41.2$ \\
+blind & $4.8$ & $17.2$ & $78.6$ & $796.6$ & $7433.6$ \\
+UE & $4.8$ & $15.5$ & $35.0$ & $79.7$ & $180.8$ \\
+ratio & $1.0$ & $1.1$ & $2.2$ & $10.0$ & $41.1$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -847,7 +847,7 @@ prices, predicts the \emph{fixed point} of that process directly and so avoids t
 overshoot. This is why a learned price field, rather than a hand-tuned correction, is
 needed.
 
-\subsection{Comparison to a learned router}\label{sec:results-learned}
+\subsection{Comparison to a learned router}
 The natural learned alternative to predicting a price \emph{field} is to predict the
 \emph{routing} directly. We implement GNN-NextHop, a graph network with the same observable
 features (demand and blind load) plus a destination indicator, trained to regress the
@@ -1117,9 +1117,15 @@ Neither is competitive by construction. Here we place a policy in the cell betwe
 demand equally across the paths within $(1+\varepsilon)$ of shortest on free-flow cost. It is
 congestion blind, costs one pass, and predates every learned method.
 
-Textbook equal-cost multipath is a no-op on this topology. Inter-satellite delays take continuous
-values, so of $2620$ node-destination pairs examined not one had two out-edges of exactly equal
-cost, and $\varepsilon=0$ reduces to blind single-path routing. The tolerance is therefore not a
+Textbook equal-cost multipath is very nearly a no-op on this topology. Inter-satellite delays
+take continuous values, so exact cost ties are rare: over $335709$ node-destination pairs across
+three shells and three seeds, $527$ had two or more out-edges of exactly equal cost, a fraction of
+$0.0021$ on the training shell and $0.0014$ to $0.0016$ on the larger ones. At $\varepsilon=0$ the
+split therefore degenerates to blind single-path routing almost everywhere.\footnote{An earlier
+version asserted that \emph{no} pair had a tie, from a count over one shell that we had not kept.
+Measuring it properly gives a small but non-zero rate. The conclusion is unchanged, since a policy
+that splits at two nodes in a thousand is not a traffic-engineering mechanism, but the absolute
+claim was wrong and the number now has a script behind it.} The tolerance is therefore not a
 detail but the whole of the baseline, and it is a knob: we sweep it rather than fix it.
 
 Both sides are tuned per shell over fixed grids, the learned decoder over its softmin temperature
