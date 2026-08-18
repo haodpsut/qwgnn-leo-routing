@@ -37,10 +37,19 @@ WAVE2 = {"r2_7_budget_matched.py": "p6_baselines.csv",
          "r3_2_feasibility.py": "p4_headroom.csv"}
 SKIP = {"make_claims.py", "run_all.py", "extract_1584_from_logs.py"}
 
+# Thi nghiem DO THOI GIAN phai chay MOT MINH. Lan dau toi cho no chay cung 25 tien trinh
+# khac, va no do wall-clock duoi tranh chap CPU: 17.85s o vo 1584 thay vi 8.75s khi chay
+# rieng, tuc gap doi. Con so ay khong noi gi ve chi phi cua phuong phap, no noi ve viec toi
+# dang chay bao nhieu thu khac cung luc. Dung lop loi ma bai nay ton ca ngay de vach ra.
+EXCLUSIVE = {"r4_4_stage_timing.py", "p6_baselines.py"}
+
 
 def experiments():
     all_py = sorted(f for f in os.listdir(EXP) if f.endswith(".py") and f not in SKIP)
-    return [f for f in all_py if f not in WAVE2], [f for f in all_py if f in WAVE2]
+    w1 = [f for f in all_py if f not in WAVE2 and f not in EXCLUSIVE]
+    w2 = [f for f in all_py if f in WAVE2]
+    ex = [f for f in all_py if f in EXCLUSIVE]
+    return w1, w2, ex
 
 
 def run_one(script):
@@ -71,7 +80,7 @@ def main():
     os.makedirs(RES, exist_ok=True)
     ncpu = os.cpu_count() or 4
     jobs = a.jobs or max(1, ncpu - 2)
-    w1, w2 = experiments()
+    w1, w2, ex = experiments()
     if a.only:
         w1 = [s for s in w1 if a.only in s]
         w2 = [s for s in w2 if a.only in s]
@@ -79,20 +88,24 @@ def main():
     tag = f"{platform.system()}-{platform.machine()}-{socket.gethostname()}"
     print(f"MAY: {tag} | {ncpu} nhan | chay toi da {jobs} tien trinh song song")
     print(f"dot 1: {len(w1)} thi nghiem doc lap")
-    print(f"dot 2: {len(w2)} thi nghiem phu thuoc ({', '.join(WAVE2)})\n")
+    print(f"dot 2: {len(w2)} thi nghiem phu thuoc ({', '.join(WAVE2)})")
+    print(f"dot 3: {len(ex)} thi nghiem chay MOT MINH ({', '.join(EXCLUSIVE)})\n")
     if a.dry:
-        for s in w1 + w2:
+        for s in w1 + w2 + ex:
             print("  ", s)
         return 0
 
     t0 = time.time()
     rows = []
-    for wave, scripts in (("1", w1), ("2", w2)):
+    # Dot 3 chay MOT MINH (par=1): do thoi gian ma co tien trinh khac tranh CPU thi con so
+    # do duoc noi ve tai may, khong noi ve phuong phap.
+    for wave, scripts, par in (("1", w1, jobs), ("2", w2, jobs), ("3 (mot minh)", ex, 1)):
         if not scripts:
             continue
         print(f"--- dot {wave} ---", flush=True)
-        with ThreadPoolExecutor(max_workers=jobs) as ex:
-            rows += list(ex.map(run_one, scripts))
+        with ThreadPoolExecutor(max_workers=par) as pool:
+            rows += list(pool.map(run_one, scripts))
+
     wall = time.time() - t0
 
     # Ghi bang thoi gian thanh CSV, de "chay het mat bao lau" cung la mot con so tra nguoc

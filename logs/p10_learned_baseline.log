@@ -1,0 +1,14 @@
+seed split    |  blind  learned GNN(ours)     UE |  deliv   fwd
+   0 in-dist  |   1.00     0.71  (see p6)   0.40 |    51%    91
+   0 ood      |   1.00     0.97  (see p6)   0.06 |    17%   190
+   1 in-dist  |   1.00     0.72  (see p6)   0.40 |    53%    95
+   1 ood      |   1.00     0.94  (see p6)   0.05 |    24%   198
+   2 in-dist  |   1.00     0.76  (see p6)   0.42 |    47%    94
+   2 ood      |   1.00     0.85  (see p6)   0.05 |    25%   183
+
+================================================================
+  in-dist  | learned-NextHop TTT/blind 0.73  greedy delivery 50%  forwards/slot 94  (UE 0.40)
+  ood      | learned-NextHop TTT/blind 0.92  greedy delivery 22%  forwards/slot 190  (UE 0.05)
+  Compare learned TTT/blind to our edge-price+multipath (p6: in-dist 0.42, OOD 0.12),
+  and note our method uses 1 forward/slot vs forwards/slot above.
+================================================================

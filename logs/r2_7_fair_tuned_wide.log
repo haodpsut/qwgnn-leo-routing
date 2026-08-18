@@ -1,0 +1,34 @@
+R2.7g -- 8 seed/vo, luoi tau den 8
+
+  w132_i53: 8 seed xong
+  w198_i53: 8 seed xong
+  w264_i53: 8 seed xong
+  w264_i70: 8 seed xong
+
+# da ghi results/r2_7_fair_tuned_wide.csv (32 dong)
+
+=== duong cong tau theo vo (trung vi) -- co quay dau chua? ===
+vo            0.05     0.1     0.2    0.35     0.5       1       2     3.5       5       8
+w132_i53     0.939   0.971   0.976   0.928   0.881   0.785   0.720   0.689   0.677   0.666   tot nhat tau=0.2
+w198_i53     0.619   0.764   0.909   0.959   0.975   0.983   0.984   0.984   0.984   0.984   tot nhat tau=2
+w264_i53     0.668   0.792   0.908   0.955   0.967   0.972   0.973   0.974   0.974   0.974   tot nhat tau=8
+w264_i70     0.773   0.858   0.937   0.973   0.982   0.989   0.989   0.989   0.989   0.989   tot nhat tau=2
+  luoi con bi cat cut o: w264_i53
+
+=== SO CONG BANG, 8 don vi moi vo ===
+vo          GNN@0.2  GNN tot  tau*  ECMP tot  eps*    chenh  GNN thang
+w132_i53      0.976    0.976   0.2     0.668   0.1   +0.308       8/8
+w198_i53      0.909    0.984     2     0.976   0.2   +0.008       8/8
+w264_i53      0.908    0.974     8     0.973   0.2   +0.001       6/8
+w264_i70      0.937    0.989     2     0.969   0.5   +0.020       8/8
+
+=== PHAN QUYET ===
+  w132_i53   chenh +0.308, GNN thang 8/8  [GNN thang gan nhu moi don vi]
+  w198_i53   chenh +0.008, GNN thang 8/8  [GNN thang gan nhu moi don vi]
+             tau co dinh 0.2 lam mat 0.075
+  w264_i53   chenh +0.001, GNN thang 6/8  [HOA (6/8)]
+             tau co dinh 0.2 lam mat 0.066
+  w264_i70   chenh +0.020, GNN thang 8/8  [GNN thang gan nhu moi don vi]
+             tau co dinh 0.2 lam mat 0.053
+
+  1/4 vo la HOA theo dem don vi.

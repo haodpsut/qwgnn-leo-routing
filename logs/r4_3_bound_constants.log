@@ -1,0 +1,28 @@
+R4.3 -- dat so cu the vao Menh de 1
+
+  BPR: cost = prop*(1 + 0.15*(x/cap)^4)
+  dcost/dx = prop*0.15*4*u^3/cap, nen he so Lipschitz ~ u^3
+
+  w132_i53 sd0: H=14  pmax/pbar=1.23  u(UE)=1.63 u(blind)=3.64  c1H(UE)=     45.0  c1H(blind)=      498.8
+  w132_i53 sd1: H=15  pmax/pbar=1.23  u(UE)=1.64 u(blind)=3.49  c1H(UE)=     48.8  c1H(blind)=      472.3
+  w132_i53 sd2: H=15  pmax/pbar=1.23  u(UE)=1.67 u(blind)=3.48  c1H(UE)=     51.7  c1H(blind)=      467.3
+  w264_i53 sd0: H=26  pmax/pbar=1.41  u(UE)=1.64 u(blind)=6.28  c1H(UE)=     96.6  c1H(blind)=     5439.3
+  w264_i53 sd1: H=27  pmax/pbar=1.41  u(UE)=1.72 u(blind)=7.11  c1H(UE)=    116.3  c1H(blind)=     8177.8
+  w264_i53 sd2: H=26  pmax/pbar=1.41  u(UE)=1.78 u(blind)=6.59  c1H(UE)=    124.5  c1H(blind)=     6290.0
+
+# da ghi results/r4_3_bound_constants.csv (6 dong)
+
+=== MENH DE 1 NOI DUOC GI, BANG SO ===
+  H (so chang dai nhat cua duong da giai ma) = 20
+  c1*H tai tai UE     = 74
+  c1*H tai tai blind  = 2,969
+
+  Chan la TTT(pi) <= (1 + delta_dec + c1*H*eps) * TTT*.
+  De phan du doan co nghia (vi du dong gop duoi 10%) thi can eps <= 0.1/(c1*H):
+    tai UE    : eps <= 1.35e-03
+    tai blind : eps <= 3.37e-05
+
+  => Sai so gia tren MOI lien ket phai duoi muc do thi chan moi noi duoc dieu gi.
+     Do la nguong ma khong mo hinh hoc nao trong bai nay dat toi, ke ca tren vo
+     huan luyen. Menh de 1 vi vay la mot phat bieu ve DANG (sai so gia -> sai so
+     dinh tuyen, tuyen tinh, tat dan ve delta_dec), KHONG phai mot chan dung duoc.

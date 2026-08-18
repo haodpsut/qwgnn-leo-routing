@@ -1,0 +1,20 @@
+train: Walker132 @ 600 pairs   OOD: larger shell @ 1200
+ops=['GCN'] need_eig=False; 10 train, 4 eval/split, 3 seeds
+
+GCN   seed0 in-dist        | recovered   97.3% +/-  0.8
+GCN   seed0 ood-largeshell | recovered   94.7% +/-  0.7
+GCN   seed1 in-dist        | recovered   97.4% +/-  1.8
+GCN   seed1 ood-largeshell | recovered   92.2% +/-  0.8
+GCN   seed2 in-dist        | recovered   96.2% +/-  1.6
+GCN   seed2 ood-largeshell | recovered   93.2% +/-  1.0
+
+========================================================================
+prop  split          |    recovered% mean +/- std (n)
+GCN   in-dist        |       97.0% +/-  1.6  (n=12)
+GCN   ood-largeshell |       93.4% +/-  1.3  (n=12)
+
+P5 VERDICT
+  => PASS (solid): GCN recovers 93% +/-1 of the blind->UE
+     gain ZERO-SHOT on a larger shell, one forward pass, low variance.
+     Next: proactive (predicted demand) + baselines + paper.
+========================================================================

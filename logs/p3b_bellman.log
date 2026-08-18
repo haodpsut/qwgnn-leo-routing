@@ -1,0 +1,25 @@
+model  lam test_shell         seed |  delivery stretch_med
+Heat   0.0 starlink_mini264      0 |     0.634       1.030
+Heat   1.0 starlink_mini264      0 |     0.634       1.030
+QW     0.0 starlink_mini264      0 |     0.823       1.038
+QW     1.0 starlink_mini264      0 |     0.692       1.028
+Heat   0.0 starlink_mini264      1 |     0.604       1.036
+Heat   1.0 starlink_mini264      1 |     0.601       1.036
+QW     0.0 starlink_mini264      1 |     0.889       1.046
+QW     1.0 starlink_mini264      1 |     0.644       1.041
+Heat   0.0 starlink_mini264      2 |     0.629       1.040
+Heat   1.0 starlink_mini264      2 |     0.629       1.039
+QW     0.0 starlink_mini264      2 |     0.672       1.048
+QW     1.0 starlink_mini264      2 |     0.672       1.046
+
+========================================================================
+model  lam test_shell         |  delivery stretch_med
+Heat   0.0 starlink_mini264   |     0.622       1.035
+Heat   1.0 starlink_mini264   |     0.621       1.035
+QW     0.0 starlink_mini264   |     0.795       1.044
+QW     1.0 starlink_mini264   |     0.669       1.038
+
+P3b VERDICT
+  Compare lam=0 (pure MSE) vs lam=1 (Bellman) delivery at matched stretch.
+  => best deliverable=0.795. If Bellman >> MSE but <0.95, add bounded-backtrack decode or stronger lambda/anneal.
+========================================================================

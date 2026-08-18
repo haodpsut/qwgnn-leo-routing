@@ -1,0 +1,41 @@
+R4.1 -- doi chung con thieu tai w1584_i53 (1584 ve tinh, 7200 cap nhu cau)
+   quet tau + baseline blind multipath, 3 seed. Cham vi UE/SO o quy mo nay.
+
+  ⚠ seed 0: SO=14799.2 > UE=11391.6, PoA=0.7697 < 1. MSA 20 vong CHUA HOI TU o quy mo nay.
+  seed 0: xong sau 946s | gnn(tau=0.2)=0.917 gnn(tot)=0.980 ecmp(tot)=0.995
+  ⚠ seed 1: SO=13648.7 > UE=10326.6, PoA=0.7566 < 1. MSA 20 vong CHUA HOI TU o quy mo nay.
+  seed 1: xong sau 902s | gnn(tau=0.2)=0.913 gnn(tot)=0.980 ecmp(tot)=0.994
+  ⚠ seed 2: SO=14878.6 > UE=10112.5, PoA=0.6797 < 1. MSA 20 vong CHUA HOI TU o quy mo nay.
+  seed 2: xong sau 884s | gnn(tau=0.2)=0.911 gnn(tot)=0.984 ecmp(tot)=0.993
+
+# da ghi results/r4_1_shell1584_controls.csv (3 dong)
+
+=== 2.1a: nhiet do co quan trong o 1584 khong? ===
+   tau    0.05     0.1     0.2    0.35     0.5       1       2     3.5       5       8
+   gnn   0.686   0.803   0.913   0.957   0.968   0.976   0.979   0.980   0.980   0.980
+  tot nhat tai tau=8 (0.980); tau=0.2 dung trong bai cho 0.913, kem -0.067
+  ⚠ CUC DAI NAM O BIEN cua luoi: phai noi rong luoi tau, chua ket luan duoc.
+
+=== 2.1b: baseline mu o 1584 ===
+   eps    0.05     0.1     0.2    0.35     0.5    0.75
+  ecmp   0.924   0.990   0.994   0.994   0.994   0.994
+  tot nhat tai eps=0.2 (0.994)
+
+=== ca hai ben cung duoc chinh, ghep cap theo don vi ===
+  gnn(tau*=8)=0.980  vs  ecmp(eps*=0.2)=0.994
+  trung vi cua HIEU theo tung don vi: -0.014   thang 0/3
+  hieu cua hai trung vi (KHONG dung de bao cao): -0.014
+
+=== 2.4: 'thu hoi 0.94' o day nghia la cach can bang bao xa? ===
+  blind te hon UE 786 lan tren vo nay.
+   tau    0.05     0.1     0.2    0.35     0.5       1       2     3.5       5       8
+  x UE   247.9   159.5    71.2    33.2    25.4    19.2    17.1    16.4    16.2    16.0
+
+  ⚠ 3/3 instance co PoA < 1: MSA 20 vong chua hoi tu o 1584.
+    Moi con so dung UE lam quy chieu o quy mo nay deu keo theo su khong chac do.
+
+=== KET LUAN ===
+  Voi n=3 seed, khong mot dau hieu nao o day du suc tach khoi hoa. Con so can doc
+  la HUONG va DO LON, va ca hai deu phai vao bai du chung noi gi.
+  ⚠ BASELINE MU KHONG THUA o 1584. Tuyen bo chuyen giao cua bai mat chan cuoi:
+    phai rut, khong phai lam nhe di.

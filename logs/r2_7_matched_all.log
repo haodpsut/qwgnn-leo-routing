@@ -1,0 +1,49 @@
+R2.7 FINAL -- moi chinh sach tren CUNG thuc the
+
+huan luyen GNN nhu p6: 10 thuc the tren 132 sat, 600 cap ...
+xong.
+
+shell  sd khe |  cold_T2  warm_T1  warm_T2    ecmp0   ecmp05   ecmp20      gnn
+w132    0   1 |    0.325    0.949    0.913    0.000    0.587    0.663    0.977
+w132    0   2 |    0.194    0.854    0.865    0.000    0.441    0.425    0.951
+w132    0   3 |    0.483    0.830    0.859   -0.000    0.365    0.426    0.957
+w132    1   1 |    0.775    0.889    0.919    0.000    0.577    0.712    0.992
+w132    1   2 |    0.658    0.874    0.903    0.000    0.414    0.623    0.970
+w132    1   3 |    0.494    0.711    0.863   -0.000    0.414    0.669    0.977
+w132    2   1 |   -0.758    0.882    0.897   -0.000    0.623    0.719    0.986
+w132    2   2 |    0.591    0.851    0.869    0.000    0.476    0.651    0.982
+w132    2   3 |   -0.277    0.591    0.814   -0.000    0.339    0.563    0.978
+w264    0   1 |    0.290    0.761    0.528   -0.000    0.843    0.974    0.928
+w264    0   2 |   -1.447    0.580    0.495    0.000    0.752    0.967    0.869
+w264    0   3 |   -0.080    0.620    0.790    0.000    0.766    0.969    0.893
+w264    1   1 |   -0.525    0.803    0.667   -0.000    0.809    0.962    0.880
+w264    1   2 |   -0.763    0.762    0.790   -0.000    0.778    0.957    0.918
+w264    1   3 |   -2.330    0.627    0.519    0.000    0.741    0.952    0.885
+w264    2   1 |    0.049    0.777    0.727   -0.000    0.827    0.974    0.907
+w264    2   2 |    0.504    0.810    0.690   -0.000    0.725    0.973    0.889
+w264    2   3 |    0.464    0.847    0.705    0.000    0.757    0.969    0.920
+
+# da ghi results/r2_7_matched_all.csv (18 dong)
+
+=== TRUNG VI tren CUNG thuc the ===
+  MSA lanh T=2      (2 luot)         0.242
+  MSA NONG  T=1      (1 luot)        0.806
+  MSA NONG  T=2      (2 luot)        0.802
+  ECMP eps=0        (1 luot)        -0.000
+  ECMP eps=0.05     (1 luot)         0.674
+  ECMP eps=0.20     (1 luot)         0.836
+  GNN (de xuat)     (2 luot + fwd)   0.940
+
+=== PHAN QUYET R2.7, cham RIENG tung vo ===
+  w132: doi thu manh nhat = MSA NONG  T=2      (2 luot)  0.869
+        GNN 0.977, chenh +0.108, thang 9/9 don vi  [GNN THANG]
+  w264: doi thu manh nhat = ECMP eps=0.20     (1 luot)   0.969
+        GNN 0.893, chenh -0.076, thang 0/9 don vi  [⛔ GNN THUA]
+
+  ⛔ CO VO MA GNN THUA. R2.7 CHUA tra loi duoc.
+     Doi thu thang la mot heuristic MU tac nghen, mot luot, re hon GNN.
+     Va no thang tren vo NGOAI PHAN PHOI, tuc dung cho bai tuyen bo chuyen giao.
+
+  18 don vi (2 vo x 3 seed x 3 khe). Don vi phan tich = (vo, seed, khe).
+  ECMP eps la mot THAM SO: o eps=0.05 GNN thang ca hai vo. Phai bao ca DAI eps,
+  dung chon mot gia tri roi ket luan.

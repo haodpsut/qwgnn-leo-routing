@@ -1,0 +1,38 @@
+R4.2 -- so vong MSA can de hoi tu: khoi dong LANH vs AM
+   quy chieu = MSA 80 vong; hoi tu = trong 0.5% TTT quy chieu
+
+  w132 sd0 lat1: lanh=11 vong  am= 4 vong
+  w132 sd0 lat2: lanh=10 vong  am= 7 vong
+  w132 sd0 lat3: lanh=23 vong  am= 6 vong
+  w132 sd1 lat1: lanh=26 vong  am=11 vong
+  w132 sd1 lat2: lanh=14 vong  am= 2 vong
+  w132 sd1 lat3: lanh=33 vong  am= 7 vong
+  w132 sd2 lat1: lanh= 9 vong  am= 1 vong
+  w132 sd2 lat2: lanh=13 vong  am= 1 vong
+  w132 sd2 lat3: lanh=18 vong  am= 6 vong
+  w264 sd0 lat1: lanh=11 vong  am= 2 vong
+  w264 sd0 lat2: lanh=29 vong  am= 6 vong
+  w264 sd0 lat3: lanh=40 vong  am= 5 vong
+  w264 sd1 lat1: lanh=28 vong  am= 3 vong
+  w264 sd1 lat2: lanh=20 vong  am= 2 vong
+  w264 sd1 lat3: lanh=22 vong  am= 2 vong
+  w264 sd2 lat1: lanh=40 vong  am= 6 vong
+  w264 sd2 lat2: lanh=17 vong  am= 2 vong
+  w264 sd2 lat3: lanh=19 vong  am= 2 vong
+
+# da ghi results/r4_2_warmstart_iters.csv (18 dong)
+
+=== KET QUA ===
+  w132: lanh=14 vong (trung vi)  am=6 vong  tiet kiem ghep cap=+12 vong  (9/9 don vi)
+  w264: lanh=22 vong (trung vi)  am=2 vong  tiet kiem ghep cap=+20 vong  (9/9 don vi)
+
+=== TUYEN BO TANG TOC BI ANH HUONG THE NAO ===
+  Bang II cua bai ghi 'UE, SO (MSA) T ~ 20' khong kem dieu kien.
+  do duoc: lanh 20 vong, am 4 vong.
+  => neu doi thu la MSA AM thi tang toc phai chia cho 5.6x:
+       21x bao trong bai  ->  ~3.8x so voi MSA am
+       22x bao trong bai  ->  ~3.9x so voi MSA am
+       29x bao trong bai  ->  ~5.2x so voi MSA am
+
+  Con so nao vao bai la tuy KICH BAN TRIEN KHAI, va bai phai NOI ro kich ban do:
+  mot he dieu hanh giu duoc can bang lat truoc thi doi thu dung la MSA am.
