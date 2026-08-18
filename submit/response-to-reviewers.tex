@@ -30,8 +30,8 @@ constellation model and the code are unchanged; the claims built on them are not
 \begin{itemize}[leftmargin=1.4em,itemsep=2pt]
 \item A congestion-blind, one-pass baseline was added, with its tolerance swept rather than fixed
 (new Section VI-H). It is competitive off distribution, and no prior work in this line reports it.
-\item Enforcing capacity feasibility reduces the headline gap from $79.1\%$ measured as delay to
-$30.9\%$ measured as delivered rate, stable across three loss models (new Section VI-G).
+\item Enforcing capacity feasibility reduces the headline gap from $80.5\%$ measured as delay to
+$29.8\%$ measured as delivered rate, stable across three loss models (new Section VI-G).
 \item The transfer claim is withdrawn in its original form and replaced by a measured boundary:
 decisive in distribution, parity outside it (new Sections VI-H and VI-I).
 \item We identify a previously unremarked cause of apparent transfer failure: the decoder's softmin
@@ -74,7 +74,7 @@ sensitivity would improve reproducibility.}
 per scenario. That is now stated. The sensitivity half of the question turned out to matter far
 more than we expected, so we swept it. The setting that maximises recovery moves by one to two
 orders of magnitude between the $132$-satellite shell and the larger ones, and holding it at $0.2$
-costs a median of $0.094$, $0.089$ and $0.065$ per instance on three unseen shells. Because that
+costs a median of $0.077$, $0.066$ and $0.053$ per instance on three unseen shells. Because that
 loss was previously charged to the learned price field, the sweep changed a conclusion and not only
 a caption. New Section VI-I; sweep in \texttt{code/experiments/r1\_1\_tau\_sweep.py}.
 
@@ -177,7 +177,7 @@ tolerance-based multipath, all at matched budgets. Two findings followed. Textbo
 multipath is a no-op on this topology, since inter-satellite delays take continuous values and
 exact ties essentially never occur, so only a tolerance-based variant is meaningful. And with both
 sides tuned per shell, the learned field is decisively ahead in distribution ($0.977$ against
-$0.668$, paired difference $0.317$) and level outside it ($0.984$/$0.976$, $0.974$/$0.973$,
+$0.668$, paired difference $0.310$) and level outside it ($0.984$/$0.976$, $0.974$/$0.973$,
 $0.989$/$0.969$). We report parity rather than advantage off distribution because eight instances
 per shell cannot separate those margins from a tie. New Section VI-H.
 
@@ -200,10 +200,10 @@ headroom remains.}
 \ans We did, and the reviewer is right about the direction. One clarification we would offer: an
 offered load of nine times capacity is a real operating state that a moving hotspot produces; what
 cannot happen is a link \emph{carrying} it. So the flaw was in the metric rather than in the load
-regime. Recomputing the same configurations under a hard capacity, the advantage reads $79.1\%$ as
-a reduction in travel time and $30.9\%$ as an increase in delivered rate. Because a loss model is a
+regime. Recomputing the same configurations under a hard capacity, the advantage reads $80.5\%$ as
+a reduction in travel time and $29.8\%$ as an increase in delivered rate. Because a loss model is a
 choice, we ran three that disagree where it matters: compounding survival along the path gives
-$30.9\%$, charging only the bottleneck gives $36.5\%$, and max-min fair sharing gives $37.1\%$. The
+$29.8\%$, charging only the bottleneck gives $37.0\%$, and max-min fair sharing gives $37.3\%$. The
 effect survives, at well under half its previously reported magnitude, and we report the range
 rather than the most favourable member. New Section VI-G.
 

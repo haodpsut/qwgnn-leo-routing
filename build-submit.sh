@@ -68,7 +68,11 @@ for src, dst in ((os.path.join(root, "v1-rejected/main.tex"), "old.tex"),
 io.open(os.path.join(work, "bodies.txt"), "w", encoding="utf-8").write(
     "\n%%TABLESPLIT%%\n".join(new_bodies))
 PY
-latexdiff --type=UNDERLINE --exclude-textcmd="section,subsection" \
+# Loai TITLE khoi phep so. latexdiff tron tieu de cu voi moi theo TUNG TU, cho ra mot dong
+# vo nghia ngay dong dau bai: "...Amortizes Congestion-Aware A Reality Check on Learned
+# Traffic Engineering...". Tieu de doi hay khong la mot SU KIEN, khong phai mot day ky tu;
+# cover letter da noi ro no doi va doi thanh gi.
+latexdiff --type=UNDERLINE --exclude-textcmd="section,subsection,title" \
   "$WORK/old.tex" "$WORK/new.tex" > "$WORK/diff.tex" 2>/dev/null
 # Chi doi MAU, khong gach chan cung khong gach ngang: gach chan doi font nen trang danh dau
 # doc khong cung co voi ban cuoi, va Hao da bat dung loi do mot lan.

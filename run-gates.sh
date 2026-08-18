@@ -23,6 +23,23 @@ python3 "$S/check_cross_table.py" "$ROOT/paper/claims.json" --auto | grep "Tong 
 line "B. So trong BAI <-> claim  (cong nay tra loi cau ma hai cong tren khong hoi)"
 python3 "$S/check_paper_vs_claims.py" paper/main.tex paper/claims.json | tail -3
 
+# THU GUI BIEN TAP cung la be mat tuyen bo. 18/08: bai da cap nhat sang so VPS, con cover
+# letter va thu tra loi van in 79.1/30.9/0.317 cua may cu, va khong cong nao doc chung.
+line "B2. So trong HAI LA THU <-> claim"
+python3 - <<'PYEOF'
+import json, re, io
+C = {c["paper_value"].lstrip("+") for c in json.load(open("paper/claims.json"))}
+SKIP = {"0.7", "0.75", "1.15", "2601.21921", "0.2", "1.4"}   # mau, le, arXiv id, tau, itemsep
+bad = 0
+for f in ("submit/cover-letter.tex", "submit/response-to-reviewers.tex"):
+    t = io.open(f, encoding="utf-8").read()
+    nums = {m.group(1) for m in re.finditer(r"(?<![\w.])(\d+\.\d+)", t)}
+    miss = sorted(nums - C - SKIP, key=float)
+    bad += len(miss)
+    print("  %-28s khong khop claim: %s" % (f.split("/")[-1], miss or "khong"))
+print("  => %s" % ("PASS" if not bad else "FAIL: thu dang in so khong con la claim nao"))
+PYEOF
+
 line "C. CSV <-> code sinh ra CSV"
 # ${=VAR} la BAT BUOC o zsh: khong co dau '=' thi ca chuoi vao lam MOT tham so va cong
 # bao "30 khong anh xa" trong khi ban do hoan toan dung.
