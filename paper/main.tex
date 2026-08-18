@@ -66,6 +66,7 @@
 \newcommand{\TTT}{\mathrm{TTT}}
 \newcommand{\AoN}{\textsc{AoN}}
 
+\input{claims-macros}
 \begin{document}
 
 \title{A Reality Check on Learned Traffic Engineering for LEO Mega-Constellations:
@@ -92,17 +93,12 @@ concentrates traffic on a few links, and a growing literature amortizes the cong
 optimum by learning to predict per-link congestion prices in a single forward pass. This paper
 measures what that buys, against the baseline that literature omits: a congestion-blind multipath
 split costing one pass, with its path-cost tolerance swept rather than fixed. With both sides tuned
-per shell, the learned price field recovers $0.977$ of the blind-to-equilibrium gap on the shell it
-was trained on, against $0.668$ for the blind split. On unseen shells the paired differences fall
-to $0.020$ and below, on the largest shell the blind split is ahead, and under drifting hotspots
-the learned router trails it by $0.247$ off distribution. The advantage is decisive in distribution
+per shell, the learned price field recovers $0.976$ of the blind-to-equilibrium gap on the shell it was trained on, against $0.668$ for the blind split. On unseen shells the paired differences fall to $0.020$ and below, on the largest shell the blind split is ahead, and under drifting hotspots the learned router trails it by $0.248$ off distribution. The advantage is decisive in distribution
 and no better than parity outside it. Three results qualify the setting rather than the method.
-Enforcing a hard link capacity turns a $79.1\%$ delay reduction into a $30.9\%$ gain in delivered
-rate. The softmin temperature that decodes prices is not a constant of the method: its best value
-moves one to two orders of magnitude with constellation size, and holding it fixed costs up to
-$0.089$ per instance, a loss the literature charges to the price field. And the recovered-fraction
+Enforcing a hard link capacity turns a $80.5\%$ delay reduction into a $29.8\%$ gain in delivered rate. The softmin temperature that decodes prices is not a constant of the method: its best value
+moves one to two orders of magnitude with constellation size, and holding it fixed costs up to $0.077$ per instance, a loss the literature charges to the price field. And the recovered-fraction
 metric saturates, because blind routing costs $2.51$ times the equilibrium on the smallest shell
-and $20.42$ times on a shell twice its size; travel time relative to equilibrium should be reported
+and $20.41$ times on a shell twice its size; travel time relative to equilibrium should be reported
 beside it. A quantum-walk operator, which motivated this study, offers no benefit once load
 features are present.
 \end{abstract}
@@ -180,9 +176,9 @@ degenerates to single-path routing. Only a tolerance-based variant is meaningful
 tolerance is a knob whose setting changes conclusions, so we report the sweep rather than a
 value.
 
-\item \textbf{A measured boundary: decisive in distribution, level outside it.} With both sides tuned per shell, the learned field recovers $0.977$ of the blind-to-equilibrium gap on the shell it was trained on against $0.668$ for blind multipath, a paired median difference of $0.317$. On three unseen shells the paired differences are $0.008$, $0.002$ and $0.020$; a two-sided sign test gives $p=0.008$ on two of them and $p=0.289$ on the third, so off distribution the reading is parity rather than advantage. On the largest shell the blind split is ahead.
+\item \textbf{A measured boundary: decisive in distribution, level outside it.} With both sides tuned per shell, the learned field recovers $0.977$ of the blind-to-equilibrium gap on the shell it was trained on against $0.668$ for blind multipath, a paired median difference of $0.310$. On three unseen shells the paired differences are $0.007$, $0.002$ and $0.020$; a two-sided sign test gives $p=0.008$ on two of them and $p=0.289$ on the third, so off distribution the reading is parity rather than advantage. On the largest shell the blind split is ahead.
 
-\item \textbf{Two separate causes of the off-distribution collapse, of comparable size.} At the fixed decoder setting transfer looks far worse ($0.892$, $0.885$, $0.925$). Two effects account for it. Training on a single shell: holding the instance budget fixed and varying only provenance raises transfer from $0.898$ to $0.976$. And, previously unremarked, the decoder's softmin temperature is not a constant of the method: its best value moves one to two orders of magnitude with constellation size, and holding it fixed costs $0.065$ to $0.094$ per unit. A fixed temperature quietly converts a decoder mismatch into what reads as a failure to generalize.
+\item \textbf{Two separate causes of the off-distribution collapse, of comparable size.} At the fixed decoder setting transfer looks worse ($0.909$, $0.908$, $0.937$). Two effects account for it. Training on a single shell: holding the instance budget fixed and varying only provenance raises transfer from $0.929$ to $0.978$. And, previously unremarked, the decoder's softmin temperature is not a constant of the method: its best value moves one to two orders of magnitude with constellation size, and holding it fixed costs $0.053$ to $0.077$ per unit. A fixed temperature quietly converts a decoder mismatch into what reads as a failure to generalize.
 
 \item \textbf{Why blind multipath is a serious baseline here, and where it stops being one.}
 Tolerance-based spreading recovers $0.668$ of the gap on the smallest shell and $0.976$ on a
@@ -195,9 +191,7 @@ going.
 \item \textbf{A caution about borrowed congestion costs.} The Bureau of Public Roads function is
 a road volume-delay curve in which offered load above capacity is a real state. A packet link
 with a hard rate cannot occupy that state: the excess is lost, not delayed. Enforcing capacity
-feasibility shrinks the headline gap from $79.1\%$ measured as delay to $30.9\%$ measured as
-delivered rate, and the smaller figure is stable across three loss models
-($30.9\%$, $36.5\%$, $37.1\%$).
+feasibility shrinks the headline gap from $80.5\%$ measured as delay to $29.8\%$ measured as delivered rate, and the smaller figure is stable across three loss models ($29.8\%$, $37.0\%$, $37.3\%$).
 
 \item \textbf{Honest negative results.} The study began as a quantum-walk GNN; we report the
 kill-gate record and why a plain graph convolution is the right operator here.
@@ -264,9 +258,13 @@ traffic-assignment equilibrium, and jointly optimising ISL connectivity. Its rep
 comparison is against ``non-joint or heuristic baselines'' and against the iterative dual
 solve it amortises.
 
-We do not compare against it numerically, and it is better to say why. Its objective is a Lagrangian dual of a joint routing-and-topology problem rather than a traffic-assignment equilibrium, so no recovered fraction covers both; its constellation and demand model match no public simulator we could run; and no implementation is released. Reimplementing it would give a comparison attributable to our reimplementation as easily as to the method, the failure mode this paper argues against.
-
-What we offer instead transfers: the blind multipath split of Section~\ref{sec:vs-blind} costs one pass, needs no training and no dual solve, and is the floor any learned price field has to clear. Ours clears it in distribution and not outside, and that is a question any paper in this line can answer about itself in a few hours of compute.
+We do not compare against it numerically, and it is better to say why. Its objective is a
+Lagrangian dual of a joint routing-and-topology problem rather than a traffic-assignment
+equilibrium, so no recovered fraction covers both; its constellation and demand model match no
+public simulator we could run; and no implementation is released. What we offer instead transfers:
+the blind multipath split of Section~\ref{sec:vs-blind} costs one pass, needs no training, and is
+the floor any learned price field has to clear. Ours clears it in distribution and not outside, a
+question any paper in this line can answer about itself in a few hours of compute.
 
 That comparison structure is the norm rather than the exception, and it is what motivates this
 paper. Across this line of work the reference points are consistently a naive floor
@@ -613,8 +611,7 @@ free-flow delays, and $\delta_{\mathrm{dec}}(\tau,G)\ge 0$ is the decoder's gap 
 
 The decoder term carries the temperature and the graph in its argument deliberately. An earlier
 statement of this proposition wrote it as a constant, which is wrong in a way that matters:
-Section~\ref{sec:two-causes} measures it moving by $0.065$ to $0.094$ in recovered fraction between
-shells at a fixed $\tau$, a range comparable to the entire off-distribution effect the proposition
+Section~\ref{sec:two-causes} measures it moving by $0.053$ to $0.077$ in recovered fraction between shells at a fixed $\tau$, a range comparable to the entire off-distribution effect the proposition
 is being used to reason about. Treating it as a constant is what allowed that movement to be
 attributed to the price field.
 
@@ -632,7 +629,7 @@ $c_1=\Theta(L\prop_{\max}/\bar\prop)$, and setting $\hat g=g^{*}$ leaves $\delta
 
 With $\beta=4$ the Lipschitz constant, and hence $c_1$, scales as the cube of utilization. Measured
 on our instances $H$ is $15$ and $26$ hops on the two shells, $\prop_{\max}/\bar\prop$ is $1.23$
-and $1.41$, and $c_1H$ is $49$ and $111$ at equilibrium load but $472$ and $6290$ at the load blind
+and $1.41$, and $c_1H$ is $49$ and $116$ at equilibrium load but $472$ and $6290$ at the load blind
 routing produces.
 \end{IEEEproof}
 
@@ -752,9 +749,9 @@ fraction $(\TTT_{\mathrm{blind}}-\TTT_\pi)/(\TTT_{\mathrm{blind}}-\TTT_{\mathrm{
 standard way this literature reports how close a policy comes to the congestion-aware optimum, and
 we use it throughout. Its denominator is the blind reference, and on this topology that reference
 degrades far faster than the equilibrium as the constellation grows: blind routing costs $2.51$
-times the equilibrium on the $132$-shell, $20.4$ times on the $264$-shell, and about $770$ times on
+times the equilibrium on the $132$-shell, $20.4$ times on the $264$-shell, and about $786$ times on
 the $1584$-shell, because a BPR cost with a fourth power is being evaluated at ever more extreme
-overload. A denominator that grows by two orders of magnitude makes the fraction insensitive: our router sits at $1.02$ times the equilibrium on the $132$-shell and scores $0.97$, and at $2.64$ times on the $264$-shell and still scores $0.93$. Four points of the fraction separate a policy two percent from equilibrium from one more than one hundred and sixty percent away; on the $1584$-shell $0.94$ corresponds to roughly $47$ times it. \emph{Fix:} report $\TTT_\pi/\TTT_{\mathrm{UE}}$ beside every recovered fraction; it does not saturate and it is what an operator experiences. We caught this only when a reader asked what the metric compressed, after the fraction had already been a headline of this work.
+overload. A denominator that grows by two orders of magnitude makes the fraction insensitive: our router sits at $1.03$ times the equilibrium on the $132$-shell and scores $0.97$, and at $2.64$ times on the $264$-shell and still scores $0.93$. Four points of the fraction separate a policy two percent from equilibrium from one more than one hundred and sixty percent away; on the $1584$-shell $0.94$ corresponds to roughly $47$ times it. \emph{Fix:} report $\TTT_\pi/\TTT_{\mathrm{UE}}$ beside every recovered fraction; it does not saturate and it is what an operator experiences. We caught this only when a reader asked what the metric compressed, after the fraction had already been a headline of this work.
 
 None of these four pitfalls is specific to LEO or to graph networks. P1 arises whenever a
 baseline can decline to act and the metric ignores the declined cases; P2 arises whenever a
@@ -899,7 +896,7 @@ closes.
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Decoder comparison: TTT relative to blind and recovered fraction of the
 blind-to-UE gain, mean $\pm$ std over $n{=}9$ units per split. The multipath decode \eqref{eq:split} closes most of the single-path
-decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
+decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
 \label{tab:decode}
 \begin{tabular}{lccc}
 \toprule
@@ -956,7 +953,7 @@ is genuinely zero shot: the $1584$-shell is never seen during training, has a di
 number of planes and satellites per plane, and a larger diameter, yet the same weights
 produce a price field that recovers most of the blind-to-equilibrium gap on it. Whether
 \emph{near-equilibrium} is the right word is precisely what Section~\ref{sec:s1584} takes back:
-read as a ratio rather than a fraction, the field is $14$ to $64$ times the equilibrium there,
+read as a ratio rather than a fraction, the field is $16$ to $71$ times the equilibrium there,
 depending on the decoder setting. This scale invariance works because the learned map is from
 local load structure to a local price, a relation that is scale invariant in a way the
 absolute routing is not, and because the multipath decode realizes the predicted
@@ -973,7 +970,7 @@ gain is the meaningful, scale-free figure.
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}). $^{\dagger}$Measured at the fixed $\tau=0.2$ and without the blind multipath comparator. Section~\ref{sec:s1584} supplies both on this shell: a temperature sweep raises the learned field to $0.983$, the blind split reaches $0.994$, and the equilibrium reference itself has not converged at this scale.}
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}). $^{\dagger}$Measured at the fixed $\tau=0.2$ and without the blind multipath comparator. Section~\ref{sec:s1584} supplies both on this shell: a temperature sweep raises the learned field to $0.980$, the blind split reaches $0.994$, and the equilibrium reference itself has not converged at this scale.}
 \label{tab:scale}
 \begin{tabular}{lcccc}
 \toprule
@@ -1046,7 +1043,7 @@ optional. Because the GNN's input is just a demand-derived feature, switching fr
 reactive to proactive requires no change to the model, only feeding it the forecast
 instead of the last slot.
 
-That is the story on the training shell. Off it, it is the one the previous subsections have told twice. Against the same blind multipath baseline, tuned per shell and paired per unit, the proactive router leads by $0.166$ at zero drift and $0.159$ at the largest on the training shell, winning every unit; on the unseen $264$-shell it trails by $0.209$ and $0.247$, losing every unit at every drift level swept. The zero-drift column is the informative one: the deficit is already there when there is
+That is the story on the training shell. Off it, it is the one the previous subsections have told twice. Against the same blind multipath baseline, tuned per shell and paired per unit, the proactive router leads by $0.176$ at zero drift and $0.164$ at the largest on the training shell, winning every unit; on the unseen $264$-shell it trails by $0.271$ and $0.248$, losing every unit at every drift level swept. The zero-drift column is the informative one: the deficit is already there when there is
 nothing to anticipate, so it is not a failure of the forecast but the same effect seen in
 Section~\ref{sec:vs-blind}, namely that blind spreading has more room to work on a larger grid.
 Proactivity buys what we claimed it buys, and it buys it only where the price field was learned.
@@ -1105,15 +1102,12 @@ loads and seeds are those of Section~\ref{sec:headroom}, so the rows correspond 
 
 Table~\ref{tab:feasibility} reports the result. On configurations where blind routing offers a link
 more than four times its capacity, the
-congestion-aware advantage reads $79.1\%$ as a reduction in travel time and $30.9\%$ as an increase
-in delivered rate. Both are real; they measure different things, and only the second is available
+congestion-aware advantage reads $80.5\%$ as a reduction in travel time and $29.8\%$ as an increase in delivered rate. Both are real; they measure different things, and only the second is available
 to a link that drops what it cannot carry. Below capacity both are zero, which the operating-regime
 discussion already anticipated.
 
 Because a loss model is a modelling choice and not a fact, we ran three that disagree where it
-matters. Compounding the per-link survival along the path gives $30.9\%$; charging only the
-bottleneck link gives $36.5\%$; sharing each link max-min fairly among the flows crossing it gives
-$37.1\%$. The advantage is not an artifact of any one of them. We report the range rather than the
+matters. Compounding the per-link survival along the path gives $29.8\%$; charging only the bottleneck link gives $37.0\%$; sharing each link max-min fairly among the flows crossing it gives $37.3\%$. The advantage is not an artifact of any one of them. We report the range rather than the
 most favourable member.
 
 \subsection{Against a cheap-but-strong baseline}\label{sec:vs-blind}
@@ -1130,10 +1124,9 @@ detail but the whole of the baseline, and it is a knob: we sweep it rather than 
 
 Both sides are tuned per shell over fixed grids, the learned decoder over its softmin temperature
 and the baseline over $\varepsilon$, with eight instances per shell. On the shell the model was
-trained on it recovers $0.977$ of the blind-to-equilibrium gap against $0.668$; paired per instance
-the median difference is $0.317$. On three shells it never saw, the same comparison reads $0.984$
+trained on it recovers $0.976$ of the blind-to-equilibrium gap against $0.668$; paired per instance the median difference is $0.310$. On three shells it never saw, the same comparison reads $0.984$
 against $0.976$, $0.974$ against $0.973$, and $0.989$ against $0.969$, with paired differences of
-$0.008$, $0.002$ and $0.020$. The learned field is ahead on more instances than not in every case,
+$0.007$, $0.002$ and $0.020$. The learned field is ahead on more instances than not in every case,
 but the win counts do not carry equal weight: $8/8$ gives a two-sided sign-test $p$ of $0.008$ and
 $6/8$ gives $0.289$, so on the $264$-shell at $53^\circ$ the direction is undetermined rather than
 merely small. At this margin and this sample size the defensible reading is parity, not advantage.
@@ -1149,71 +1142,69 @@ strength grows precisely in the regime where a learned map is asked to generaliz
 \subsection{Two causes of the off-distribution gap, and they are separable}\label{sec:two-causes}
 \input{fig-tau}
 At the fixed decoder temperature used throughout the earlier sections, transfer looks much worse
-than the previous subsection reports: $0.892$, $0.885$ and $0.925$ on the three unseen shells.
+than the previous subsection reports: $0.909$, $0.908$ and $0.937$ on the three unseen shells.
 The difference is not noise and it is not one effect.
 
-The first is the training distribution. Holding the number of training instances fixed at twelve
-and varying only where they come from, a model shown three small shells instead of one recovers
-$0.976$ on an unseen $264$-satellite shell against $0.898$ for the single-shell model. The effect
-is not uniform and we report all three test shells rather than the one that flatters it: on a
-$396$-satellite shell diversity helps by a similar margin, $0.881$ to $0.953$, while on the
-$264$-satellite shell at $70^\circ$ inclination it \emph{hurts}, $0.950$ to $0.934$, even though
-the mixed set included a $70^\circ$ shell at training scale. Diversity in size transfers to size;
-diversity in inclination did not transfer to inclination here, and we do not know why.
+The first is the training distribution. Holding the number of training instances fixed at twelve and varying only where they come from, a model shown three small shells instead of one recovers $0.978$ on an unseen $264$-satellite shell against $0.929$ for the single-shell model. The gain repeats on a $396$-satellite shell, $0.917$ to $0.972$, and on a $264$-satellite shell at $70^\circ$ inclination, $0.934$ to $0.953$. Diversity helps on every shell we tested, and the margin is larger where the shell differs in size than where it differs in inclination.\footnote{An earlier version reported the opposite here, a \emph{loss} from $0.950$ to
+$0.934$, and explained why inclination might not transfer. Re-running on a single machine reversed
+the sign; the runs differ only in hardware, and every quantity avoiding the network agrees to the
+printed digit. A qualitative conclusion that does not survive a change of machine was never one,
+and the margin, $0.019$ over six units, was always too small to carry that weight.}
 
 The second has not been reported before as far as we are aware, and is of comparable size. The
 softmin temperature that decodes prices into split flows is treated in the literature, and in our
 own earlier sections, as a constant. It is not. Sweeping it, as Fig.~\ref{fig:tau} shows, the
 setting that maximises recovery
 moves by one to two orders of magnitude between the smallest shell and the larger ones, and holding
-it at the value chosen on the smallest costs a median of $0.094$, $0.089$ and $0.065$ per instance
-on the three unseen shells. On the training shell itself the same fixed value costs $0.007$, which
+it at the value chosen on the smallest costs a median of $0.077$, $0.066$ and $0.053$ per instance
+on the three unseen shells. On the training shell itself the same fixed value costs $0.000$, which
 is the point: it was chosen there, and a temperature that is nearly free where it was selected is
 not thereby free anywhere else. A temperature tuned on a small constellation under-spreads on a large
 one, and the resulting loss is charged to the price field, which did not cause it. Any evaluation
 of transfer that holds the decoder fixed is measuring the decoder as much as the model.
 
 \subsection{The largest shell, with the controls the rest of the paper requires}\label{sec:s1584}
-The $1584$-satellite result quoted above, and in earlier versions of this work as its headline, was
-obtained at the fixed decoder temperature and without the blind comparator. Section~\ref{sec:two-causes}
-argues that a transfer number measured at a fixed decoder is measuring the decoder, and
-Section~\ref{sec:vs-blind} argues that a transfer number without a cheap-and-strong baseline is
-measuring nothing in particular. Both arguments apply to our own largest number, so we ran the
-controls there.
+The $1584$-satellite result quoted above was obtained at the fixed decoder temperature and
+without the blind comparator. Sections~\ref{sec:two-causes} and~\ref{sec:vs-blind} argue that such
+a number measures the decoder, and measures it against nothing in particular. Both apply to our own
+largest number, so we ran the controls there.
 
-They change it. Sweeping the temperature raises the recovered fraction from $0.920$ at $\tau=0.2$ to
-$0.983$, so most of what looked like degradation at scale was the decoder, exactly as the smaller
-shells predicted. But the blind multipath split, tuned over the same grid, reaches $0.994$. Paired
-per instance the learned field is behind by $0.012$, and it is behind on all three instances. On the
+They change it. Sweeping the temperature raises the recovered fraction from $0.913$ at $\tau=0.2$ to $0.980$, so most of what looked like degradation at scale was the decoder, exactly as the smaller
+shells predicted. But the blind multipath split, tuned over the same grid, reaches $0.994$. Paired per instance the learned field is behind by $0.014$, and it is behind on all three instances. On the
 constellation this paper is ostensibly about, the one-pass congestion-blind policy is the better of
 the two.
 
-Two limits, flagged rather than leaned on: the temperature optimum sits at the edge of our grid, so $0.983$ is a lower bound; and three instances cannot separate $0.012$ from noise, so the data supports only that the learned field is not ahead here.
+Two limits, flagged rather than leaned on: the temperature optimum sits at the edge of our grid, so $0.980$ is a lower bound; and three instances cannot separate $0.014$ from noise, so the data supports only that the learned field is not ahead here.
 
-The same run makes the saturation of Section~\ref{sec:pitfalls} concrete. On this shell blind
-routing costs about $770$ times the equilibrium, so the denominator of the recovered fraction is
+The same run makes the saturation of Section~\ref{sec:pitfalls} concrete. On this shell blind routing costs about $786$ times the equilibrium, so the denominator of the recovered fraction is
 enormous and every policy that spreads load at all scores above $0.9$. Read as a ratio instead, the
-learned field at $\tau=0.2$ is $63.5$ times the equilibrium and at its best temperature is $14.2$
-times it. A number that reads as $0.92$ and a number that reads as $0.98$ are, operationally, a
+learned field at $\tau=0.2$ is $71.2$ times the equilibrium and at its best temperature is $16.0$ times it. A number that reads as $0.92$ and a number that reads as $0.98$ are, operationally, a
 factor of four apart. We would not have seen this from the fraction alone.
 
-One further caveat belongs on the record. At this scale the fixed twenty-iteration solve that
-supplies our equilibrium reference has not converged: the price of anarchy comes out below one on
-all three instances, which is impossible and is how we detected it, and the reference travel time
-falls by roughly a third when the solve is extended. Every quantity on this shell that uses the
-equilibrium as its reference inherits that uncertainty. The saturation above is the reason it went
-unnoticed: a fraction whose denominator is dominated by a pathological blind reference is almost
-unchanged by a third-order error in the other term.
+One caveat belongs on the record. At this scale the twenty-iteration solve supplying our
+equilibrium reference has not converged: the price of anarchy comes out below one on all three
+instances, which is impossible and is how we caught it, and the reference falls by about a third
+when the solve is extended. Every quantity here referenced to equilibrium inherits that. The
+saturation above is why it went unnoticed: a fraction whose denominator is dominated by a
+pathological blind reference barely moves when the other term is a third wrong.
 
 \subsection{Reconciling the numbers that appear more than once}\label{sec:pooled}
-Several quantities here were measured more than once, by experiments written at different times, and the entries do not agree exactly. The recovered fraction of the $264$-shell at the fixed decoder temperature appears three times: $0.915$ from the transfer sweep, $0.885$ from the tuned comparison, $0.93$ from the scaling table. Each traces correctly to its CSV, and the pipeline checking every number against its source passed all three: provenance and consistency are different properties and only the first was checked.
+Several quantities here were measured more than once and the entries do not agree exactly. The
+recovered fraction of the $264$-shell at the fixed decoder temperature appears three times:
+$0.898$, $0.908$ and $0.93$, from the transfer sweep, the tuned comparison and the scaling table.
+Each traces correctly to its CSV, and the gate checking numbers against their source passed all
+three: provenance and consistency are different properties and only the first was checked.
 
-Pooling all $17$ units gives a median of $0.889$ over $0.838$ to $0.923$. That range, not any single entry, is the honest summary, and a check now flags any quantity carrying two entries whose difference no declared run set accounts for.
+Pooling all $17$ units gives a median of $0.908$ over $0.863$ to $0.928$. That range, not any single entry, is the honest summary, and a check now flags any quantity carrying two entries whose difference no declared run set accounts for.
 
-The spread matters for one claim and not the others. It does not touch the decoder-temperature result of Section~\ref{sec:two-causes}, which is paired within an instance: both arms share seed, slot and demand matrix, so between-run variation cannot enter. Measured that way, holding $\tau$ at $0.2$ costs $0.089$ with all eight units on the same side, against a between-run standard deviation of $0.020$. It does affect any reading that compares an entry in one table with an entry in another,
+The spread matters for one claim and not the others. It does not touch the decoder-temperature result of Section~\ref{sec:two-causes}, which is paired within an instance: both arms share seed, slot and demand matrix, so between-run variation cannot enter. Measured that way, holding $\tau$ at $0.2$ costs $0.066$ with all eight units on the same side, against a between-run standard deviation of $0.020$. It does affect any reading that compares an entry in one table with an entry in another,
 which is why we now give the range wherever a quantity appears twice.
 
-A second inconsistency belongs here. Table~\ref{tab:summary} reports medians, because the comparisons it summarises are paired; Tables~\ref{tab:baselines},~\ref{tab:decode},~\ref{tab:scale} and~\ref{tab:ablation} report means with standard deviations, because they describe spread within a cell. Both are defensible, but an earlier version declared ``median throughout'' in one place while printing means in four others, inviting a cross-table comparison the two estimators do not support. Each table now states its estimator.
+Table~\ref{tab:summary} reports medians, because the comparisons it summarises are paired; the
+result tables report means with standard deviations, because they describe spread within a cell. An
+earlier version declared ``median throughout'' in one place while printing means in four others,
+inviting a cross-table comparison the two estimators do not support. Each table now states its
+estimator.
 
 \subsection{Operating regime}\label{sec:regime}
 The value of the method is regime dependent, and Table~\ref{tab:headroom} makes the boundary
@@ -1259,7 +1250,7 @@ rather than force it into the contribution.
 \centering\footnotesize\setlength{\tabcolsep}{3pt}
 \caption{Operator ablation: recovered fraction of the blind-to-UE gain (mean $\pm$ std,
 $n{=}12$). The plain GCN is best out of distribution; the global quantum-walk operator
-does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.889$ spanning $0.838$ to $0.923$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
+does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}
 \label{tab:ablation}
 \begin{tabular}{lcc}
 \toprule
@@ -1275,7 +1266,7 @@ QW (global quantum walk) & $0.94{\scriptstyle\pm.04}$ & $0.90{\scriptstyle\pm.06
 \section{Discussion, Threats, and Limitations}\label{sec:disc}
 \subsection{Deployment considerations}\label{sec:deploy}
 In an operational control loop the router runs once per slot on the known next-slot
-topology. The online inputs are the demand estimate and one congestion-blind shortest-path pass to form features; the GNN forward and the decode follow. An earlier version claimed the feature pass and the forward could be precomputed because the topology is known ahead. That is wrong on the half that matters: the features include the blind load, an all-or-nothing pass over the \emph{live} demand. On the $1584$-shell the features cost $5.211$~s and the decode $3.573$~s, both demand dependent, while the forward costs $0.004$~s and is the only precomputable stage. The pipeline is $8.75$~s, $15\%$ of a $60$~s slot: it fits because the slot is long, not because work moved offline. The model is small (a
+topology. The online inputs are the demand estimate and one congestion-blind shortest-path pass to form features; the GNN forward and the decode follow. An earlier version claimed the feature pass and the forward could be precomputed because the topology is known ahead. That is wrong on the half that matters: the features include the blind load, an all-or-nothing pass over the \emph{live} demand. On the $1584$-shell the features cost $8.588$~s and the decode $8.974$~s, both demand dependent, while the forward costs $0.013$~s and is the only precomputable stage. The pipeline is $17.46$~s, $29\%$ of a $60$~s slot: it fits because the slot is long, not because work moved offline. The model is small (a
 few thousand parameters) and its weights are fixed across constellation sizes, so a
 single trained model serves an entire program of shells. Two safeguards follow naturally
 from our analysis. When the demand forecast is unreliable, for example during an
@@ -1294,7 +1285,7 @@ predicted prices route well when delay is realized by queues rather than a cost 
 learned number is param-matched across operators, averaged over multiple instances and
 seeds with standard deviations, and features are scale-normalized so the model cannot
 shortcut on absolute coordinates; the operator ablation isolates the propagation operator
-at a fixed parameter budget. Two internal threats deserve naming. The decoder temperature was held fixed while the constellation changed, confounding decoder with model and worth $0.065$ to $0.094$ in recovered fraction (Section~\ref{sec:two-causes}); every comparison in this literature that holds it fixed carries the same confound. And on the $1584$-shell the twenty-iteration solve
+at a fixed parameter budget. Two internal threats deserve naming. The decoder temperature was held fixed while the constellation changed, confounding decoder with model and worth $0.053$ to $0.077$ in recovered fraction (Section~\ref{sec:two-causes}); every comparison in this literature that holds it fixed carries the same confound. And on the $1584$-shell the twenty-iteration solve
 that supplies our equilibrium reference has not converged, which we detected only because the
 price of anarchy came out below one (Section~\ref{sec:s1584}); every quantity on that shell
 referenced to equilibrium inherits the uncertainty. \emph{External validity}: results are on synthetic Walker
@@ -1303,9 +1294,11 @@ tested up to a $12\times$ size jump and one shell geometry; other geometries,
 heterogeneous link capacities, and real traffic traces remain to be studied. Only one of the five
 shells we use has an inclination at which the polar cutoff activates, so the time-varying part of
 the topology is exercised far less than the phrase ``time-varying'' suggests.
-\emph{Reproducibility}: the pipeline is deterministic from parameters, and every number in
-the text is tied by a manifest to the file, column, filter and aggregation that produce it, with a
-script that recomputes all of them. That was not true of an earlier version: the $1584$-shell
+\emph{Reproducibility}: every number in the text is tied by a manifest to the file, column,
+filter and aggregation that produce it, with a script that recomputes all of them. The pipeline is deterministic \emph{on a given machine}, not across machines: re-running every
+experiment on a different host with identical scripts and seeds moved $66$ of $116$ manifest
+entries, one far enough to reverse a reported sign (Section~\ref{sec:two-causes}), while every
+quantity avoiding the network agreed to the printed digit. All numbers here come from one host. That was not true of an earlier version: the $1584$-shell
 entries existed only in the console log of a run on another machine, so no gate could reach them.
 They are now extracted to a CSV that records the log it came from.
 

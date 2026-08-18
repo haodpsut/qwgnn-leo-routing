@@ -11,15 +11,15 @@ seed split      |     UE     SO    geo  1step    GNN | geo_stuck
 INFERENCE TIME (GNN one-shot vs UE/MSA)
 
 shell          n pairs |  t_gnn(s)   t_ue(s)  speedup
-w132         132   600 |     0.049     1.022    21.0x
-w264         264  1200 |     0.248     5.556    22.4x
+w132         132   600 |     0.048     0.993    20.6x
+w264         264  1200 |     0.244     5.323    21.8x
 
 ========================================================================
 Mean TTT relative to blind (1.00); UE is the congestion-aware reference.
   in-dist  | SO 0.39  UE 0.40  geo 0.78  1step 1.04  GNN 0.42  (geo stuck 53%)
   ood      | SO 0.05  UE 0.05  geo 0.80  1step 0.55  GNN 0.12  (geo stuck 68%)
 
-GNN vs UE/MSA speedup: 21x - 22x  [21.0, 22.4]
+GNN vs UE/MSA speedup: 21x - 22x  [20.6, 21.8]
 
 P6 VERDICT
   => GNN (0.12) is the best deployable policy zero-shot: beats 1-step (0.55), geo (0.80), blind (1.00),

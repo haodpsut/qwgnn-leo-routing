@@ -1,27 +1,27 @@
 R4.4 -- phan ra thoi gian theo chang; lat cat = 60s (theo MA, khong theo van xuoi)
 
-  w132   sd0: dac trung=  0.043s  forward= 0.001s  giai ma=  0.064s  TONG=  0.108s  =   0.2% lat cat
-  w132   sd1: dac trung=  0.047s  forward= 0.001s  giai ma=  0.068s  TONG=  0.116s  =   0.2% lat cat
-  w132   sd2: dac trung=  0.047s  forward= 0.001s  giai ma=  0.069s  TONG=  0.117s  =   0.2% lat cat
-  w264   sd0: dac trung=  0.234s  forward= 0.002s  giai ma=  0.298s  TONG=  0.534s  =   0.9% lat cat
-  w264   sd1: dac trung=  0.239s  forward= 0.002s  giai ma=  0.318s  TONG=  0.559s  =   0.9% lat cat
-  w264   sd2: dac trung=  0.236s  forward= 0.001s  giai ma=  0.281s  TONG=  0.518s  =   0.9% lat cat
-  w1584  sd0: dac trung=  8.684s  forward= 0.012s  giai ma=  9.172s  TONG= 17.869s  =  29.8% lat cat
-  w1584  sd1: dac trung=  8.687s  forward= 0.011s  giai ma=  9.155s  TONG= 17.853s  =  29.8% lat cat
-  w1584  sd2: dac trung=  8.252s  forward= 0.011s  giai ma=  8.645s  TONG= 16.908s  =  28.2% lat cat
+  w132   sd0: dac trung=  0.041s  forward= 0.001s  giai ma=  0.051s  TONG=  0.093s  =   0.2% lat cat
+  w132   sd1: dac trung=  0.041s  forward= 0.001s  giai ma=  0.051s  TONG=  0.093s  =   0.2% lat cat
+  w132   sd2: dac trung=  0.042s  forward= 0.001s  giai ma=  0.052s  TONG=  0.094s  =   0.2% lat cat
+  w264   sd0: dac trung=  0.221s  forward= 0.001s  giai ma=  0.243s  TONG=  0.465s  =   0.8% lat cat
+  w264   sd1: dac trung=  0.226s  forward= 0.001s  giai ma=  0.259s  TONG=  0.487s  =   0.8% lat cat
+  w264   sd2: dac trung=  0.228s  forward= 0.002s  giai ma=  0.244s  TONG=  0.474s  =   0.8% lat cat
+  w1584  sd0: dac trung=  8.472s  forward= 0.014s  giai ma=  8.974s  TONG= 17.460s  =  29.1% lat cat
+  w1584  sd1: dac trung=  8.973s  forward= 0.012s  giai ma=  9.073s  TONG= 18.058s  =  30.1% lat cat
+  w1584  sd2: dac trung=  8.588s  forward= 0.013s  giai ma=  8.812s  TONG= 17.413s  =  29.0% lat cat
 
 # da ghi results/r4_4_stage_timing.csv (9 dong)
 
 === 2.3: co vua mot lat cat khong, va bao nhieu phan TIEN TINH duoc ===
-  w132  : tong=  0.116s (  0.2% lat cat) | tien tinh duoc= 0.001s ( 0.9%) | phu thuoc nhu cau=  0.115s (99.2%)
-  w264  : tong=  0.534s (  0.9% lat cat) | tien tinh duoc= 0.002s ( 0.3%) | phu thuoc nhu cau=  0.532s (99.7%)
-  w1584 : tong= 17.853s ( 29.8% lat cat) | tien tinh duoc= 0.011s ( 0.1%) | phu thuoc nhu cau= 17.842s (99.9%)
+  w132  : tong=  0.093s (  0.2% lat cat) | tien tinh duoc= 0.001s ( 0.9%) | phu thuoc nhu cau=  0.093s (99.1%)
+  w264  : tong=  0.474s (  0.8% lat cat) | tien tinh duoc= 0.001s ( 0.3%) | phu thuoc nhu cau=  0.472s (99.6%)
+  w1584 : tong= 17.460s ( 29.1% lat cat) | tien tinh duoc= 0.013s ( 0.1%) | phu thuoc nhu cau= 17.446s (99.9%)
 
   => Phan TIEN TINH DUOC chi la forward cua GNN. Hai chang con lai deu can ma tran
      nhu cau cua lat cat dang xet, nen tuyen bo 'topology biet truoc nen tien tinh
      duoc feature pass va forward' la SAI o ve dau va do la ve nang hon.
 
-  Voi lat cat 60s, vo 1584 dung het 29.8% ngan sach: VUA.
+  Voi lat cat 60s, vo 1584 dung het 29.1% ngan sach: VUA.
   Nhung van xuoi cua bai viet 'topology changing every few seconds' de loai UE.
   Neu lat cat that su chi vai giay thi GNN cung bi loai boi chinh tieu chi do.
   Mot trong hai phai sua, va sua theo MA moi dung: mo phong dung 60s.

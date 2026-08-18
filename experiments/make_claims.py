@@ -181,6 +181,34 @@ def pool_264_fixedtau():
     return out
 
 
+def emit_macros():
+    """Sinh paper/claims-macros.tex de bai GOI so thay vi GO so.
+
+    VI SAO. Ngay 18/08 chay lai toan bo thi nghiem tren mot may khac: 66/116 claim doi gia
+    tri, va 44 trong so do van con gia tri CU nam trong main.tex. Cong truy so bao 116/116
+    XANH suot, vi no chi doi chieu claims.json voi CSV va khong bao gio doc bai. Mot con so
+    go tay vao van xuoi la mot ban sao khong ai dong bo.
+
+    Va sua tay thi nguy hiem: chuoi "0.008" vua la gia tri cua gap_fair_w198_i53 vua la mot
+    p-value o dong ngay ben canh. Thay the mu se lam hong bai ma khong ai thay.
+
+    Dung: $\clm{gap-fair-w198-i53}$ thay cho $0.008$. Gach duoi doi thanh gach ngang vi
+    gach duoi la ky tu dac biet trong LaTeX.
+    """
+    lines = [r"% SINH TU make_claims.py -- DUNG SUA TAY.",
+             r"% Dinh nghia mot lan; bai goi bang \clm{ten-claim}.",
+             r"\makeatletter",
+             r"\newcommand{\defclaim}[2]{\expandafter\gdef\csname cl@#1\endcsname{#2}}",
+             r"\newcommand{\clm}[1]{%",
+             r"  \ifcsname cl@#1\endcsname\csname cl@#1\endcsname",
+             r"  \else\textbf{??#1??}\PackageWarning{claims}{khong co claim #1}\fi}",
+             r"\makeatother"]
+    for c in sorted(C, key=lambda x: x["id"]):
+        lines.append("\\defclaim{%s}{%s}" % (c["id"].replace("_", "-"), c["paper_value"]))
+    open(os.path.join(PAPER, "claims-macros.tex"), "w").write("\n".join(lines) + "\n")
+    print(f"  + {len(C)} macro -> paper/claims-macros.tex")
+
+
 def claim_r4():
     """Ket qua vong R4, sinh ra tu ban phan bien ngoai 17/08/2026."""
     # 2.2: so vong MSA can de hoi tu. Bang II cua bai ghi "T ~ 20" khong kem dieu kien,
@@ -530,6 +558,7 @@ def main():
 
     os.makedirs(PAPER, exist_ok=True)
     json.dump(C, open(OUT_JSON, "w"), indent=2, ensure_ascii=False)
+    emit_macros()
     g = lambda cid: next(c["paper_value"] for c in C if c["id"] == cid)
     open(OUT_TEX, "w").write(r"""% SINH TU code/experiments/make_claims.py -- DUNG SUA TAY.
 \begin{table}[t]

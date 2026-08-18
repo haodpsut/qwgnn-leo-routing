@@ -13,33 +13,33 @@ picking one. Read down a block, not across blocks.}
 question & quantity & value \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does the headline survive capacity feasibility?}}\\
-& gap under BPR delay, offered load $>4\times$ & 79.1\% \\
-& gap in delivered rate, same rows & 30.9\% \\
-& \quad bottleneck loss instead of compounding & 36.5\% \\
-& \quad max-min fair sharing & 37.1\% \\
+& gap under BPR delay, offered load $>4\times$ & 80.5\% \\
+& gap in delivered rate, same rows & 29.8\% \\
+& \quad bottleneck loss instead of compounding & 37.0\% \\
+& \quad max-min fair sharing & 37.3\% \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does it beat a blind baseline at matched budget?}}\\
 \multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_7\_fair\_tuned\_wide}}\\
-& learned / blind, training shell & 0.977 / 0.668 \\
+& learned / blind, training shell & 0.976 / 0.668 \\
 & learned / blind, unseen 264 & 0.974 / 0.973 \\
 \multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$; same run set}\\
-& learned / blind, unseen 264 & 0.885 / 0.973 \\
+& learned / blind, unseen 264 & 0.908 / 0.973 \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
 \multicolumn{3}{@{}l}{\quad\scriptsize\itshape a DIFFERENT run set (\texttt{r2\_7\_eps\_sweep}); see Section~\ref{sec:pooled}}\\
-& GNN / blind multipath, 132 sat (trained) & 0.975 / 0.660 \\
-& GNN / blind multipath, 198 sat & 0.913 / 0.968 \\
-& GNN / blind multipath, 264 sat & 0.915 / 0.970 \\
-& GNN / blind multipath, 396 sat & 0.947 / 0.960 \\
-& GNN / blind multipath, 264 sat at $70^\circ$ & 0.941 / 0.944 \\
+& GNN / blind multipath, 132 sat (trained) & 0.980 / 0.660 \\
+& GNN / blind multipath, 198 sat & 0.915 / 0.968 \\
+& GNN / blind multipath, 264 sat & 0.898 / 0.970 \\
+& GNN / blind multipath, 396 sat & 0.933 / 0.960 \\
+& GNN / blind multipath, 264 sat at $70^\circ$ & 0.932 / 0.944 \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does diverse training restore it? (same instance budget)}}\\
-& single-shell training, unseen 264 & 0.898 \\
-& mixed training, unseen 264 & 0.976 \\
+& single-shell training, unseen 264 & 0.929 \\
+& mixed training, unseen 264 & 0.978 \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does proactivity reach an axis blind multipath cannot?}}\\
-& proactive / blind multipath, trained shell & 0.961 / 0.801 \\
-& proactive / blind multipath, unseen shell & 0.737 / 0.984 \\
+& proactive / blind multipath, trained shell & 0.962 / 0.801 \\
+& proactive / blind multipath, unseen shell & 0.736 / 0.984 \\
 \bottomrule
 \end{tabular}
 \end{table}
