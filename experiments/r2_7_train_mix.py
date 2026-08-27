@@ -94,15 +94,23 @@ def main():
                 span = blind - ue
                 rec = lambda x: (blind - x) / span if span > 0 else float("nan")
                 row = {"shell": name, "n_sat": w.T, "inc": w.inc, "seed": seed, "slot": k,
+                       # ⛔ GHI CA TI SO QUY CHIEU BLIND. `recovered` chia cho (blind - ue), nen no vo
+                       # nghia o bat ky vo nao co tham chieu can bang khong dat PoA >= 1. Do 27/08:
+                       # vo 396 dat 0.9854 o 160 vong va van duoi 1, vo 1584 khong bao gio dat. Ti so
+                       # voi blind do TRUC TIEP nen no van dung o dung nhung vo ma `recovered` chet.
+                       "blind_ttt": round(blind, 4), "ue_ttt": round(ue, 4),
+                       "poa": round(ue / so, 6) if so > 0 else float("nan"),
                        "unit_of_analysis": "vo-x-seed-x-khe"}
                 for tag, m in models.items():
                     v = eval_instance(m, ins)["gnn"]
                     assert v >= so - 1e-6, f"{tag} {v:.3f} < SO {so:.3f}"
                     row[f"recovered_{tag}"] = round(rec(v), 4)
+                    row[f"rel_{tag}"] = round(v / blind, 6) if blind > 0 else float("nan")
                 for e in EPSS:
                     v = ecmp_ttt(A, W, dem, CAP, eps=e)
                     assert v >= so - 1e-6, f"ecmp{e} {v:.3f} < SO {so:.3f}"
                     row[f"recovered_ecmp_{e}"] = round(rec(v), 4)
+                    row[f"rel_ecmp_{e}"] = round(v / blind, 6) if blind > 0 else float("nan")
                 rows.append(row)
                 print(f"{name:10s} {seed:>2} {k:>3} {row['recovered_single']:>7.3f} "
                       f"{row['recovered_mix']:>7.3f} | "
