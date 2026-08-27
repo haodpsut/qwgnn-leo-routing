@@ -44,14 +44,17 @@ def main():
         print("  ⛔ hai tep trung tag -- khong phan biet duoc may")
         return 1
 
-    commits = {t: d[t][0]["commit"] for t in tags}
-    if len(set(commits.values())) != 1:
-        print("  ⛔ HAI MAY CHAY HAI COMMIT KHAC NHAU: %s" % commits)
-        print("     Phep so nay se do MA NGUON chu khong do may. Dong bo commit roi chay lai.")
+    # ⛔ Ghim bang BAM NOI DUNG, khong bang commit: mot ben co the khong nam trong kho git
+    # (thu muc lam viec tren Mac), va khi do so commit se tu choi chay dung luc can nhat.
+    shas = {t: d[t][0].get("code_sha", "(khong ghi)") for t in tags}
+    if len(set(shas.values())) != 1 or "(khong ghi)" in shas.values():
+        print("  ⛔ HAI MAY CHAY HAI BAN MA KHAC NHAU (hoac chua ghi bam): %s" % shas)
+        print("     Phep so nay se do MA NGUON chu khong do may. Dong bo ma roi chay lai.")
         return 1
+    commits = {t: d[t][0].get("commit", "?") for t in tags}
 
     a, b = tags[0], tags[1]
-    print("  commit chung: %s" % commits[a])
+    print("  bam ma nguon chung: %s | commit: %s" % (shas[a], commits))
     for t in tags:
         print("    %-5s %s" % (t, d[t][0]["env"]))
 

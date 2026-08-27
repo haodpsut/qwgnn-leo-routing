@@ -34,6 +34,7 @@ bo ve nhom A, va no phai duoc do RIENG tren nhom A chu khong suy ra tu mot phep 
 """
 import argparse
 import csv
+import hashlib
 import os
 import platform
 import subprocess
@@ -61,6 +62,24 @@ SHELLS = [("w132_i53", Walker(132, 12, 1, 53.0, 550.0), 600),
 SEEDS = [0, 1, 2]
 
 
+# ⛔ KHONG dua vao git de ghim ma nguon. Ban tren VPS nam trong mot clone nen `git rev-parse`
+# tra ve commit; ban tren Mac thi thu muc code/ khong phai kho git nen no tra ve
+# "(khong phai git repo)", va phep so hai may tu choi chay -- dung luc no can chay nhat.
+# Bam NOI DUNG cac tep that su quyet dinh ket qua thi dung tren ca hai may, va con chat hon
+# git: no bat ca sua chua chua commit.
+SRC = ("sim/traffic.py", "sim/constellation.py", "experiments/p5_gnn_router.py",
+       "experiments/r6_0_host_control.py")
+
+
+def code_sha():
+    h = hashlib.sha256()
+    for rel in SRC:
+        p = os.path.join(ROOT, rel)
+        h.update(rel.encode())
+        h.update(open(p, "rb").read() if os.path.exists(p) else b"<THIEU>")
+    return h.hexdigest()[:12]
+
+
 def head():
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"],
@@ -75,10 +94,11 @@ def main():
     a = ap.parse_args()
 
     commit = head()
+    sha = code_sha()
     env = "%s-%s | numpy %s | torch %s" % (platform.system(), platform.machine(),
                                            np.__version__, torch.__version__)
     print("=" * 78)
-    print("  R6.0 host control | tag=%s | commit=%s" % (a.tag, commit))
+    print("  R6.0 host control | tag=%s | commit=%s | code_sha=%s" % (a.tag, commit, sha))
     print("  %s" % env)
     print("=" * 78, flush=True)
 
@@ -102,7 +122,7 @@ def main():
                 g = torch.expm1(model(ins["X"], ins["ctx"])).clamp(min=0).numpy()
 
             rows.append({
-                "tag": a.tag, "commit": commit, "env": env,
+                "tag": a.tag, "commit": commit, "code_sha": sha, "env": env,
                 "shell": name, "seed": seed, "unit_of_analysis": "vo-x-seed",
                 # nhom A -- in DU chu so, khong lam tron: mot phep do ve "khop toi chu so
                 # in ra" ma tu lam tron truoc khi so thi da tra loi san cau hoi cua no.
