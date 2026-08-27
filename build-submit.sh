@@ -152,34 +152,58 @@ PY
 # Dem HINH NHUNG THAT bang pdfimages, khong grep \includegraphics: ban danh dau dinh nghia
 # lai \includegraphics trong phan dau, nen grep tung bao "can 11, duoc 8" tren mot ban hoan
 # toan dung.
-echo "== 3b/5 SO SO HINH giua ban sach va ban danh dau"
-python3 - "$OUT" <<'PYEOF'
-import re, subprocess, sys
-out = sys.argv[1]
-def nimg(pdf):
-    r = subprocess.run(["pdfimages", "-list", pdf], capture_output=True, text=True)
-    return sum(1 for l in r.stdout.splitlines()[2:] if l.strip())
-def nbox(pdf):
-    r = subprocess.run(["pdftotext", pdf, "-"], capture_output=True, text=True)
-    return len(re.findall(r"(?i)figure pending|\[ *figure *\]|image not found", r.stdout))
-a, b = out + "/manuscript.pdf", out + "/manuscript-highlighted.pdf"
-ia, ib = nimg(a), nimg(b)
-pa, pb = nbox(a), nbox(b)
-print("   ban sach: %d hinh nhung, %d khung cho | ban danh dau: %d hinh nhung, %d khung cho"
-      % (ia, pa, ib, pb))
-bad = []
-if ia == 0:
-    bad.append("ban sach KHONG co hinh nhung nao")
-if ib == 0:
-    bad.append("ban danh dau KHONG co hinh nhung nao")
-if ia and ib and abs(ia - ib) > 0:
-    bad.append("HAI BAN LECH SO HINH (%d vs %d): gan nhu chac chan mot hinh bi ghi de" % (ia, ib))
-if pa or pb:
-    bad.append("con %d khung cho trong ban sach va %d trong ban danh dau" % (pa, pb))
-if bad:
-    print("   ⛔ " + "; ".join(bad))
-    sys.exit(1)
-print("   ✅ hai ban cung %d hinh nhung, khong khung cho nao" % ia)
+echo "== 3b/5 MOI HINH PHAI CO MAT THAT O CA HAI BAN"
+# ⛔ BON CACH DEU SAI, va toi da thu ca bon truoc khi den cach nay:
+#   grep \includegraphics : ban danh dau dinh nghia lai macro do, nen grep tung bao
+#                            "can 11, duoc 8" tren mot ban hoan toan dung;
+#   pdfimages -list        : chi dem anh RASTER. Hinh o day la vector => dem 0 tren CA HAI
+#                            ban, tuc cong bao dong gia 100%;
+#   so trung tu trong hinh : chu trong hinh ("time per slot", "features") TRUNG voi tu ngu
+#                            than bai, nen bo hinh di ma do phu van 100%;
+#   dem so lan xuat hien   : cung ly do, 9/9 token van du sau khi hinh bien mat.
+# Cach duy nhat phan biet duoc: TIM MANH LUONG BYTE cua tung tep hinh trong PDF cuoi.
+# pdflatex nhung nguyen luong noi dung cua hinh vector, nen manh byte co mat <=> hinh co
+# mat that. Do duoc: bo hinh 3 di thi no tut 2/3 -> 0/3, trong khi moi phep kiem chu deu
+# khong doi. Va chinh phep kiem nay tim ra fig_denominator_drift duoc SINH RA nhung khong
+# he duoc \input vao bai.
+python3 - "$ROOT" "$OUT" <<'PYEOF'
+import glob, os, re, subprocess, sys
+root, out = sys.argv[1], sys.argv[2]
+def chunks(p, n=3, ln=48):
+    b = open(p, "rb").read()
+    i = b.find(b"stream")
+    if i < 0:
+        return []
+    body = b[i:]
+    step = max(1, len(body) // (n + 1))
+    return [c for c in (body[step*(k+1):step*(k+1)+ln] for k in range(n)) if len(c) == ln]
+docs = {"ban sach": out + "/manuscript.pdf", "ban danh dau": out + "/manuscript-highlighted.pdf"}
+raw = {k: open(v, "rb").read() for k, v in docs.items() if os.path.exists(v)}
+if len(raw) < 2:
+    print("   ⛔ thieu mot trong hai ban PDF: %s" % sorted(set(docs) - set(raw))); sys.exit(1)
+used = set(re.findall(r"\\input\{(fig-[^}]*)\}", open(root + "/paper/main.tex").read()))
+figs = sorted(glob.glob(os.path.join(root, "paper", "figures", "*.pdf")))
+if not figs:
+    print("   ⛔ khong co tep hinh nao -- khong doc thanh sach"); sys.exit(1)
+bad = 0
+for f in figs:
+    cs = chunks(f)
+    if not cs:
+        print("   -- %-26s khong doc duoc luong byte" % os.path.basename(f)); continue
+    hit = {k: sum(1 for c in cs if c in d) for k, d in raw.items()}
+    ok = all(v > 0 for v in hit.values())
+    print("   %s %-26s %s" % ("ok " if ok else "⛔ ", os.path.basename(f),
+          "  ".join("%s %d/%d" % (k, v, len(cs)) for k, v in sorted(hit.items()))))
+    if not ok:
+        bad += 1
+txt = {k: subprocess.run(["pdftotext", v, "-"], capture_output=True, text=True).stdout
+       for k, v in docs.items()}
+ph = {k: len(re.findall(r"(?i)figure pending|image not found", t)) for k, t in txt.items()}
+if any(ph.values()):
+    print("   ⛔ con khung cho: %s" % ph); bad += 1
+print("   da kiem %d hinh tren 2 ban PDF (%d wrapper duoc \input) => %s"
+      % (len(figs), len(used), "FAIL" if bad else "PASS"))
+sys.exit(1 if bad else 0)
 PYEOF
 
 echo "== 4/5 thu tra loi + cover letter"
