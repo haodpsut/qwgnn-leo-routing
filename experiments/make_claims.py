@@ -237,22 +237,34 @@ def claim_r4():
     claim("s1584_relblind_gnn", u, src, "rel_best_gnn", {}, "vo 1584, GNN / blind", places=4)
     claim("s1584_relblind_ecmp", u, src, "rel_best_ecmp", {}, "vo 1584, blind-mp / blind", places=4)
     claim("s1584_margin", u, src, "margin_pct", {}, "cach biet blind-vs-GNN, %", places=0)
-    # ⛔ Bon con so duoi day la DEM, khong phai gia tri do, nen chung khong di qua claim():
-    # claim() lay trung vi cua mot cot, ma "thang 3/3 instance" khong phai trung vi cua gi ca.
-    # Ep chung vao khuon trung vi la dung mot cong cho mot viec no khong lam.
-    m = sorted(float(r["margin_pct"]) for r in u)
-    for cid, val, note in (
-            ("s1584_margin_lo", "%d" % round(m[0]), "cach biet nho nhat, %"),
-            ("s1584_margin_hi", "%d" % round(m[-1]), "cach biet lon nhat, %"),
-            ("s1584_ecmp_wins", str(sum(1 for r in u if r["winner"] == "ecmp")),
-             "so instance blind thang"),
-            ("s1584_n_inst", str(len(u)), "so instance do o vo 1584"),
-            ("s1584_tau_edge", str(sum(int(r["tau_at_grid_edge"]) for r in u)),
+    # ⛔ MOT DEM CUNG PHAI TAI TINH DUOC. Ban truoc ghi cac so nay voi ten cot gia
+    # "(dem tren cac dong)", va cong verify_numbers bao ERR tren ca nam -- dung: no khong
+    # co cach nao suy lai chung tu CSV. Cach sua khong phai noi long cong ma la ghi cot
+    # THAT vao CSV, roi de phep gop san (sum/min/max) lam viec dem. Nho vay moi con so
+    # dem van co the doi chieu nguoc ve du lieu nhu moi con so khac.
+    for fn in sorted(os.listdir(RES)):
+        if not (fn.startswith("r5_4_shell1584_uefree") and fn.endswith(".csv")):
+            continue
+        q = os.path.join(RES, fn)
+        rr = list(csv.DictReader(open(q)))
+        if not rr or "ecmp_win" in rr[0]:
+            continue
+        for r in rr:
+            r["ecmp_win"] = 1 if r["winner"] == "ecmp" else 0
+            r["unit"] = 1
+        with open(q, "w", newline="") as f:
+            wtr = csv.DictWriter(f, fieldnames=list(rr[0].keys()))
+            wtr.writeheader(); wtr.writerows(rr)
+        print("  + them cot 'ecmp_win', 'unit' vao %s" % fn)
+
+    for cid, col, agg, pl, note in (
+            ("s1584_margin_lo", "margin_pct", "min", 0, "cach biet blind-vs-GNN nho nhat, %"),
+            ("s1584_margin_hi", "margin_pct", "max", 0, "cach biet blind-vs-GNN lon nhat, %"),
+            ("s1584_ecmp_wins", "ecmp_win", "sum", 0, "so instance blind thang"),
+            ("s1584_n_inst", "unit", "sum", 0, "so instance do o vo 1584"),
+            ("s1584_tau_edge", "tau_at_grid_edge", "sum", 0,
              "so instance co tau toi uu nam O BIEN luoi")):
-        C.append({"id": cid, "paper_value": val, "csv": f"../code/results/{src}",
-                  "column": "(dem tren cac dong)", "filter": {}, "agg": "count",
-                  "places": 0, "unit_of_analysis": u[0].get("unit_of_analysis", "?"),
-                  "note": note})
+        claim_raw(cid, src, col, {}, agg, pl, note)
 
     # 4.2/4.3: hang so cua Menh de 1, dat bang so thay vi de o dang Theta().
     for sh in ("w132_i53", "w264_i53"):

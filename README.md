@@ -20,7 +20,7 @@ several times over; it drifted because nothing checked it. `code/check_artifact_
 does, and it is what caught this.
 
 - **In distribution**, with both sides tuned per shell, the learned price field recovers
-  `0.976` of the blind-to-equilibrium gap against `0.668` for a one-pass congestion-blind
+  `0.973` of the blind-to-equilibrium gap against `0.666` for a one-pass congestion-blind
   multipath split. Paired per instance the median difference is `0.310`.
 - **Out of distribution** the two are level: paired differences of `0.007`, `0.002`, `0.020`
   on three unseen shells, and on the largest shell tested the blind split is **ahead**.

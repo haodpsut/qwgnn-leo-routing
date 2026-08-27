@@ -49,3 +49,6 @@ p5_router.csv = p5_gnn_router.py
 pooled_w264_fixedtau.csv = make_claims.py
 run_all_timing.csv = run_all.py
 shell1584_from_logs.csv = extract_1584_from_logs.py
+r5_0_msa_ladder_1584.csv = r5_0_msa_convergence_pilot.py
+r5_3_convergence_small.csv = r5_3_convergence_small.py
+r5_4_shell1584_uefree.csv = r5_4_shell1584_uefree.py

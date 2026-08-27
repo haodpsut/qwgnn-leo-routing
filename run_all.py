@@ -35,7 +35,25 @@ RES = os.path.join(ROOT, "results")
 WAVE2 = {"r2_7_budget_matched.py": "p6_baselines.csv",
          "r2_7_warmstart_ecmp.py": "p6_baselines.csv",
          "r3_2_feasibility.py": "p4_headroom.csv"}
-SKIP = {"make_claims.py", "run_all.py", "extract_1584_from_logs.py"}
+# ⛔ MOI TEN O DAY PHAI CO LY DO, va cac ly do KHAC NHAU -- gop chung "cho nhanh" la cach
+# mot phep do can thiet bi bo im lang.
+#   (a) khong phai thi nghiem: bo sinh, driver, bo trich log
+#   (b) doi tham so dong lenh -> chay tran se hong
+#   (c) r4_1: TOAN BO dau ra la cac dai luong chia cho can bang o vo 1584, va vo do da bi
+#       RUT vi khong dat PoA >= 1. Chay ~8 gio de sinh ra so sap bi xoa la tra gia hai lan.
+#   (d) nac thang do o SO VONG CO DINH (hoac khong dung UE): san MSA khong lam doi ket qua,
+#       nen chay lai chi lam mat du lieu doi chieu.
+#   (e) doi chung HAI MAY: phai chay tay tren tung may, khong sinh so cho bang nao.
+SKIP = {
+    "make_claims.py", "make_figs_tables.py", "make_r5_figs.py",           # (a)
+    "run_all.py", "extract_1584_from_logs.py",                            # (a)
+    "r5_1_shell1584_converged.py", "r5_1b_unit.py", "r5_1c_join.py",      # (b)
+    "r5_0b_one_solve.py",                                                 # (b)
+    "r4_1_shell1584_controls.py",                                         # (c)
+    "r5_0_msa_ladder_1584.py", "r5_3_convergence_small.py",               # (d)
+    "r5_4_shell1584_uefree.py",                                           # (d)
+    "r6_0_host_control.py", "r6_1_host_compare.py",                       # (e)
+}
 
 # Thi nghiem DO THOI GIAN phai chay MOT MINH. Lan dau toi cho no chay cung 25 tien trinh
 # khac, va no do wall-clock duoi tranh chap CPU: 17.85s o vo 1584 thay vi 8.75s khi chay
