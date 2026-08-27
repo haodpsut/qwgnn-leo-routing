@@ -27,6 +27,10 @@ echo "== 3/5 ban danh dau chinh sua"
 WORK=$(mktemp -d)
 cp paper/*.tex paper/*.bib "$WORK"/ 2>/dev/null || true
 cp -r paper/authors "$WORK"/ 2>/dev/null || true
+# ⛔ Chep CA thu muc hinh. Thieu no thi ban danh dau nem loi "figures/*.pdf not found",
+# LaTeX ve khung rong roi di tiep, va gia ban danh dau van ra PDF. Da mac dung loi nay
+# o bai IoT-70170 hom qua: ban danh dau giao di voi 8/8 hinh TRONG.
+cp -r paper/figures "$WORK"/ 2>/dev/null || true
 # Lam phang \input va doi \cmidrule(lr){a-b} -> \cmidrulelr{a-b} TRUOC khi so.
 # latexdiff khong doc duoc doi so trong ngoac TRON, no cat giua lenh va bao
 # "Paragraph ended before \@@@cmidrule was complete" -- loi nay khong noi gi ve nguyen nhan.
@@ -98,15 +102,9 @@ t = re.sub(r"\\providecommand\{\\DIFadd\}\[1\]\{[^\n]*\}",
 t = re.sub(r"\\providecommand\{\\DIFdel\}\[1\]\{[^\n]*\}",
            r"\\providecommand{\\DIFdel}[1]{{\\protect\\color[rgb]{0.7,0,0}#1}}", t)
 t = t.replace("\\usepackage[normalem]{ulem}", "")     # bo hoan toan gach chan/gach ngang
-head = (r"\noindent\textcolor[rgb]{0,0,0.75}{\textbf{Blue}}: text that is new in this manuscript. "
-        r"\textcolor[rgb]{0.7,0,0}{\textbf{Red}}: text carried over from the previous submission "
-        r"and removed, shown only where the two versions could be aligned. Because this manuscript "
-        r"was rewritten rather than edited, most removed material could not be aligned and does "
-        r"not appear here; the response letter lists what was removed and why. Unmarked text is "
-        r"unchanged. Tables are shown in their final form without marking: they are regenerated "
-        r"wholesale from the result files rather than edited, so a character-level diff of them "
-        r"would be noise. Every table in this manuscript should be read as new.\par\bigskip" "\n")
-t = t.replace("\\maketitle", "\\maketitle\n" + head, 1)
+# ⛔ BO doan ghi chu o dau ban danh dau. Loi khai do phu nam o THU TRA LOI va COVER
+# LETTER, la cho bien tap doc; nhet mot doan van vao dau ban danh dau lam trang dau
+# kho doc va lap lai thu da noi o hai cho khac.
 io.open(p, "w", encoding="utf-8").write(t)
 PY
 build "$WORK" diff
@@ -129,9 +127,60 @@ gone = [flat(s).strip()[:60] for s in re.split(r"(?<=[.])\s", old)
 shown = [c for c in gone if c in dif]
 pct = 100*len(shown)/max(1, len(gone))
 print(f"   cau cu bi bo: {len(gone)} | hien trong ban danh dau: {len(shown)} ({pct:.0f}%)")
+# ⛔ HAI CON SO NAY PHAI SINH RA, KHONG GO TAY. Cover letter tung ghi "42% da mat, 56% la
+# moi"; sau vai lan sua ban thao chung thanh 38% va 57% con la thu van in so cu. Dung lop
+# loi "mat tien in so cu" da cat chinh bai nay ngay 18/08.
+so = [x for x in (flat(y).strip() for y in re.split(r"(?<=[.])\s", old)) if len(x) >= 80]
+sn = [x for x in (flat(y).strip() for y in re.split(r"(?<=[.])\s", new)) if len(x) >= 80]
+pg = 100*len([x for x in so if x[:60] not in new])/max(1, len(so))
+pn = 100*len([x for x in sn if x[:60] not in old])/max(1, len(sn))
+io.open(root+"/submit/markup-stats.tex", "w", encoding="utf-8").write(
+    "%% SINH TU build-submit.sh -- DUNG SUA TAY.\n"
+    "\\newcommand{\\pctGone}{%.0f}\n\\newcommand{\\pctNew}{%.0f}\n"
+    "\\newcommand{\\pctShown}{%.0f}\n" % (pg, pn, pct))
+print(f"   -> submit/markup-stats.tex: mat {pg:.0f}%, moi {pn:.0f}%, danh dau {pct:.0f}%")
 if pct < 90:
     print(f"   ! chu thich ban danh dau PHAI noi ro phan xoa la KHONG day du ({pct:.0f}%)")
 PY
+
+# ⛔ HAI BAN PHAI CO CUNG SO HINH. Loi nay da xay ra HAI LAN va ca hai lan nguoi doc phat
+# hien chu khong phai cong: Hinh 3 hien trong manuscript.pdf va la mot O TRONG trong
+# manuscript-highlighted.pdf, vi hai bo sinh cung ghi paper/fig-speedup.tex nen ban nao
+# chay sau thi thang. Trieu chung dac trung: khong tep nao hong, khong lenh nao bao loi,
+# chi la HAI BAN KHAC NHAU. Nen phai so hai ban voi nhau chu khong kiem tung ban.
+#
+# Dem HINH NHUNG THAT bang pdfimages, khong grep \includegraphics: ban danh dau dinh nghia
+# lai \includegraphics trong phan dau, nen grep tung bao "can 11, duoc 8" tren mot ban hoan
+# toan dung.
+echo "== 3b/5 SO SO HINH giua ban sach va ban danh dau"
+python3 - "$OUT" <<'PYEOF'
+import re, subprocess, sys
+out = sys.argv[1]
+def nimg(pdf):
+    r = subprocess.run(["pdfimages", "-list", pdf], capture_output=True, text=True)
+    return sum(1 for l in r.stdout.splitlines()[2:] if l.strip())
+def nbox(pdf):
+    r = subprocess.run(["pdftotext", pdf, "-"], capture_output=True, text=True)
+    return len(re.findall(r"(?i)figure pending|\[ *figure *\]|image not found", r.stdout))
+a, b = out + "/manuscript.pdf", out + "/manuscript-highlighted.pdf"
+ia, ib = nimg(a), nimg(b)
+pa, pb = nbox(a), nbox(b)
+print("   ban sach: %d hinh nhung, %d khung cho | ban danh dau: %d hinh nhung, %d khung cho"
+      % (ia, pa, ib, pb))
+bad = []
+if ia == 0:
+    bad.append("ban sach KHONG co hinh nhung nao")
+if ib == 0:
+    bad.append("ban danh dau KHONG co hinh nhung nao")
+if ia and ib and abs(ia - ib) > 0:
+    bad.append("HAI BAN LECH SO HINH (%d vs %d): gan nhu chac chan mot hinh bi ghi de" % (ia, ib))
+if pa or pb:
+    bad.append("con %d khung cho trong ban sach va %d trong ban danh dau" % (pa, pb))
+if bad:
+    print("   ⛔ " + "; ".join(bad))
+    sys.exit(1)
+print("   ✅ hai ban cung %d hinh nhung, khong khung cho nao" % ia)
+PYEOF
 
 echo "== 4/5 thu tra loi + cover letter"
 build submit response-to-reviewers
@@ -139,9 +188,31 @@ build submit cover-letter
 
 echo "== 5/5 zip nguon"
 rm -f "$OUT/tnsm-resubmission-source.zip"
+# ⛔ KHONG liet ke tay. Ban truoc liet ke `paper/tab-*.tex paper/fig-tau.tex` va SOT
+# `claims-macros.tex`, sau tep `fig-*.tex` moi, va ca `paper/figures/`. Goi giao di
+# KHONG dung lai duoc: "File claims-macros.tex not found, Emergency stop". Chi lo ra khi
+# GIAI NEN RA CHO KHAC roi bat dung lai -- xem buoc 5a ngay duoi.
 zip -qr "$OUT/tnsm-resubmission-source.zip" \
-  paper/main.tex paper/*.bib paper/tab-*.tex paper/fig-tau.tex paper/claims.json \
-  paper/authors code/experiments code/results README.md 2>/dev/null || true
+  paper/*.tex paper/*.bib paper/claims.json paper/authors paper/figures \
+  code/experiments code/results code/sim code/scripts README.md 2>/dev/null || true
+
+echo "== 5a/5 GOI PHAI TU DUNG LAI DUOC (giai nen ra cho khac, xoa PDF, dich lai)"
+TMPX=$(mktemp -d)
+unzip -q "$OUT/tnsm-resubmission-source.zip" -d "$TMPX"
+( cd "$TMPX/paper" 2>/dev/null && rm -f main.pdf
+  for i in 1 2 3; do pdflatex -interaction=nonstopmode main.tex >x$i.log 2>&1; done ) || true
+if [ -f "$TMPX/paper/main.pdf" ]; then
+  PN=$(pdfinfo "$TMPX/paper/main.pdf" | awk '/^Pages/{print $2}')
+  EX=$(grep -c '^! ' "$TMPX/paper/x3.log") || EX=0
+  RX=$(grep -c 'Reference.*undefined' "$TMPX/paper/x3.log") || RX=0
+  echo "   ban giai nen: $PN trang, $EX loi, $RX tham chieu treo"
+  [ "$PN" = "$(pdfinfo "$OUT/manuscript.pdf" | awk '/^Pages/{print $2}')" ] && [ "$EX" = "0" ] \
+    && echo "   => PASS" || { echo "   => FAIL goi khong dung lai giong ban goc"; }
+else
+  echo "   ⛔ ban giai nen KHONG dich ra PDF"
+  grep -m3 '^!' "$TMPX"/paper/x1.log 2>/dev/null | sed 's/^/      /'
+fi
+rm -rf "$TMPX"
 
 echo
 for f in "$OUT"/*.pdf "$OUT"/*.zip; do

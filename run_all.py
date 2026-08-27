@@ -50,7 +50,11 @@ SKIP = {
     "r5_1_shell1584_converged.py", "r5_1b_unit.py", "r5_1c_join.py",      # (b)
     "r5_0b_one_solve.py",                                                 # (b)
     "r4_1_shell1584_controls.py",                                         # (c)
-    "r5_0_msa_ladder_1584.py", "r5_3_convergence_small.py",               # (d)
+    # ⛔ TEN SCRIPT, khong phai ten CSV. Toi tung ghi "r5_0_msa_ladder_1584.py" o day --
+    # do la ten CSV no SINH RA, khong phai ten tep. Ket qua: script van chay, ton ~2,5 gio
+    # de tai tao dung tung chu so bo so da co (no truyen iters tuong minh nen san MSA khong
+    # the lam doi ket qua), va vi no o dot 1 nen no CHAN ca 5 thi nghiem cua dot 2 va 3.
+    "r5_0_msa_convergence_pilot.py", "r5_3_convergence_small.py",         # (d)
     "r5_4_shell1584_uefree.py",                                           # (d)
     "r6_0_host_control.py", "r6_1_host_compare.py",                       # (e)
 }
