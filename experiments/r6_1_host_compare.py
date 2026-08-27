@@ -16,6 +16,7 @@ khac ma nguon thi do ma nguon chu khong do may, va do dung la cai da xay ra voi 
 """
 import csv
 import glob
+import re
 import os
 import sys
 
@@ -95,9 +96,22 @@ def main():
 
     # ⛔ Doi chieu thang voi VAN BAN. Mot phep do khong tu no sua duoc mot cau khai sai;
     # cong phai noi ro cau nao trong bai da bi du lieu bac.
+    # ⛔ KIEM CAU DUOC KHANG DINH, khong kiem chuoi co mat. Ban dau tien chi tim chuoi, nen
+    # khi bai duoc sua thanh "An earlier version claimed that ... That claim was wrong", cong
+    # van keu -- tuc no bao dong to hon sau khi bai da dung hon. Mot cong nhu vay day nguoi
+    # dung di dung huong nguoc lai. Xem [[feedback-cong-suy-su-kien-tu-dau-vet-mo]].
     tex = os.path.join(ROOT, "..", "paper", "main.tex")
     CLAIM = "agreed to the printed digit"
-    said = os.path.exists(tex) and CLAIM in open(tex, encoding="utf-8").read()
+    said = False
+    if os.path.exists(tex):
+        body = open(tex, encoding="utf-8").read()
+        for m in re.finditer(re.escape(CLAIM), body):
+            w = body[max(0, m.start() - 320):m.end() + 120].lower()
+            retracted = re.search(r"earlier version|was wrong|no longer|we withdraw|"
+                                  r"that claim|incorrect|retract", w)
+            if not retracted:
+                said = True
+                break
     print()
     if exact_A:
         print("  ✅ nhom A khop TUNG BIT giua hai may.")

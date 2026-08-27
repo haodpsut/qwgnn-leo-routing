@@ -1,7 +1,7 @@
-shell,seed,unit_of_analysis,recovered_tau0.02,recovered_tau0.05,recovered_tau0.1,recovered_tau0.2,recovered_tau0.35,recovered_tau0.5,recovered_tau1.0
-w132 (trained),0,vo-x-seed,0.888,0.9197,0.957,0.9698,0.9443,0.9184,0.866
-w132 (trained),1,vo-x-seed,0.9102,0.9416,0.9677,0.9641,0.9188,0.8708,0.7726
-w132 (trained),2,vo-x-seed,0.8467,0.907,0.9638,0.9739,0.9293,0.8814,0.7834
-w264 (unseen),0,vo-x-seed,0.5796,0.6847,0.816,0.9221,0.9608,0.9707,0.9758
-w264 (unseen),1,vo-x-seed,0.5803,0.6844,0.8089,0.9168,0.9562,0.9668,0.9751
-w264 (unseen),2,vo-x-seed,0.5599,0.653,0.7887,0.914,0.9566,0.9666,0.9728
+shell,seed,unit_of_analysis,recovered_tau0.02,recovered_tau0.05,recovered_tau0.1,recovered_tau0.2,recovered_tau0.35,recovered_tau0.5,recovered_tau1.0,machine
+w132 (trained),0,vo-x-seed,0.88,0.9221,0.9603,0.9604,0.93,0.904,0.8542,Linux-x86_64-sol1
+w132 (trained),1,vo-x-seed,0.8979,0.9347,0.9587,0.9476,0.8982,0.8499,0.7529,Linux-x86_64-sol1
+w132 (trained),2,vo-x-seed,0.8724,0.9285,0.967,0.9558,0.9053,0.8585,0.767,Linux-x86_64-sol1
+w264 (unseen),0,vo-x-seed,0.5091,0.6345,0.785,0.9115,0.9611,0.9729,0.9785,Linux-x86_64-sol1
+w264 (unseen),1,vo-x-seed,0.5358,0.6625,0.8012,0.9135,0.9556,0.9676,0.9767,Linux-x86_64-sol1
+w264 (unseen),2,vo-x-seed,0.4728,0.5925,0.7564,0.9023,0.9536,0.9662,0.9737,Linux-x86_64-sol1

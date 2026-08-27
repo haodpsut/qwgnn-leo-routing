@@ -1,10 +1,10 @@
-quantity,shell,split,seed,value,std_within_seed,unit_of_analysis,source_log,n_sat,pairs,t_ue_s,speedup
-recovered_fraction,w132_i53,in-dist,0,0.975,0.008,vo-x-seed,p5_full_1584.log,,,,
-recovered_fraction,w1584_i53,ood-largeshell,0,0.919,0.007,vo-x-seed,p5_full_1584.log,,,,
-recovered_fraction,w132_i53,in-dist,1,0.971,0.027,vo-x-seed,p5_full_1584.log,,,,
-recovered_fraction,w1584_i53,ood-largeshell,1,0.951,0.007,vo-x-seed,p5_full_1584.log,,,,
-recovered_fraction,w132_i53,in-dist,2,0.971,0.009,vo-x-seed,p5_full_1584.log,,,,
-recovered_fraction,w1584_i53,ood-largeshell,2,0.96,0.003,vo-x-seed,p5_full_1584.log,,,,
-inference_time,w132,timing,-1,0.048,,vo (mot lan do),p6_full_1584.log,132,600,1.038,21.8
-inference_time,w264,timing,-1,0.232,,vo (mot lan do),p6_full_1584.log,264,1200,4.921,21.2
-inference_time,shell1584,timing,-1,8.38,,vo (mot lan do),p6_full_1584.log,1584,7200,243.723,29.1
+quantity,shell,split,seed,value,std_within_seed,unit_of_analysis,source_log,n_sat,pairs,t_ue_s,speedup,machine
+recovered_fraction,w132_i53,in-dist,0,0.975,0.008,vo-x-seed,p5_full_1584.log,,,,,Linux-x86_64-sol1
+recovered_fraction,w1584_i53,ood-largeshell,0,0.919,0.007,vo-x-seed,p5_full_1584.log,,,,,Linux-x86_64-sol1
+recovered_fraction,w132_i53,in-dist,1,0.971,0.027,vo-x-seed,p5_full_1584.log,,,,,Linux-x86_64-sol1
+recovered_fraction,w1584_i53,ood-largeshell,1,0.951,0.007,vo-x-seed,p5_full_1584.log,,,,,Linux-x86_64-sol1
+recovered_fraction,w132_i53,in-dist,2,0.971,0.009,vo-x-seed,p5_full_1584.log,,,,,Linux-x86_64-sol1
+recovered_fraction,w1584_i53,ood-largeshell,2,0.96,0.003,vo-x-seed,p5_full_1584.log,,,,,Linux-x86_64-sol1
+inference_time,w132,timing,-1,0.048,,vo (mot lan do),p6_full_1584.log,132,600,1.038,21.8,Linux-x86_64-sol1
+inference_time,w264,timing,-1,0.232,,vo (mot lan do),p6_full_1584.log,264,1200,4.921,21.2,Linux-x86_64-sol1
+inference_time,shell1584,timing,-1,8.38,,vo (mot lan do),p6_full_1584.log,1584,7200,243.723,29.1,Linux-x86_64-sol1

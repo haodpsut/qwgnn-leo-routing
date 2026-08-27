@@ -30,7 +30,11 @@ import matplotlib.pyplot as plt
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 RES = os.path.join(ROOT, "results")
-OUT = os.path.join(RES, "figures")
+# ⛔ GHI THANG VAO paper/figures. Ban cu ghi vao code/results/figures va KHONG co buoc
+# nao chep sang, nen bai dung mot bo hinh con bo sinh cap nhat mot bo khac. Do 27/08:
+# ca SAU hinh trong paper/figures deu lech ban sinh ra. Khong ai thay, vi hinh van hien
+# ra binh thuong -- chi la hien ban cu. Mot hien vat phai co DUNG MOT cho o.
+OUT = os.path.abspath(os.path.join(RES, "..", "..", "paper", "figures"))
 
 mpl.rcParams.update({
     "font.family": "serif", "font.serif": ["DejaVu Serif"],
@@ -110,57 +114,71 @@ def fig_denom():
 
 
 def fig_host():
-    """Phan phoi lech giua hai may, doi chieu voi cac hieu ung bien cua bai."""
-    a_d, b_d = "/tmp/res_before", os.path.join(RES)
-    if not os.path.isdir(a_d):
-        print("  ⚠ khong co /tmp/res_before -> bo qua fig_host")
+    """Lech giua hai may, TACH nhom khong-cham-torch khoi nhom qua-torch.
+
+    ⛔ BAN CU VE TU MOT PHEP SO KHONG HOP LE. No diff `/tmp/res_before` voi `results/` va
+    goi ket qua la "lech giua hai may". Doi chieu 27/08 cho thay CA HAI thu muc deu mang
+    nhan `Linux-x86_64-sol1`, va so o lech la 1094/3345 chu khong phai 17/2999 nhu ghi chep
+    noi bo. Hai bac chenh nhau ⇒ hai thu muc do khac nhau vi doi MA NGUON (san MSA 20 -> 40),
+    khong phai vi doi may. Mot hinh ve tu do se minh hoa mot dieu khong duoc do.
+
+    Ban nay doc `r6_0_host_control_*.csv`: cung bam ma nguon, cung seed, cung tham so, chi
+    khac MAY. Va no ve HAI duong, vi day moi la dieu bai muon noi: nhom A (Dijkstra, MSA,
+    TTT -- khong mot dong torch) lech toi 8.5e-04, nhom B (qua mo hinh) lech toi 1.0e-01.
+    Ve chung mot duong thi che mat dung cai khac biet hai bac ay.
+    """
+    files = sorted(glob.glob(os.path.join(RES, "r6_0_host_control_*.csv")))
+    if len(files) < 2:
+        print("  ⚠ can hai tep r6_0_host_control_*.csv (moi may mot tep) -> bo qua fig_host")
         return
-    deltas = []
-    for p in sorted(glob.glob(os.path.join(a_d, "*.csv"))):
-        q = os.path.join(b_d, os.path.basename(p))
-        if not os.path.exists(q):
-            continue
-        A, B = list(csv.DictReader(open(p))), list(csv.DictReader(open(q)))
-        if not A or not B or len(A) != len(B) or A[0].keys() != B[0].keys():
-            continue
-        for x, y in zip(A, B):
-            for k in x:
-                if any(t in k for t in ("_s", "seconds", "frac_of_slot", "speedup")):
-                    continue
-                try:
-                    u, v = float(x[k]), float(y[k])
-                except (TypeError, ValueError):
-                    continue
-                if u != v:
-                    deltas.append(abs(u - v) / max(abs(u), abs(v), 1e-12))
-    if not deltas:
-        print("  ⚠ khong co o nao lech -> bo qua fig_host")
+    per = {}
+    for p in files:
+        rows = list(csv.DictReader(open(p)))
+        if rows:
+            per[rows[0]["tag"]] = rows
+    if len(per) < 2:
+        print("  ⚠ hai tep cung mot tag -> bo qua fig_host")
         return
-    deltas.sort()
-    ys = [(i + 1) / len(deltas) for i in range(len(deltas))]
+    ta, tb = sorted(per)
+    sha = {t: per[t][0].get("code_sha", "?") for t in (ta, tb)}
+    if len(set(sha.values())) != 1:
+        print("  ⛔ hai may chay hai ban ma khac nhau %s -> KHONG ve" % sha)
+        return
+    ka = {(x["shell"], x["seed"]): x for x in per[ta]}
+    kb = {(x["shell"], x["seed"]): x for x in per[tb]}
+
+    groups = {"A_": [], "B_": []}
+    for k in sorted(set(ka) & set(kb)):
+        for col in ka[k]:
+            pre = col[:2]
+            if pre not in groups:
+                continue
+            try:
+                u, v = float(ka[k][col]), float(kb[k][col])
+            except (TypeError, ValueError):
+                continue
+            groups[pre].append(abs(u - v) / max(abs(u), abs(v), 1e-300))
+
     fig, ax = plt.subplots(figsize=(COL, 2.1))
-    ax.step(deltas, ys, where="post", color=C["blue"], lw=1.2)
-    # ba nguong 0.002 / 0.007 / 0.020 nam qua gan nhau tren truc log nen ba nhan de
-    # len nhau. Ve MOT DAI phu kin khoang do, mot nhan duy nhat: doc duoc va cung y.
+    LAB = {"A_": "no network (shortest path, MSA, travel time)",
+           "B_": "through the network"}
+    for pre, colr in (("A_", C["blue"]), ("B_", C["orange"])):
+        d = sorted(x for x in groups[pre] if x > 0)
+        if not d:
+            continue
+        ys = [(i + 1) / len(d) for i in range(len(d))]
+        ax.step(d, ys, where="post", color=colr, lw=1.3, label=LAB[pre])
+    # ⛔ Dai hieu ung bien VAN phai co mat: cau hoi that su khong phai "co lech khong" ma la
+    # "lech co lon bang cai bai dang tuyen bo khong". Bo dai nay di thi hinh mat y nghia.
     lo, hi = 0.002, 0.020
-    ax.axvspan(lo, hi, color=C["orange"], alpha=0.13, lw=0)
-    ax.axvline(hi, color=C["orange"], lw=0.7, ls="--")
-    ax.text(hi * 1.25, 0.30, "effect sizes the\nboundary claims\nrest on\n($0.002$--$0.020$)",
+    ax.axvspan(lo, hi, color=C["gray"], alpha=0.13, lw=0)
+    ax.text(hi * 1.3, 0.32, "effect sizes the\nboundary claims\nrest on\n($0.002$--$0.020$)",
             fontsize=7, color=C["gray"], ha="left", va="center")
     ax.set_xscale("log")
-    ax.set_xlabel("relative change of a reported cell")
+    ax.set_xlabel("relative difference between the two hosts")
     ax.set_ylabel("empirical CDF")
-
+    ax.legend(fontsize=7, loc="upper left", frameon=False)
     save(fig, "fig_host_delta")
-
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# BA HINH DU LIEU CU, ve lai theo CUNG stylesheet cua kit.
-# Truoc do chung ve bang pgfplots voi bo mau TU DAT (cNavy/cRed/cAmber...), tuc moi
-# hinh mot kieu va khong an toan cho nguoi mu mau. Nay dung Okabe-Ito, phan biet bang
-# MAU + MARKER + KIEU NET, va xuat PDF vector giong ba hinh moi.
-# ═══════════════════════════════════════════════════════════════════════════
 
 def fig_bound():
     """Khoang cach toi UE theo sai so gia, hai bo giai ma."""

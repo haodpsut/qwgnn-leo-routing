@@ -360,23 +360,116 @@ def claim_inherited():
     # `abl_heat_ood` (phan gap thu hoi cua toan tu Heat) va bi gan nham vao mot cau noi ve
     # THOI GIAN TUONG DOI. Trung gia tri khong phai trung y nghia, va mot con so khong co
     # claim thi khong co gi ngan no bi gan nham.
+    # ⛔ DOI CHUNG HAI MAY. Bai tung khai "moi dai luong khong di qua mang deu khop toi chu
+    # so in ra", va bang chung la mot diff hai thu muc ma CA HAI deu la sol1. Nay do co kiem
+    # soat: cung bam ma nguon, cung seed, cung tham so, chi khac MAY. Ket qua bac loi khai --
+    # nhom khong-cham-torch CO lech, chi la lech nho hai bac so voi nhom qua torch.
+    import glob as _glob
+    h = {}
+    for _p in sorted(_glob.glob(os.path.join(RES, "r6_0_host_control_*.csv"))):
+        _r = list(csv.DictReader(open(_p)))
+        if _r:
+            h[_r[0]["tag"]] = _r
+    if len(h) >= 2:
+        ta, tb = sorted(h)
+        ka = {(x["shell"], x["seed"]): x for x in h[ta]}
+        kb = {(x["shell"], x["seed"]): x for x in h[tb]}
+        # ⛔ GHI RA MOT CSV DAN XUAT roi claim tren do. Ban truoc dat "csv" la mot MAU GLOB
+        # (`r6_0_host_control_*.csv`), va cong verify_numbers bao "khong mo duoc tep" tren ca
+        # sau claim. Mot claim tro toi thu khong mo duoc thi khong the doi chieu nguoc.
+        delta_rows = []
+        for grp, pre in (("a", "A_"), ("b", "B_")):
+            rels, keys_seen, ncell = [], [], 0
+            for k in sorted(set(ka) & set(kb)):
+                for col in ka[k]:
+                    if not col.startswith(pre):
+                        continue
+                    try:
+                        u, v = float(ka[k][col]), float(kb[k][col])
+                    except (TypeError, ValueError):
+                        continue
+                    ncell += 1
+                    rels.append(abs(u - v) / max(abs(u), abs(v), 1e-300))
+                    keys_seen.append((k, col))
+            if not rels:
+                continue
+            delta_rows.extend({"group": grp, "shell": k[0], "seed": k[1], "column": col,
+                               "rel": repr(r), "one": 1, "differs": int(r > 0)}
+                              for (k, col), r in zip(keys_seen, rels))
+
+        if delta_rows:
+            dp = os.path.join(RES, "r6_0_host_delta.csv")
+            with open(dp, "w", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=list(delta_rows[0].keys()))
+                w.writeheader(); w.writerows(delta_rows)
+            print("  + r6_0_host_delta.csv: %d o doi chung hai may" % len(delta_rows))
+            for grp in ("a", "b"):
+                fl = {"group": grp}
+                claim_raw("host_%s_cells" % grp, "r6_0_host_delta.csv", "one", fl,
+                          "sum", 0, "so o so sanh duoc, nhom %s" % grp)
+                claim_raw("host_%s_diff" % grp, "r6_0_host_delta.csv", "differs", fl,
+                          "sum", 0, "so o LECH giua hai may, nhom %s" % grp)
+                claim_raw("host_%s_maxrel" % grp, "r6_0_host_delta.csv", "rel", fl,
+                          "max", 6, "lech tuong doi LON NHAT giua hai may, nhom %s" % grp)
+
+    # ⛔ VO 396 -- do 27/08 cho thay tham chieu can bang o day KHONG dat PoA >= 1 o BAT KY
+    # nac nao trong thang (0.9170 o 20 vong den 0.9987 o 640). Cung dang hong voi vo 1584,
+    # chi it cuc doan hon. Nen moi `recovered_*` cua vo nay deu chia cho mot mau so khong
+    # phai can bang. Thay bang ti so QUY CHIEU BLIND, do truc tiep, khong can giai can bang.
+    #
+    # Nguong that su nam GIUA 264 va 396 ve tinh, khong phai "o quy mo mega": vo 264 dat
+    # chuan tu 40 vong, vo 396 khong dat o 640. Do la khoang ma dong nghien cuu nay hay dung.
+    for src, keys in (("r2_7_eps_sweep.csv",
+                       [("s396_relblind_gnn", "rel_gnn")]),
+                      ("r2_7_train_mix.csv",
+                       [("s396_relblind_single", "rel_single"), ("s396_relblind_mix", "rel_mix")])):
+        rows = load(src)
+        w396 = [r for r in rows if "396" in r.get("shell", "")]
+        if not w396 or not any(k.startswith("rel_") for k in w396[0]):
+            raise SystemExit("%s chua co cot rel_* cho vo 396: chay lai thi nghiem" % src)
+        # ⛔ BO LOC PHAI TAI TAO DUOC PHEP CHON. Ban truoc loc w396 truoc roi ghi bo loc RONG,
+        # nen cong tai tinh doc CA 30 dong thay vi 6 dong cua vo 396 va bao lech tren ca nam
+        # claim. Loc san rat tien khi viet, nhung no cat dut soi day noi claim voi du lieu.
+        shell_name = w396[0]["shell"]
+        for cid, col in keys:
+            if col in w396[0]:
+                claim(cid, rows, src, col, {"shell": shell_name},
+                      "vo 396 quy chieu blind: %s" % col, places=4)
+        # baseline blind: lay eps TOT NHAT (ti so nho nhat), cung quy tac "chinh ca hai phia"
+        eps_cols = [k for k in w396[0] if k.startswith("rel_ecmp_")]
+        if eps_cols:
+            best = min(eps_cols, key=lambda c: st.median(float(r[c]) for r in w396))
+            cid = "s396_relblind_ecmp" if "eps" in src else "s396_relblind_ecmp_mix"
+            claim(cid, rows, src, best, {"shell": shell_name},
+                  "vo 396 quy chieu blind, eps tot nhat (%s)" % best[len("rel_ecmp_"):], places=4)
+
     # ⛔ p8_decoder.csv cung KHONG co claim nao, va hau qua giong het p10: cau ve giai ma
     # mot-duong / da-duong go tay "0.90 / 0.97 / 0.64 / 0.94", roi ba trong bon so do bi gan
     # nham sang ho claim `abl_*` (ablation TOAN TU) chi vi trung gia tri. Hai bang khac han
     # nhau: mot cai doi bo giai ma, mot cai doi toan tu do thi.
     dec = load("p8_decoder.csv")
+    if "recovered_sp" not in dec[0]:
+        for x in dec:
+            bb, uu = float(x["r_blind"]), float(x["r_ue"])
+            for c in ("sp", "mp"):
+                x["recovered_" + c] = round((bb - float(x["r_gnn_" + c])) / (bb - uu), 6)
+        _q = os.path.join(RES, "p8_decoder.csv")
+        with open(_q, "w", newline="") as _f:
+            _w = csv.DictWriter(_f, fieldnames=list(dec[0].keys()))
+            _w.writeheader(); _w.writerows(dec)
+        print("  + them cot 'recovered_sp', 'recovered_mp' vao p8_decoder.csv")
     for split, tag in (("in-dist", "indist"), ("ood", "ood")):
         g = [x for x in dec if x["split"] == split]
         b = st.mean(float(x["r_blind"]) for x in g)
         u = st.mean(float(x["r_ue"]) for x in g)
+        # ⛔ GHI COT DAN XUAT VAO CSV, dung tu dat mot phep gop moi. Ban truoc khai
+        # agg="mean-derived", va cong verify_numbers bao "agg khong hop le" tren ca bon --
+        # dung: mot claim ma cong khong tai tinh duoc thi khong phai claim. Cach dung la
+        # dua phep tinh vao DU LIEU (them cot) roi dung phep gop san.
         for cid, col in ((f"dec_sp_{tag}", "r_gnn_sp"), (f"dec_mp_{tag}", "r_gnn_mp")):
-            v = st.mean(float(x[col]) for x in g)
-            C.append({"id": cid, "paper_value": "%.3f" % ((b - v) / (b - u)),
-                      "csv": "../code/results/p8_decoder.csv", "column": col,
-                      "filter": {"split": split}, "agg": "mean-derived", "places": 3,
-                      "unit_of_analysis": g[0].get("unit_of_analysis", "?"),
-                      "note": f"phan gap thu hoi cua bo giai ma {col}, {split} "
-                              f"= (blind-{col})/(blind-ue)"})
+            der = "recovered_" + col.replace("r_gnn_", "")
+            claim_raw(cid, "p8_decoder.csv", der, {"split": split}, "mean", 3,
+                      f"phan gap thu hoi cua bo giai ma {col}, {split}")
         claim_raw(f"dec_rel_mp_{tag}", "p8_decoder.csv", "r_gnn_mp", {"split": split},
                   "mean", 2, f"thoi gian tuong doi so voi blind, da-duong, {split}")
 
@@ -571,6 +664,10 @@ def main():
     EPSS = [k.split("recovered_ecmp_")[1] for k in sweep[0] if k.startswith("recovered_ecmp_")]
     for shell in sorted({r["shell"] for r in sweep}):
         f = {"shell": shell}
+        if "396" in shell:
+            # vo 396: PoA < 1 o MOI nac (0.9170 -> 0.9987 tai 640), nen `recovered` o day
+            # khong co mau so. Doc theo don vi blind qua cac claim s396_relblind_*.
+            continue
         claim(f"sweep_gnn_{shell}", sweep, "r2_7_eps_sweep.csv", "recovered_gnn", f,
               "GNN, huan luyen tren vo 132")
         be = max(EPSS, key=lambda e: st.median(
@@ -580,6 +677,8 @@ def main():
 
     for shell in sorted({r["shell"] for r in mix}):
         for arm in ("single", "mix"):
+            if "396" in shell:
+                continue          # vo 396: khong co mau so can bang, xem s396_relblind_*
             claim(f"mix_{arm}_{shell}", mix, "r2_7_train_mix.csv", f"recovered_{arm}",
                   {"shell": shell}, f"nhanh {arm}, cung ngan sach 12 thuc the")
 
@@ -638,7 +737,7 @@ $(\mathrm{blind}-\mathrm{policy})/(\mathrm{blind}-\mathrm{UE})$; the unit of ana
 (shell, seed, slot) throughout, and every value is the median over those units. Blocks come from
 different experiments and are labelled with their run set: entries for the same shell and the same
 $\tau$ therefore differ between blocks, and Section~\ref{sec:pooled} pools them rather than
-picking one. Read down a block, not across blocks.}
+picking one. Read down a block, not across blocks. $^{\ddagger}$The $396$-satellite row is not a recovered fraction: that shell has no admissible equilibrium at any iteration count we could run (Table~\ref{tab:msa}), so both policies are given as travel time relative to blind, where smaller is better and the two columns are therefore ordered the opposite way from the rows above.}
 \label{tab:summary}
 \begin{tabular}{@{}llr@{}}
 \toprule
@@ -662,7 +761,8 @@ question & quantity & value \\
 & GNN / blind multipath, 132 sat (trained) & """ + g("sweep_gnn_w132_i53") + " / " + g("sweep_ecmp_w132_i53") + r""" \\
 & GNN / blind multipath, 198 sat & """ + g("sweep_gnn_w198_i53") + " / " + g("sweep_ecmp_w198_i53") + r""" \\
 & GNN / blind multipath, 264 sat & """ + g("sweep_gnn_w264_i53") + " / " + g("sweep_ecmp_w264_i53") + r""" \\
-& GNN / blind multipath, 396 sat & """ + g("sweep_gnn_w396_i53") + " / " + g("sweep_ecmp_w396_i53") + r""" \\
+\multicolumn{3}{@{}l}{\quad\scriptsize\itshape 396 sat has no admissible equilibrium (Table~\ref{tab:msa}), so it is read against blind travel time instead}\\
+& GNN / blind multipath, 396 sat$^{\ddagger}$ & """ + g("s396_relblind_gnn") + " / " + g("s396_relblind_ecmp") + r""" \\
 & GNN / blind multipath, 264 sat at $70^\circ$ & """ + g("sweep_gnn_w264_i70") + " / " + g("sweep_ecmp_w264_i70") + r""" \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Does diverse training restore it? (same instance budget)}}\\
