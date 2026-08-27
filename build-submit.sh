@@ -206,6 +206,16 @@ print("   da kiem %d hinh tren 2 ban PDF (%d wrapper duoc \input) => %s"
 sys.exit(1 if bad else 0)
 PYEOF
 
+# ⛔ TRAN COT KHONG PHAI TRAN TRANG. Hao bat duoc Bang II de len than chu cot ben canh
+# trong khi pdflatex bao 0 loi 0 Overfull, check_figure_quality bao DANGEROUS 0, va g7 bao
+# 0/0/0. Ba tang deu xanh vi tat ca deu do bien TRANG. `Overfull \hbox` cung im, vi LaTeX
+# chi keu khi mot hop vuot \hsize cua CHINH no -- mot tabular rong hon cot khong tao ra
+# hop tran. Cong nay do bien COT, suy tu chinh bai, va da duoc thu bang cach tiem lai
+# dung loi do: 16 tu tren 5 trang khi tran, 0 khi da sua.
+echo "== 3c/5 KHONG GI DUOC VUOT BIEN COT"
+python3 "$ROOT/code/scripts/check_column_bleed.py" --pdf "$ROOT/paper/main.pdf" \
+        --tex "$ROOT/paper/main.tex" | tail -3
+
 echo "== 4/5 thu tra loi + cover letter"
 build submit response-to-reviewers
 build submit cover-letter

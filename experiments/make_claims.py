@@ -779,37 +779,42 @@ different experiments and are labelled with their run set: entries for the same 
 $\tau$ therefore differ between blocks, and Section~\ref{sec:pooled} pools them rather than
 picking one. Read down a block, not across blocks. $^{\ddagger}$The $396$-satellite row is not a recovered fraction: that shell has no admissible equilibrium at any iteration count we could run (Table~\ref{tab:msa}), so both policies are given as travel time relative to blind, where smaller is better and the two columns are therefore ordered the opposite way from the rows above.}
 \label{tab:summary}
-\begin{tabular}{@{}llr@{}}
+% ⛔ COT NHAN PHAI XUONG DONG DUOC. Voi `l` no khong bao gio xuong dong, nen mot ten
+% run set dai lam CA BANG rong ra va cot gia tri tran sang mang giua (do 27/08: toi
+% x=309.8 trong khi bien cot trai la 305, tuc de len than chu cot phai). pdftotext do
+% bien TRANG thi khong thay -- ranh gioi that o bo cuc hai cot la bien COT.
+% p{} khoa be rong nen loi nay khong the tai dien du noi dung dai them.
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.54\columnwidth}r@{}}
 \toprule
 question & quantity & value \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{Does the headline survive capacity feasibility?}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does the headline survive capacity feasibility?}}\\
 & gap under BPR delay, offered load $>4\times$ & """ + g("bpr_gain_overload") + r"""\% \\
 & gap in delivered rate, same rows & """ + g("goodput_gain_overload") + r"""\% \\
 & \quad bottleneck loss instead of compounding & """ + g("goodput_gain_bottleneck") + r"""\% \\
 & \quad max-min fair sharing & """ + g("goodput_gain_maxmin") + r"""\% \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{Does it beat a blind baseline at matched budget?}}\\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_7\_fair\_tuned\_wide}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does it beat a blind baseline at matched budget?}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_\allowbreak 7\_\allowbreak fair\_\allowbreak tuned\_\allowbreak wide}}\\
 & learned / blind, training shell & """ + g("fair_gnn_w132_i53") + " / " + g("fair_ecmp_w132_i53") + r""" \\
 & learned / blind, unseen 264 & """ + g("fair_gnn_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$; same run set}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$; same run set}\\
 & learned / blind, unseen 264 & """ + g("fair_gnn_fixedtau_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape a DIFFERENT run set (\texttt{r2\_7\_eps\_sweep}); see Section~\ref{sec:pooled}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape a DIFFERENT run set (\texttt{r2\_\allowbreak 7\_\allowbreak eps\_\allowbreak sweep}); see Section~\ref{sec:pooled}}\\
 & GNN / blind multipath, 132 sat (trained) & """ + g("sweep_gnn_w132_i53") + " / " + g("sweep_ecmp_w132_i53") + r""" \\
 & GNN / blind multipath, 198 sat & """ + g("sweep_gnn_w198_i53") + " / " + g("sweep_ecmp_w198_i53") + r""" \\
 & GNN / blind multipath, 264 sat & """ + g("sweep_gnn_w264_i53") + " / " + g("sweep_ecmp_w264_i53") + r""" \\
-\multicolumn{3}{@{}l}{\quad\scriptsize\itshape 396 sat has no admissible equilibrium (Table~\ref{tab:msa}), so it is read against blind travel time instead}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape 396 sat has no admissible equilibrium (Table~\ref{tab:msa}), so it is read against blind travel time instead}\\
 & GNN / blind multipath, 396 sat$^{\ddagger}$ & """ + g("s396_relblind_gnn") + " / " + g("s396_relblind_ecmp") + r""" \\
 & GNN / blind multipath, 264 sat at $70^\circ$ & """ + g("sweep_gnn_w264_i70") + " / " + g("sweep_ecmp_w264_i70") + r""" \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{Does diverse training restore it? (same instance budget)}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does diverse training restore it? (same instance budget)}}\\
 & single-shell training, unseen 264 & """ + g("mix_single_w264_i53") + r""" \\
 & mixed training, unseen 264 & """ + g("mix_mix_w264_i53") + r""" \\
 \midrule
-\multicolumn{3}{@{}l}{\emph{Does proactivity reach an axis blind multipath cannot?}}\\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does proactivity reach an axis blind multipath cannot?}}\\
 & proactive / blind multipath, trained shell & """ + g("proact_w132_drift15") + " / " + g("proact_ecmp_w132_drift15") + r""" \\
 & proactive / blind multipath, unseen shell & """ + g("proact_w264_drift15") + " / " + g("proact_ecmp_w264_drift15") + r""" \\
 \bottomrule

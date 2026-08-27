@@ -60,7 +60,10 @@ def save(fig, name):
     os.makedirs(OUT, exist_ok=True)
     for ext in ("pdf", "png"):
         fig.savefig(os.path.join(OUT, "%s.%s" % (name, ext)),
-                    bbox_inches="tight", pad_inches=0.02,
+                    # ⛔ pad 0.02in khong du: mot nhan truc nam ngoai hop "tight" 1.8pt, va no chi lo ra
+                    # khi hinh roi vao COT TRAI (o cot phai thi 1.8pt do van con trong le trang).
+                    # Nghia la cung mot hinh, cung mot ban, luc dat luc sai tuy vi tri float.
+                    bbox_inches="tight", pad_inches=0.05,
                     **({"dpi": 200} if ext == "png" else {}))
     plt.close(fig)
     print("  ✅ results/figures/%s.pdf" % name)
