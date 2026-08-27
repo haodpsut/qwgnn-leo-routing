@@ -182,6 +182,45 @@ def pool_264_fixedtau():
     return out
 
 
+def sync_claim_scope():
+    """Ghi lai `value` trong paper/claim-scope.json tu chinh du lieu.
+
+    ⛔ VI SAO. Tep do khai cac tuyen bo dang "cuc dai tren MOI vo va seed" kem gia tri, va
+    gia tri ay duoc GO TAY. Sau lan chay lai 27/08 no van in 0.002147 trong khi cuc dai that
+    la 0.002226, va cong claim-scope bao BLOCK -- dung, nhung no bao vi tep KHAI sai chu
+    khong vi bai sai. Mot con so nam o cho khong bo sinh nao cham toi thi se hoa cu, ke ca
+    khi cho do la mot tep dung de KIEM cac con so khac.
+    """
+    p = os.path.join(PAPER, "claim-scope.json")
+    if not os.path.exists(p):
+        return
+    d = json.load(open(p, encoding="utf-8"))
+    AGG = {"max": max, "min": min, "mean": st.mean, "median": st.median}
+    n = 0
+    for sup in d.get("superlatives", []):
+        vals = []
+        for spec in sup.get("columns", []):
+            fn, _, col = spec.partition(":")
+            q = os.path.join(RES, fn)
+            if not os.path.exists(q):
+                continue
+            for r in csv.DictReader(open(q)):
+                try:
+                    vals.append(float(r[col]))
+                except (KeyError, TypeError, ValueError):
+                    pass
+        if not vals:
+            continue
+        new = AGG[sup.get("kind", "max")](vals)
+        if abs(new - float(sup["value"])) > 1e-12:
+            print("  ~ claim-scope '%s': %s -> %.6f" % (sup["label"][:34], sup["value"], new))
+            sup["value"] = round(new, 6)
+            n += 1
+    if n:
+        json.dump(d, open(p, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
+        print("  + dong bo %d gia tri trong claim-scope.json" % n)
+
+
 def emit_macros():
     """Sinh paper/claims-macros.tex de bai GOI so thay vi GO so.
 
@@ -727,6 +766,7 @@ def main():
 
     os.makedirs(PAPER, exist_ok=True)
     json.dump(C, open(OUT_JSON, "w"), indent=2, ensure_ascii=False)
+    sync_claim_scope()
     emit_macros()
     g = lambda cid: next(c["paper_value"] for c in C if c["id"] == cid)
     open(OUT_TEX, "w").write(r"""% SINH TU code/experiments/make_claims.py -- DUNG SUA TAY.

@@ -217,9 +217,12 @@ def tab_matched():
            r"defined.}")
 
     return w("tab-matched.tex",
-             "\\begin{table}[t]\n  \\centering\\footnotesize\\setlength{\\tabcolsep}{4pt}\n  "
+             # ⛔ tabcolsep 4pt lam bang TRAN COT 14pt (do duoc: chu toi x=577, bien 563), va
+             # LaTeX KHONG bao gi vi tran nam trong moi truong table. Chi cong do toa do chu
+             # moi thay. 2pt + cot cuoi bo bot khoang la vua.
+             "\\begin{table}[t]\n  \\centering\\footnotesize\\setlength{\\tabcolsep}{2pt}\n  "
              + cap + "\n  \\label{tab:matched}\n"
-             + "\n  \\begin{tabular}{lccc}\n    \\toprule\n"
+             + "\n  \\begin{tabular}{@{}lc r@{~}r@{}}\n    \\toprule\n"
              + "    policy & budget (\\AoN{}) & $132$ & $264$ \\\\\n    \\midrule\n"
              + "    \\multicolumn{4}{l}{\\emph{fixed setting: $\\tau=0.2$}} \\\\\n"
              + "\n".join(body)

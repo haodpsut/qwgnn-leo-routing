@@ -20,14 +20,14 @@ several times over; it drifted because nothing checked it. `code/check_artifact_
 does, and it is what caught this.
 
 - **In distribution**, with both sides tuned per shell, the learned price field recovers
-  `0.973` of the blind-to-equilibrium gap against `0.666` for a one-pass congestion-blind
-  multipath split. Paired per instance the median difference is `0.310`.
-- **Out of distribution** the two are level: paired differences of `0.007`, `0.002`, `0.020`
+  `0.972`<!--clm:fair-gnn-w132-i53--> of the blind-to-equilibrium gap against `0.665`<!--clm:fair-ecmp-w132-i53--> for a one-pass congestion-blind
+  multipath split. Paired per instance the median difference is `0.313`<!--clm:gap-fair-w132-i53-->.
+- **Out of distribution** the two are level: paired differences of `0.008`<!--clm:gap-fair-w198-i53-->, `0.004`<!--clm:gap-fair-w264-i53-->, `0.020`<!--clm:gap-fair-w264-i70-->
   on three unseen shells, and on the largest shell tested the blind split is **ahead**.
-- **Under a hard link capacity** the advantage is a `29.8%` gain in delivered rate, not the
-  `80.5%` delay reduction the BPR cost reports.
-- **The decoder temperature is not a constant of the method**: holding it fixed costs `0.053`
-  to `0.077` per unit on unseen shells.
+- **Under a hard link capacity** the advantage is a `33.8%`<!--clm:goodput-gain-overload--> gain in delivered rate, not the
+  `84.3%`<!--clm:bpr-gain-overload--> delay reduction the BPR cost reports.
+- **The decoder temperature is not a constant of the method**: holding it fixed costs `0.058`<!--clm:cost-fixed-tau-w264-i70-->
+  to `0.088`<!--clm:cost-fixed-tau-w198-i53--> per unit on unseen shells.
 - **Negative result kept**: the quantum-walk operator earns no place once blind-load features
   are present.
 
