@@ -32,8 +32,15 @@ from constellation import Walker                                # noqa: E402
 from traffic import evaluate, route_and_measure                 # noqa: E402
 from p5_gnn_router import make_instance, CAP                    # noqa: E402
 
+# ⛔ PHAI PHU MOI VO MA BAI CHIA CHO CAN BANG, khong chi cac vo tien tay do.
+# 27/08/2026: cong check_msa_reference.py doi chieu claims.json voi nac thang nay va thay
+# vo 198 co 5 claim, vo 396 co 4 claim deu chia cho can bang, ma CHUA BAO GIO co ai kiem
+# PoA >= 1 tren hai vo do. Vo 264 tung o dung tinh trang ay, va khi do duoc thi no HONG
+# (PoA = 0.9976 o 20 vong). "Chua do" khong phai "dat"; hai vo nay phai co nac thang rieng.
 SHELLS = [("w132_i53", Walker(132, 12, 1, 53.0, 550.0), 600),
-          ("w264_i53", Walker(264, 24, 1, 53.0, 550.0), 1200)]
+          ("w198_i53", Walker(198, 18, 1, 53.0, 550.0), 900),
+          ("w264_i53", Walker(264, 24, 1, 53.0, 550.0), 1200),
+          ("w396_i53", Walker(396, 36, 1, 53.0, 550.0), 1800)]
 LADDER = [20, 40, 80, 160, 320, 640]
 SEEDS = [0, 1, 2]
 TOL = 0.005

@@ -133,8 +133,105 @@ def tab_cost():
              + "\n    \\bottomrule\n  \\end{tabular}\n\\end{table}")
 
 
+# --------------------------------------------------------------- tab:matched
+def tab_matched():
+    """MOT bang cho toan bo so sanh NGAN SACH KHOP.
+
+    VI SAO GOM LAI. Nguoi doc ngoai 27/08: so sanh nay truoc do nam rai o BA CHO -- so vong
+    am/lanh o muc VI-F, phan gap thu hoi cua tung doi thu o muc VI-B, va chi phi theo luot
+    AoN o Bang II. Doc rieng thi moi manh deu dung; ghep lai moi thay chung tra loi CUNG
+    mot cau hoi, va khong cho nao dat cac doi thu canh nhau o CUNG mot ngan sach.
+
+    HAI KHOI, va khoi thu hai la bat buoc chu khong phai bo sung cho day. Khoi tren giai ma
+    GNN o MOT gia tri tau co dinh (0.2) trong khi phia blind duoc quet ba gia tri eps.
+    Chinh bai, muc VI-I, chung minh giu tau co dinh la dang DO BO GIAI MA chu khong do
+    truong gia, va rang tau toi uu doi mot den hai bac theo quy mo. Mot bang chi co khoi
+    tren se la so sanh bat doi xung dung theo cai loi ma bai nay ton mot muc de vach ra --
+    va no bat doi xung theo huong CO LOI cho ket luan cua bai, nen cang phai in ca hai.
+    """
+    r = rd("r2_7_matched_all.csv")
+    it = rd("r4_2_warmstart_iters.csv")
+    tuned = rd("r2_7_fair_tuned_wide.csv")
+    shells = ["w132", "w264"]
+    TSHELL = {"w132": "w132_i53", "w264": "w264_i53"}
+
+    def med(col, sh):
+        v = [float(x[col]) for x in r if x["shell"] == sh]
+        return st.median(v) if v else None
+
+    def iters(col, sh):
+        v = [int(x[col]) for x in it if x["shell"] == sh]
+        return int(round(st.median(v))) if v else None
+
+    def best_tuned(pre, sh):
+        rows = [x for x in tuned if x["shell"] == sh]
+        cols = [k for k in rows[0] if k.startswith(pre)] if rows else []
+        if not cols:
+            return None, None
+        b = max(cols, key=lambda c: st.median(float(x[c]) for x in rows))
+        return st.median(float(x[b]) for x in rows), b[len(pre):]
+
+    ROWS = [
+        (r"blind multipath, $\varepsilon=0.05$", "1", "recovered_ecmp05"),
+        (r"blind multipath, $\varepsilon=0.2$", "1", "recovered_ecmp20"),
+        (r"MSA, warm start, $T{=}1$", "1", "recovered_warm_T1"),
+        (r"MSA, warm start, $T{=}2$", "2", "recovered_warm_T2"),
+        (r"MSA, cold start, $T{=}2$", "2", "recovered_cold_T2"),
+        (r"\textbf{learned price field (ours)}", r"$2{+}f$", "recovered_gnn"),
+    ]
+    body = []
+    for lbl, budget, col in ROWS:
+        cells = ["--" if med(col, sh) is None else "%.3f" % med(col, sh) for sh in shells]
+        body.append("    %s & %s & %s \\\\" % (lbl, budget, " & ".join(cells)))
+
+    tune = []
+    for lbl, budget, pre in (
+            (r"blind multipath, $\varepsilon$ tuned", "1", "recovered_ecmp_eps"),
+            (r"\textbf{learned price field, $\tau$ tuned}", r"$2{+}f$", "recovered_gnn_tau")):
+        cells = []
+        for sh in shells:
+            v, at = best_tuned(pre, TSHELL[sh])
+            cells.append("--" if v is None else "%.3f {\\scriptsize$(%s)$}" % (v, at))
+        tune.append("    %s & %s & %s \\\\" % (lbl, budget, " & ".join(cells)))
+
+    # Dong cuoi KHONG phai mot doi thu o ngan sach khop: no la cai gia cua chinh tham chieu.
+    # Tach bang \midrule va ghi ro, vi mot dong khac ngan sach dat lan trong bang de gay hieu nham.
+    ref = ["--" if iters("iters_warm", sh) is None
+           else "$%d$ / $%d$" % (iters("iters_warm", sh), iters("iters_cold", sh))
+           for sh in shells]
+
+    cap = (r"\caption{Every matched-budget comparison in one place. Budget is counted in "
+           r"\AoN{} passes, the unit that dominates cost at scale; $f$ is one forward pass, "
+           r"which Fig.~\ref{fig:speedup} measures far below a pass. Entries are median "
+           r"recovered fractions of the blind-to-equilibrium gap, paired over the units of a "
+           r"single run set, so no entry is combined across run sets. The two blocks differ "
+           r"in what is held fixed, and the difference matters: the upper block decodes the "
+           r"learned field at the single inherited $\tau=0.2$ while sweeping $\varepsilon$ "
+           r"for the blind split, which Section~\ref{sec:two-causes} shows measures the "
+           r"decoder rather than the price field. The lower block tunes both sides per shell "
+           r"and is the comparison we regard as fair; the setting achieving each entry is "
+           r"given in parentheses. The last row is not a competitor: it reports the warm / "
+           r"cold iteration counts the equilibrium reference itself needs to pass the "
+           r"admissibility test of Section~\ref{sec:s1584}. The $1584$-shell is absent by "
+           r"construction, since that test never passes there and no recovered fraction is "
+           r"defined.}")
+
+    return w("tab-matched.tex",
+             "\\begin{table}[t]\n  \\centering\\footnotesize\\setlength{\\tabcolsep}{4pt}\n  "
+             + cap + "\n  \\label{tab:matched}\n"
+             + "\n  \\begin{tabular}{lccc}\n    \\toprule\n"
+             + "    policy & budget (\\AoN{}) & $132$ & $264$ \\\\\n    \\midrule\n"
+             + "    \\multicolumn{4}{l}{\\emph{fixed setting: $\\tau=0.2$}} \\\\\n"
+             + "\n".join(body)
+             + "\n    \\midrule\n    \\multicolumn{4}{l}{\\emph{both sides tuned per shell}} \\\\\n"
+             + "\n".join(tune)
+             + "\n    \\midrule\n    MSA solved to the equilibrium test"
+             + " & \\multicolumn{1}{c}{--} & " + " & ".join(ref) + " \\\\"
+             + "\n    \\bottomrule\n  \\end{tabular}\n\\end{table}")
+
+
 CAP_SCALE_OLD = r"""\caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}). $^{\dagger}$Measured at the fixed $\tau=0.2$ and without the blind multipath comparator. Section~\ref{sec:s1584} supplies both on this shell: a temperature sweep raises the learned field to $0.980$, the blind split reaches $0.994$, and the equilibrium reference itself has not converged at this scale.}"""
+the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}). $^{\dagger}$No entry: the equilibrium reference on this shell never satisfies $\mathrm{PoA}\ge 1$ within the largest iteration budget we could afford (Table~\ref{tab:msa}), so the recovered fraction has no denominator here and is not merely imprecise. Section~\ref{sec:s1584} reports this shell against blind travel time instead, which is measured directly.}"""
 PRE_SCALE = r""""""
 
 
@@ -381,15 +478,15 @@ def fig_speedup():
 
 def main():
     made = []
-    for fn in (tab_baselines, tab_decode, tab_headroom, tab_ablation, tab_cost, tab_scale, tab_msa):
+    for fn in (tab_matched, tab_baselines, tab_decode, tab_headroom, tab_ablation, tab_cost, tab_scale, tab_msa):
         try:
             made.append(fn())
         except Exception as e:
             print("  ⛔ %-18s LOI: %s" % (fn.__name__, e))
     for n in made:
         print("  ✅ paper/%s" % n)
-    print("  => sinh %d/7 hien vat" % len(made))
-    return 0 if len(made) == 7 else 1
+    print("  => sinh %d/8 hien vat" % len(made))
+    return 0 if len(made) == 8 else 1
 
 
 if __name__ == "__main__":

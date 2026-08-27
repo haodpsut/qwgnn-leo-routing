@@ -220,26 +220,39 @@ def claim_r4():
                       {"shell": sh}, "median", 0,
                       f"so vong MSA de vao trong 0.5% TTT quy chieu, khoi dong {kind}, {sh}")
 
-    # 3.5: proactive so voi blind tot nhat, GHEP CAP theo tung don vi, o TUNG muc troi.
-    # 2.1a/2.1b: vo 1584, quet tau + baseline blind. Truoc do CA HAI deu vang mat o dung vo
-    # cho con so headline, va bai tu neu luat "giu tau co dinh la dang do bo giai ma" o muc VI-I.
-    r4 = list(csv.DictReader(open(os.path.join(RES, "r4_1_shell1584_controls.csv"))))
-    for r in r4:
-        r["gap_1584"] = round(float(r["recovered_gnn_tau8.0"]) - float(r["recovered_ecmp_eps0.2"]), 4)
-    with open(os.path.join(RES, "r4_1_shell1584_controls.csv"), "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(r4[0].keys())); w.writeheader(); w.writerows(r4)
-    for cid, col in (("s1584_gnn_fixedtau", "recovered_gnn_tau0.2"),
-                     ("s1584_gnn_besttau", "recovered_gnn_tau8.0"),
-                     ("s1584_ecmp_best", "recovered_ecmp_eps0.2"),
-                     ("s1584_gap", "gap_1584")):
-        claim(cid, r4, "r4_1_shell1584_controls.csv", col, {"shell": "w1584_i53"},
-              f"vo 1584: {col}")
-    claim_raw("s1584_blind_over_ue", "r4_1_shell1584_controls.csv", "blind_over_ue",
-              {"shell": "w1584_i53"}, "median", 0, "blind te hon can bang bao nhieu lan o 1584")
-    claim_raw("s1584_ratio_fixedtau", "r4_1_shell1584_controls.csv", "ratio_ue_gnn_tau0.2",
-              {"shell": "w1584_i53"}, "median", 1, "GNN o tau=0.2 cach can bang bao nhieu lan")
-    claim_raw("s1584_ratio_besttau", "r4_1_shell1584_controls.csv", "ratio_ue_gnn_tau8.0",
-              {"shell": "w1584_i53"}, "median", 1, "GNN o tau tot nhat cach can bang bao nhieu lan")
+    # ⛔ VO 1584 -- KHONG con claim nao chia cho can bang. Cac claim cu (s1584_gnn_besttau,
+    # s1584_ecmp_best, s1584_gap, s1584_blind_over_ue, s1584_ratio_*) deu lay tu
+    # r4_1_shell1584_controls.csv, tuc deu chia cho mot loi giai MSA co PoA < 1 tren ca ba
+    # instance. PoA < 1 la khong the xay ra, nen mau so do khong phai can bang va cac ti so
+    # khong "kem chinh xac" ma KHONG XAC DINH. Xoa han thay vi noi long dung sai.
+    #
+    # Thay bang cac dai luong QUY CHIEU BLIND tu r5_4_shell1584_uefree.py: blind do truc tiep,
+    # khong can giai can bang lan nao, nen thu hang giua hai chinh sach van dung nguyen.
+    u, src = [], None
+    for fn in sorted(os.listdir(RES)):
+        if fn.startswith("r5_4_shell1584_uefree") and fn.endswith(".csv"):
+            u += list(csv.DictReader(open(os.path.join(RES, fn)))); src = fn
+    if not u:
+        raise SystemExit("thieu r5_4_shell1584_uefree*.csv: vo 1584 khong con nguon nao khac")
+    claim("s1584_relblind_gnn", u, src, "rel_best_gnn", {}, "vo 1584, GNN / blind", places=4)
+    claim("s1584_relblind_ecmp", u, src, "rel_best_ecmp", {}, "vo 1584, blind-mp / blind", places=4)
+    claim("s1584_margin", u, src, "margin_pct", {}, "cach biet blind-vs-GNN, %", places=0)
+    # ⛔ Bon con so duoi day la DEM, khong phai gia tri do, nen chung khong di qua claim():
+    # claim() lay trung vi cua mot cot, ma "thang 3/3 instance" khong phai trung vi cua gi ca.
+    # Ep chung vao khuon trung vi la dung mot cong cho mot viec no khong lam.
+    m = sorted(float(r["margin_pct"]) for r in u)
+    for cid, val, note in (
+            ("s1584_margin_lo", "%d" % round(m[0]), "cach biet nho nhat, %"),
+            ("s1584_margin_hi", "%d" % round(m[-1]), "cach biet lon nhat, %"),
+            ("s1584_ecmp_wins", str(sum(1 for r in u if r["winner"] == "ecmp")),
+             "so instance blind thang"),
+            ("s1584_n_inst", str(len(u)), "so instance do o vo 1584"),
+            ("s1584_tau_edge", str(sum(int(r["tau_at_grid_edge"]) for r in u)),
+             "so instance co tau toi uu nam O BIEN luoi")):
+        C.append({"id": cid, "paper_value": val, "csv": f"../code/results/{src}",
+                  "column": "(dem tren cac dong)", "filter": {}, "agg": "count",
+                  "places": 0, "unit_of_analysis": u[0].get("unit_of_analysis", "?"),
+                  "note": note})
 
     # 4.2/4.3: hang so cua Menh de 1, dat bang so thay vi de o dang Theta().
     for sh in ("w132_i53", "w264_i53"):
@@ -451,30 +464,12 @@ def emit_tables_and_figure():
         " & $\\tau{=}0.2$ & best & $\\tau^\\star$ & best & $\\varepsilon^\\star$ & & & \\\\\n"
         "\\midrule\n" + "\n".join(body) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
-    open(os.path.join(PAPER, "fig-tau.tex"), "w").write(
-        "% SINH TU make_claims.py -- DUNG SUA TAY\n"
-        "\\begin{figure}[t]\n\\centering\n"
-        # prostyle la kieu dung chung cua MOI hinh ket qua trong bai: font nhan, do day net,
-        # mau luoi. Khong duoc bo qua no roi boc \resizebox, vi resizebox doi co chu theo mot
-        # he so rieng nen hinh nay se khong cung co voi cac hinh con lai.
-        "\\begin{tikzpicture}\n\\begin{axis}[prostyle,\n"
-        "  xlabel={decoder temperature $\\tau$ (log scale)},\n"
-        "  ylabel={recovered fraction},\n"
-        "  xmode=log, log basis x=10, width=8.4cm, height=5.4cm,\n"
-        "  legend pos=south east,\n"
-        "  ymin=0.4, ymax=1.06, mark size=1.6pt]\n"
-        + "\n".join(curves) + "\n"
-        "\\draw[dashed,gray] (axis cs:0.2,0.4) -- (axis cs:0.2,1.02);\n"
-        "\\node[font=\\scriptsize,gray!60!black,anchor=south west] at (axis cs:0.21,0.42)\n"
-        "  {$\\tau{=}0.2$};\n"
-        "\\end{axis}\n\\end{tikzpicture}\n"
-        "\\caption{The decoder temperature is not a constant of the method. On the shell the model "
-        "was trained on the curve peaks near $\\tau=0.1$ and falls away; on every larger or "
-        "differently inclined shell it rises and then plateaus one to two orders of magnitude "
-        "higher. The fixed value inherited from the training shell (dashed) sits far down the "
-        "curve everywhere else, and the loss that causes was previously charged to the learned "
-        "price field.}\n\\label{fig:tau}\n\\end{figure}\n")
-    print("  + tab-feasibility.tex, tab-fair.tex, fig-tau.tex")
+    # ⛔ KHONG ghi fig-tau.tex nua (27/08/2026). Ban pgfplots o day va ban PDF do
+    # make_r5_figs.py ve tren stylesheet nha cung tro toi paper/fig-tau.tex, nen ban nao
+    # chay SAU se de len ban kia. Hau qua da xay ra: ban sach va ban danh dau cua cung mot
+    # lan nop hien hai hinh khac nhau, tuy thu tu chay. Mot duong dan phai co DUNG MOT
+    # nguoi ghi. Hinh ket qua thuoc ve make_r5_figs.py; tep nay chi lo claim va bang.
+    print("  + tab-feasibility.tex, tab-fair.tex  (fig-tau.tex: xem make_r5_figs.py)")
 
 
 def fit_to_column(*files):
