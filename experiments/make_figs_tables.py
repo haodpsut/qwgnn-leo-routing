@@ -229,6 +229,14 @@ def tab_msa():
                     for j in iters if j < it) and m >= 1.0
                 cells.append((r"$\mathbf{%.4f}$" if first_ok else r"$%.4f$") % m)
         out.append("    %s & %s \\\\" % (lab, " & ".join(cells)))
+    # ⛔ Hinh "mau so troi" ve CUNG du lieu nay o dang khac. Gop no vao day thanh mot
+    # dong thay vi giu mot float rieng: bai dang 16 trang va do la trung lap tu tao ra.
+    bl = []
+    for it in iters:
+        v = [float(x["blind_over_ue"]) for x in big if int(x["iters"]) == it]
+        bl.append(("$%.0f$" % st.median(v)) if v else "--")
+    out.append(r"    \midrule" + "\n    blind/UE, $1584$ & "
+               + " & ".join(bl) + r" \\")
     return w("tab-msa.tex",
              "\\begin{table}[t]\n  \\centering\\footnotesize\\setlength{\\tabcolsep}{3pt}\n"
              "  \\caption{Price of anarchy $\\mathrm{TTT}_{\\mathrm{UE}}/\\mathrm{TTT}_{\\mathrm{SO}}$ "
@@ -236,7 +244,9 @@ def tab_msa():
              "impossible and mark a solve that has not converged; bold is the first "
              "iteration count at which a shell satisfies the constraint. The $1584$-shell "
              "never does: the gap to one shrinks by about $0.55$ per doubling, so the "
-             "extrapolated requirement exceeds $2500$ iterations.}\n"
+             "extrapolated requirement exceeds $2500$ iterations. The last row shows why no "
+             "ratio is reported on that shell: its denominator moves by $63\\%$ across the "
+             "ladder and has not settled.}\n"
              "  \\label{tab:msa}\n  \\begin{tabular}{l" + "c" * len(iters) + "}\n"
              "    \\toprule\n    shell & " + " & ".join("$%d$" % i for i in iters)
              + " \\\\\n    \\midrule\n" + "\n".join(out)
