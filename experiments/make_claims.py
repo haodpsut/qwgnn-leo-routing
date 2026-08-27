@@ -360,6 +360,26 @@ def claim_inherited():
     # `abl_heat_ood` (phan gap thu hoi cua toan tu Heat) va bi gan nham vao mot cau noi ve
     # THOI GIAN TUONG DOI. Trung gia tri khong phai trung y nghia, va mot con so khong co
     # claim thi khong co gi ngan no bi gan nham.
+    # ⛔ p8_decoder.csv cung KHONG co claim nao, va hau qua giong het p10: cau ve giai ma
+    # mot-duong / da-duong go tay "0.90 / 0.97 / 0.64 / 0.94", roi ba trong bon so do bi gan
+    # nham sang ho claim `abl_*` (ablation TOAN TU) chi vi trung gia tri. Hai bang khac han
+    # nhau: mot cai doi bo giai ma, mot cai doi toan tu do thi.
+    dec = load("p8_decoder.csv")
+    for split, tag in (("in-dist", "indist"), ("ood", "ood")):
+        g = [x for x in dec if x["split"] == split]
+        b = st.mean(float(x["r_blind"]) for x in g)
+        u = st.mean(float(x["r_ue"]) for x in g)
+        for cid, col in ((f"dec_sp_{tag}", "r_gnn_sp"), (f"dec_mp_{tag}", "r_gnn_mp")):
+            v = st.mean(float(x[col]) for x in g)
+            C.append({"id": cid, "paper_value": "%.3f" % ((b - v) / (b - u)),
+                      "csv": "../code/results/p8_decoder.csv", "column": col,
+                      "filter": {"split": split}, "agg": "mean-derived", "places": 3,
+                      "unit_of_analysis": g[0].get("unit_of_analysis", "?"),
+                      "note": f"phan gap thu hoi cua bo giai ma {col}, {split} "
+                              f"= (blind-{col})/(blind-ue)"})
+        claim_raw(f"dec_rel_mp_{tag}", "p8_decoder.csv", "r_gnn_mp", {"split": split},
+                  "mean", 2, f"thoi gian tuong doi so voi blind, da-duong, {split}")
+
     for split, tag in (("in-dist", "indist"), ("ood", "ood")):
         for cid, col, pl in ((f"p10_rel_learned_{tag}", "r_learned", 2),
                              (f"p10_delivery_{tag}", "delivery", 2)):
