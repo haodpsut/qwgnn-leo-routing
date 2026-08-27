@@ -104,7 +104,24 @@ def _realized(prop_W, load, cap, demands, paths):
     return total, (float(np.mean(per)) if per else float("nan"))
 
 
-def evaluate(A, prop_W, demands, cap, policy="blind", iters=20):
+# ⛔ SO VONG MSA KHONG DUOC LA MOT HANG SO. Do 27/08 tren nam nac va ba vo:
+#     vo 132 : PoA = 1.0265 ngay tu 20 vong        -> 20 la du
+#     vo 264 : PoA = 0.9976 o 20 vong (3/3 seed VI PHAM PoA>=1), 1.0060 tu 40 vong
+#     vo 1584: PoA = 0.7697 -> 0.9844 sau 320 vong, khoang cach toi 1 chi co lai he so
+#              ~0.55 moi lan gap doi, ngoai suy can >2500 vong -> KHONG hoi tu duoc
+# Mot hang so 20 vong nghia la: dung o vo 132, SAI NHE o vo 264, va SAI HAN o vo 1584.
+# Nen thay bang DUNG KHI DAT TIEU CHI, va TRA VE so vong da dung de bai bao cao duoc.
+#
+# Tieu chi (chot trong THIET-KE-TRUOC, khong doi sau khi nhin so):
+#   (1) PoA = UE/SO >= 1              -- rang buoc vat ly, khong the vi pham
+#   (2) |dUE| < 0.5% giua hai lan kiem -- da on dinh
+# Dat max_iters de khong chay vo han; khong dat duoc thi bao KHONG HOI TU, khong im lang.
+MSA_MIN_ITERS = 20
+MSA_MAX_ITERS = 320
+MSA_TOL = 0.005
+
+
+def evaluate(A, prop_W, demands, cap, policy="blind", iters=None):
     """
     policy='blind' : all-or-nothing on free-flow (propagation) cost, congestion-blind.
     policy='ue'    : user-equilibrium via MSA on BPR cost (congestion-aware optimum).
@@ -125,12 +142,24 @@ def evaluate(A, prop_W, demands, cap, policy="blind", iters=20):
         # MSA: x_{k+1} = x_k + (1/(k+1)) (aon(cost(x_k)) - x_k)
         paths = _route_on_cost(A, free, demands)
         load = edge_loads([(p, r) for p, r in paths if p is not None], n)
-        for k in range(1, iters + 1):
+        # iters=None -> DUNG KHI DAT TIEU CHI (mac dinh moi). Truyen so cu the thi giu
+        # nguyen hanh vi cu, de cac phep do so-vong (r5_0, r5_3) van chay duoc.
+        adaptive = iters is None
+        n_it = iters if not adaptive else MSA_MAX_ITERS
+        prev_ttt, used = None, 0
+        for k in range(1, n_it + 1):
             cost = route_cost_fn(prop_W, load, cap)
             aon = _route_on_cost(A, cost, demands)
             yload = edge_loads([(p, r) for p, r in aon if p is not None], n)
             load = load + (yload - load) / (k + 1)
             paths = aon
+            used = k
+            if adaptive and k >= MSA_MIN_ITERS and k % 10 == 0:
+                c_now = link_cost(prop_W, load, cap)
+                t_now = float((load * c_now).sum())
+                if prev_ttt is not None and abs(t_now - prev_ttt) / prev_ttt < MSA_TOL:
+                    break
+                prev_ttt = t_now
         # For equilibria the MSA-averaged load, not a single re-routing, defines the
         # operating point. Measure TTT directly on that load to avoid a path/load
         # mismatch (which can otherwise make SO appear above UE):
@@ -139,8 +168,10 @@ def evaluate(A, prop_W, demands, cap, policy="blind", iters=20):
         total = float((load * cost).sum())
         demand_total = sum(r for _, _, r in demands)
         mean = total / demand_total if demand_total > 0 else float("nan")
+        # tra ve so vong DA DUNG: bai phai bao cao duoc no, va cong kiem duoc
         return {"total_ttt": total, "mean_delay": mean,
-                "max_util": float((load / cap).max()), "unmet": 0}
+                "max_util": float((load / cap).max()), "unmet": 0,
+                "msa_iters": used}
 
     total, mean = _realized(prop_W, load, cap, demands, paths)
     unmet = sum(1 for p, _ in paths if p is None)
