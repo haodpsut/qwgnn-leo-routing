@@ -116,7 +116,17 @@ def _realized(prop_W, load, cap, demands, paths):
 #   (1) PoA = UE/SO >= 1              -- rang buoc vat ly, khong the vi pham
 #   (2) |dUE| < 0.5% giua hai lan kiem -- da on dinh
 # Dat max_iters de khong chay vo han; khong dat duoc thi bao KHONG HOI TU, khong im lang.
-MSA_MIN_ITERS = 20
+# ⛔ SAN LA 40, KHONG PHAI 20 (sua 27/08/2026 sau nhan xet nguoi doc ngoai).
+# Tieu chi (2) mot minh KHONG du: o vo 264, |dUE| tut duoi 0.5% ngay tu 20 vong, nen ham
+# nay dung o 20 va bao "da hoi tu" -- trong khi PoA = 0.9976 < 1, tuc vi pham tieu chi (1),
+# la rang buoc VAT LY. Nghia la ban cu cai dat mot trong hai tieu chi da khai va van bao
+# xanh. Do la ly do moi so cua vo 264 phai giai lai.
+#   vo 132:  PoA 1.0265 tu 20 vong  -> 20 da du
+#   vo 264:  PoA 0.9976 o 20 vong, 1.0060 o 40  -> SAN PHAI LA 40
+#   vo 1584: chua bao gio dat 1 (0.9844 o 320)  -> khong co san nao cuu duoc, da RUT
+# San lay tu nac do duoc, khong tu dat. Cong `check_msa_reference.py` chan chieu nguoc:
+# no doc lai bang nac va FAIL neu con vo nao duoc bai trich ma PoA < 1 tai san nay.
+MSA_MIN_ITERS = 40
 MSA_MAX_ITERS = 320
 MSA_TOL = 0.005
 
@@ -179,7 +189,7 @@ def evaluate(A, prop_W, demands, cap, policy="blind", iters=None):
             "max_util": float((load / cap).max()), "unmet": unmet}
 
 
-def ue_loads(A, prop_W, demands, cap, iters=20):
+def ue_loads(A, prop_W, demands, cap, iters=MSA_MIN_ITERS):
     """Equilibrium edge-load matrix and congestion multiplier g = cost/prop - 1."""
     n = A.shape[0]
     free = link_cost(prop_W, np.zeros_like(prop_W), cap)

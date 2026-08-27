@@ -355,122 +355,41 @@ def tab_headroom():
 
 # ------------------------------------------------------------------- fig:bound
 def fig_bound():
-    r = sorted(rd("p9_bound.csv"), key=lambda x: float(x["rel_err"]))
-    co = lambda c, s: " ".join("(%.4f,%.4f) +- (0,%.4f)"
-                               % (float(x["rel_err"]), float(x[c]), float(x[s])) for x in r)
-    floor = float(r[0]["gap_mp_pct"])
-    return w("fig-bound.tex", r"""\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}
-  \begin{axis}[width=\columnwidth, height=4.4cm, xlabel={relative price error
-      $\|\hat g - g^\star\|/\bar g$}, ylabel={gap to UE (\%%)},
-      legend style={font=\scriptsize, at={(0.02,0.98)}, anchor=north west},
-      tick label style={font=\scriptsize}, label style={font=\scriptsize},
-      grid=both, grid style={line width=.1pt, draw=gray!20}]
-  \addplot[cRed, smark, error bars/.cd, y dir=both, y explicit] coordinates {%s};
-  \addlegendentry{single-path decode}
-  \addplot[cNavy, pmark, error bars/.cd, y dir=both, y explicit] coordinates {%s};
-  \addlegendentry{multipath decode}
-  \node[font=\scriptsize, cNavy, anchor=south west] at (axis cs:0.0,%.1f)
-    {$\delta_{\mathrm{dec}}\!\approx\!%.1f\%%$};
-  \end{axis}
-  \end{tikzpicture}
-  \caption{Travel-time gap to UE against injected price error. The gap grows
-  monotonically and flattens to a floor $\delta_{\mathrm{dec}}$ as the error vanishes,
-  which is the \emph{shape} Proposition~\ref{prop:bound} predicts. It is not a
-  validation of the bound: Section~\ref{sec:bound} shows the numerical bound is vacuous
-  at every operating point measured here.}
-  \label{fig:bound}
-\end{figure}""" % (co("gap_sp_pct", "gap_sp_std"), co("gap_mp_pct", "gap_mp_std"),
-                   floor + 0.4, floor))
+    """Da chuyen sang make_r5_figs.py (stylesheet chuan). Ham nay KHONG ghi tep:
+    hai bo sinh cung ghi mot duong dan thi ban nao chay sau se de len ban kia, va ban
+    sach voi ban danh dau se khac nhau -- da xay ra dung nhu vay."""
+    return None
 
-
-# --------------------------------------------------------------- fig:proactive
 def fig_proactive():
-    r = rd("p7_proactive.csv")
-    drifts = sorted({float(x["drift"]) for x in r})
-    def at(d, col):
-        # so bang SO THUC: CSV ghi "0.0" con "%g" % 0.0 cho "0", nen so chuoi khong khop
-        return [float(x[col]) for x in r if abs(float(x["drift"]) - d) < 1e-9]
-    def series(col):
-        return " ".join("(%.2f,%.4f) +- (0,%.4f)"
-                        % (d, st.mean(at(d, col)), st.stdev(at(d, col))) for d in drifts)
-    return w("fig-proactive.tex", r"""\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}
-  \begin{axis}[width=\columnwidth, height=4.4cm, xlabel={hotspot drift},
-      ylabel={TTT relative to blind}, legend style={font=\scriptsize,
-      at={(0.02,0.98)}, anchor=north west}, tick label style={font=\scriptsize},
-      label style={font=\scriptsize}, grid=both,
-      grid style={line width=.1pt, draw=gray!20}]
-  \addplot[name path=R, cRed, pmark, error bars/.cd, y dir=both, y explicit]
-    coordinates {%s}; \addlegendentry{reactive}
-  \addplot[name path=P, cNavy, smark, error bars/.cd, y dir=both, y explicit]
-    coordinates {%s}; \addlegendentry{proactive}
-  \addplot[cNavy!12, forget plot] fill between[of=R and P];
-  \end{axis}
-  \end{tikzpicture}
-  \caption{Reactive versus proactive routing as the hotspot drifts within a slot.
-  Shading marks the gap the forecast buys.}
-  \label{fig:proactive}
-\end{figure}""" % (series("r_react"), series("r_proact")))
+    """Da chuyen sang make_r5_figs.py (stylesheet chuan). Ham nay KHONG ghi tep:
+    hai bo sinh cung ghi mot duong dan thi ban nao chay sau se de len ban kia, va ban
+    sach voi ban danh dau se khac nhau -- da xay ra dung nhu vay."""
+    return None
 
-
-# ----------------------------------------------------------------- fig:speedup
 def fig_speedup():
-    """Tang toc suy dien so voi loi giai MSA, theo co vo.
+    """Bo giai ma va chi phi suy dien -> nay do `make_r5_figs.py` ve thanh PDF.
 
-    ⛔ Ba con so cu (21.8, 21.2, 29.1) go cung trong main.tex la dung ba con so nguoi
-    doc ngoai bac. Nay tinh tu r4_4_stage_timing.csv (thoi gian suy dien) chia cho thoi
-    gian MSA doc tu cung tep neu co; thieu cot MSA thi KHONG doan, ma bao ra.
+    ⛔ HAM NAY KHONG CON GHI TEP. Ban cu sinh mot khung "Figure pending" vi thieu cot
+    thoi gian MSA. Nhung khai niem "speedup so voi UE" da bi BO HAN: o vo 1584 mau so
+    khong hoi tu, o hai vo nho mau so la loi giai KHOI DONG LANH, va so cu lay tu log
+    cua may khac. `paper/fig-speedup.tex` nay tro toi `figures/fig_inference_cost.pdf`.
+
+    De ham nay ghi tiep thi no DE LEN ban viet tay moi lan dung goi, va bo giai ma se
+    khac nhau giua ban sach voi ban danh dau -- da xay ra dung nhu vay.
     """
-    r = rd("r4_4_stage_timing.csv")
-    cols = set(r[0])
-    ref = next((c for c in ("t_msa_s", "t_ue_s", "ref_ttt_s", "msa_s") if c in cols), None)
-    shells = []
-    for x in r:
-        if x["n_sat"] not in shells:
-            shells.append(x["n_sat"])
-    if ref is None:
-        return w("fig-speedup.tex", r"""%% ⛔ CHUA SINH DUOC. r4_4_stage_timing.csv khong co cot thoi gian MSA,
-%% nen khong tinh duoc he so tang toc ma khong doan. Chay lai phep do voi cot do,
-%% hoac bo hinh nay. KHONG go tay toa do vao main.tex.
-\begin{figure}[t]\centering
-  \fbox{\parbox{0.9\columnwidth}{\footnotesize Figure pending: inference speedup
-  requires an MSA reference time column in \texttt{r4\_4\_stage\_timing.csv}.}}
-  \caption{Inference speedup over the equilibrium solve.}
-  \label{fig:speedup}
-\end{figure}""")
-    pts = " ".join("(%s,%.1f)" % (s, st.mean(num(r, ref, {"n_sat": s}))
-                                  / st.mean(num(r, "t_total_s", {"n_sat": s})))
-                   for s in shells)
-    return w("fig-speedup.tex", r"""\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}
-  \begin{axis}[width=\columnwidth, height=4.2cm, xmode=log, log basis x=2,
-      xlabel={satellites}, ylabel={speedup over MSA ($\times$)},
-      tick label style={font=\scriptsize}, label style={font=\scriptsize},
-      grid=both, grid style={line width=.1pt, draw=gray!20}]
-  \addplot[name path=A, cNavy, pmark] coordinates {%s};
-  \end{axis}
-  \end{tikzpicture}
-  \caption{Inference cost against the equilibrium solve it replaces.}
-  \label{fig:speedup}
-\end{figure}""" % pts)
-
+    return None
 
 def main():
     made = []
-    for fn in (tab_baselines, tab_decode, tab_headroom, tab_ablation, tab_cost, tab_scale, tab_msa,
-               fig_bound, fig_proactive, fig_speedup):
+    for fn in (tab_baselines, tab_decode, tab_headroom, tab_ablation, tab_cost, tab_scale, tab_msa):
         try:
             made.append(fn())
         except Exception as e:
             print("  ⛔ %-18s LOI: %s" % (fn.__name__, e))
     for n in made:
         print("  ✅ paper/%s" % n)
-    print("  => sinh %d/10 hien vat" % len(made))
-    return 0 if len(made) == 10 else 1
+    print("  => sinh %d/7 hien vat" % len(made))
+    return 0 if len(made) == 7 else 1
 
 
 if __name__ == "__main__":
