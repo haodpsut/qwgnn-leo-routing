@@ -116,8 +116,15 @@ def main():
         ww = words(a.pdf, p)
         flat = " ".join(t for *_, t in ww)
         for ws in caps:
-            if " ".join(ws) in flat:
-                ys = [y for x0, y, x1, y1, t in ww if t == ws[0]]
+            # ⛔ KHOP THEO TAP TU, KHONG THEO CUM TU LIEN. Trong ban DANH DAU, latexdiff chen
+            # lenh va tu vao giua chu thich, nen cum "4 tu dau" vo va float khong duoc nhan
+            # ra ⇒ cong bao mot chu thich figure* trai ngang la "tran cot". Do 28/08 tren bai
+            # IoT-70170: ban sach PASS, ban danh dau FAIL, cung mot hinh, khac moi dau sua.
+            # Doi hoi da so tu xuat hien thi song duoc qua moi kieu chen cua latexdiff.
+            toks = set(x.lower() for x in ws)
+            have = set(x.lower() for *_, x in ww)
+            if len(toks & have) >= max(2, len(toks) - 1):
+                ys = [y for x0, y, x1, y1, t in ww if t.lower() in toks]
                 if ys:
                     full_width_y.setdefault(p, []).append(max(ys))
     if a.tex:
