@@ -318,7 +318,44 @@ def main():
             fn()
         except Exception as e:
             print("  ⛔ %-12s LOI: %s" % (fn.__name__, e))
+    emit_wrappers()
     return 0
+
+
+
+# ⛔ WRAPPER CUNG PHAI SINH RA. Trong lan QA cuoi toi xoa het hien vat de dung lai tu CSV,
+# va sau khi sinh lai thi con 0/6 wrapper hinh: chung chi ton tai duoi dang tep VIET TAY,
+# khong bo sinh nao tao lai duoc. Nghia la mot ban clone sach khong dung duoc bai, va cong
+# `check_one_writer` bao chung la "VIET TAY" -- dung, va do chinh la van de chu khong phai
+# mot trang thai chap nhan duoc.
+#
+# Chu thich duoi day duoc BOC TU chinh cac tep dang dung, khong viet lai: viet lai chu thich
+# la cach da lam mat \footnotesize cua mot bang va mat han mot doan cua mot bang khac.
+WRAPPERS = [
+    ('fig-bound', 'fig_bound.pdf', 'fig:bound', 'Travel-time gap to UE against injected price error. The gap grows\n  monotonically and flattens to a floor $\\delta_{\\mathrm{dec}}$ as the error vanishes,\n  which is the \\emph{shape} Proposition~\\ref{prop:bound} predicts. It is not a\n  validation of the bound: Section~\\ref{sec:bound} shows the numerical bound is vacuous\n  at every operating point measured here.', False),
+    ('fig-host-delta', 'fig_host_delta.pdf', 'fig:host', 'Cross-host divergence, split by whether the quantity passes through the neural network. Source hash, seeds, parameters and ordering are fixed; only the host varies. Quantities that never touch the network (shortest paths, the MSA solve, travel times) still differ on $\\clm{host-a-diff}$ of $\\clm{host-a-cells}$ cells, but by at most $\\clm{host-a-maxrel}$, so they agree to about four significant figures rather than exactly. Quantities that pass through the network differ on all $\\clm{host-b-cells}$ cells and by up to $\\clm{host-b-maxrel}$, and that curve lies \\emph{above} the shaded range of paired differences on which the boundary claims rest. Those claims therefore carry a machine-dependent uncertainty at least as large as the effect they report, which is the reason every number in this paper comes from one host.', False),
+    ('fig-msa-convergence', 'fig_msa_convergence.pdf', 'fig:msaconv', "Price of anarchy $\\mathrm{TTT_{UE}}/\\mathrm{TTT_{SO}}$ against MSA iteration count, median over three seeds. Values below one are impossible: the system optimum minimises the quantity the equilibrium only stabilises. The two shells that carry the paper's claims clear the constraint at twenty and forty iterations; the $1584$-shell does not clear it at any count we could run, and the gap to one shrinks by only about $0.55$ per doubling.", False),
+    ('fig-proactive', 'fig_proactive.pdf', 'fig:proactive', 'Reactive versus proactive routing as the hotspot drifts within a slot.\n  Shading marks the gap the forecast buys.', False),
+    ('fig-speedup', 'fig_inference_cost.pdf', 'fig:speedup', 'Per-slot cost of the learned pipeline against constellation size, measured\n  on one machine in a single run. The GNN forward costs $\\clm{ratio-dec-fwd-w1584}\\times$ less\n  than the multipath decode and $\\clm{ratio-feat-fwd-w1584}\\times$ less than the feature pass, so the\n  amortization argument rests on the two classical stages, not on the network. Decode\n  cost is independent of the softmin temperature: at $1584$ satellites it is $\\clm{time-dec-w1584}$~s at\n  both $\\tau=0.2$ and $\\tau=1024$, so the totals here hold at every operating point. The\n  total stays below the $60$~s slot at every size we tested, reaching $\\clm{time-total-w1584}$~s at $1584$\n  satellites. We do not report a speedup against the equilibrium solve: on the\n  $1584$-shell that reference does not converge (Fig.~\\ref{fig:msaconv}), and on the\n  smaller shells it would be taken against a cold-started solver that\n  Section~\\ref{sec:warmstart} shows needs only $1$--$11$ iterations when warm started.', False),
+    ('fig-tau', 'fig_tau.pdf', 'fig:tau', 'The decoder temperature is not a constant of the method. On the shell the model was trained on the curve peaks near $\\tau=0.1$ and falls away; on every larger or differently inclined shell it rises and then plateaus one to two orders of magnitude higher. The fixed value inherited from the training shell (dashed) sits far down the curve everywhere else, and the loss that causes was previously charged to the learned price field.', False),
+]
+
+
+def emit_wrappers():
+    """Sinh paper/fig-*.tex tro toi cac PDF do chinh tep nay ve."""
+    n = 0
+    for stem, pdf, label, caption, star in WRAPPERS:
+        env = "figure*" if star else "figure"
+        wid = "\\textwidth" if star else "\\columnwidth"
+        p = os.path.abspath(os.path.join(OUT, "..", "%s.tex" % stem))
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("%% SINH TU make_r5_figs.py -- KHONG sua tay.\n"
+                    "\\begin{%s}\n  \\centering\n"
+                    "  \\includegraphics[width=%s]{figures/%s}\n"
+                    "  \\caption{%s}\n  \\label{%s}\n\\end{%s}\n"
+                    % (env, wid, pdf, caption, label, env))
+        n += 1
+    print("  ✅ %d wrapper hinh -> paper/fig-*.tex" % n)
 
 
 if __name__ == "__main__":

@@ -105,6 +105,19 @@ t = t.replace("\\usepackage[normalem]{ulem}", "")     # bo hoan toan gach chan/g
 # ⛔ BO doan ghi chu o dau ban danh dau. Loi khai do phu nam o THU TRA LOI va COVER
 # LETTER, la cho bien tap doc; nhet mot doan van vao dau ban danh dau lam trang dau
 # kho doc va lap lai thu da noi o hai cho khac.
+# ⛔ THAM CHIEU CUA BAN CU KHONG GIAI DUOC trong ban danh dau. latexdiff giu nguyen
+# \ref{...} nam trong doan BI XOA, ma nhan do chi ton tai o ban v1, nen chung in ra "??".
+# Do 28/08: 9 dau ?? trong ban danh dau. Chung khong sai ve noi dung -- doan do dang bi
+# xoa -- nhung mot tai lieu gui di doc ma rai ?? thi nguoi doc khong phan biet duoc dau la
+# "da xoa" va dau la "bai hong". Thay bang chu, giu nguyen y.
+import re as _re
+import os as _os
+_wd = _os.path.dirname(_os.path.abspath(p))
+_known = set(_re.findall(r"\\label\{([^}]+)\}",
+                        io.open(_os.path.join(_wd, "new.tex"), encoding="utf-8").read()))
+def _fix(m):
+    return m.group(0) if m.group(1) in _known else "\\textup{[removed]}"
+t = _re.sub(r"\\(?:ref|autoref|eqref)\{([^}]+)\}", _fix, t)
 io.open(p, "w", encoding="utf-8").write(t)
 PY
 build "$WORK" diff
@@ -227,8 +240,29 @@ rm -f "$OUT/tnsm-resubmission-source.zip"
 # KHONG dung lai duoc: "File claims-macros.tex not found, Emergency stop". Chi lo ra khi
 # GIAI NEN RA CHO KHAC roi bat dung lai -- xem buoc 5a ngay duoi.
 zip -qr "$OUT/tnsm-resubmission-source.zip" \
-  paper/*.tex paper/*.bib paper/claims.json paper/authors paper/figures \
-  code/experiments code/results code/sim code/scripts README.md 2>/dev/null || true
+  paper/*.tex paper/*.bib paper/claims.json paper/claim-scope.json paper/authors paper/figures \
+  code/experiments code/results code/sim code/scripts \
+  code/run_all.py code/csv-producers.txt code/check_artifact_claims.py code/README.md \
+  2>/dev/null || true
+
+# ⛔ BUOC 5a CHI THU DICH LAI BAI, KHONG THU CHAY LAI THI NGHIEM. Va vi the no bao PASS
+# trong khi goi thieu `run_all.py`, `README.md`, `csv-producers.txt` va
+# `check_artifact_claims.py`: du de dich ra PDF, khong du de ai do chay lai bat cu thu gi.
+# Mot artifact khong chay lai duoc thi phan "reproducible" cua bai la loi noi suong.
+# Kiem danh sach toi thieu ngay tai day, tren chinh tep zip vua tao.
+echo "== 5b/5 GOI PHAI CHAY LAI DUOC, khong chi dich lai duoc"
+python3 - "$OUT/tnsm-resubmission-source.zip" <<'PYEOF'
+import sys, zipfile
+NEED = ["code/run_all.py", "code/README.md", "code/csv-producers.txt",
+        "code/check_artifact_claims.py", "code/sim/traffic.py",
+        "code/experiments/make_claims.py", "paper/claims.json", "paper/main.tex"]
+names = set(zipfile.ZipFile(sys.argv[1]).namelist())
+miss = [f for f in NEED if f not in names]
+for f in NEED:
+    print("   %s %s" % ("ok " if f in names else "⛔ ", f))
+print("   %d tep trong goi, %d thieu => %s" % (len(names), len(miss), "FAIL" if miss else "PASS"))
+sys.exit(1 if miss else 0)
+PYEOF
 
 echo "== 5a/5 GOI PHAI TU DUNG LAI DUOC (giai nen ra cho khac, xoa PDF, dich lai)"
 TMPX=$(mktemp -d)
