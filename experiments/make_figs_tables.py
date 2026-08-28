@@ -310,8 +310,14 @@ def tab_msa():
     small = rd("r5_3_convergence_small.csv")
     big = rd("r5_0_msa_ladder_1584.csv")
     iters = sorted({int(x["iters"]) for x in small} | {int(x["iters"]) for x in big})
-    shells = [("$132$", "w132_i53", small), ("$264$", "w264_i53", small),
-              ("$1584$", "w1584_i53", big)]
+    # ⛔ DANH SACH VO PHAI LAY TU DU LIEU, khong go cung. Ban truoc liet ke tay ba vo, nen
+    # khi nac thang duoc mo rong sang vo 198 va 396 thi bang van chi co ba dong cu -- va
+    # chu thich cua Bang II lai tro sang day de chung minh vo 396 khong dat chuan. Nguoi doc
+    # ngoai bat dung dieu do: "Table X contains only rows for 132, 264, and 1584".
+    def _n(k):
+        return int("".join(c for c in k.split("_")[0] if c.isdigit()))
+    shells = [("$%d$" % _n(k), k, small) for k in sorted({x["shell"] for x in small}, key=_n)]
+    shells += [("$%d$" % _n(k), k, big) for k in sorted({x["shell"] for x in big}, key=_n)]
     out = []
     for lab, key, src in shells:
         cells = []

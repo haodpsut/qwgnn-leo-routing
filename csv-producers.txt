@@ -55,3 +55,4 @@ r5_4_shell1584_uefree.csv = r5_4_shell1584_uefree.py
 r6_0_host_control_mac.csv = r6_0_host_control.py
 r6_0_host_control_vps.csv = r6_0_host_control.py
 r6_0_host_delta.csv = make_claims.py
+r5_0_msa_shrink.csv = make_claims.py

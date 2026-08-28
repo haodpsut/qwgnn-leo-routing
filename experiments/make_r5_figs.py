@@ -227,31 +227,49 @@ def fig_proactive():
 
 def fig_tau():
     """Phan thu hoi theo nhiet do bo giai ma, theo tung vo."""
+    # ⛔ VE TU r2_7_fair_tuned_wide, KHONG tu r1_1_tau_sweep. r1_1 chi co HAI vo, nen hinh
+    # hien hai duong trong khi muc noi ve BA vo chua tung thay -- nguoi doc ngoai bat dung
+    # dieu do. fair_tuned_wide quet cung luoi tau tren ca bon vo, tuc no la nguon khop voi
+    # cau van. Va nhan dung ky hieu cua bai ($132$, $264$ o $70^\circ$), khong dung ten cot
+    # trong CSV ("w132 (trained)"): ten noi bo cua du lieu khong phai ngon ngu cua bai.
     try:
-        r = rd("r1_1_tau_sweep.csv")
+        r = rd("r2_7_fair_tuned_wide.csv")
     except FileNotFoundError:
-        print("  ⚠ khong co r1_1_tau_sweep.csv -> bo qua fig_tau")
+        print("  ⚠ khong co r2_7_fair_tuned_wide.csv -> bo qua fig_tau")
         return
     # ⛔ Giu NGUYEN ten cot, dung tai tao no tu so: cot la "recovered_tau1.0" con
     # "%g" % 1.0 cho "1" -> KeyError. Cung lop loi da vap o cot `drift`.
-    cols = sorted((k for k in r[0] if k.startswith("recovered_tau")),
+    cols = sorted((k for k in r[0] if k.startswith("recovered_gnn_tau")),
                   key=lambda k: float(k.split("tau")[1]))
     taus = [float(k.split("tau")[1]) for k in cols]
     shells = []
     for v in r:
         if v["shell"] not in shells:
             shells.append(v["shell"])
-    sty = [(C["blue"], "o", "-"), (C["green"], "s", "--"), (C["verm"], "^", "-.")]
+    def nice(k):
+        n = "".join(c for c in k.split("_")[0] if c.isdigit())
+        inc = k.split("_i")[1] if "_i" in k else ""
+        base = "$%s$" % n + (" (trained)" if n == "132" else "")
+        return base + (r" at $70^\circ$" if inc == "70" else "")
+    sty = [(C["blue"], "o", "-"), (C["green"], "s", "--"), (C["verm"], "^", "-."),
+           (C["orange"], "D", ":")]
     fig, ax = plt.subplots(figsize=(COL, 2.1))
     for i, sh in enumerate(shells):
         c, m, ls = sty[i % len(sty)]
         y = [st.median([float(v[k]) for v in r if v["shell"] == sh]) for k in cols]
         ax.plot(taus, y, color=c, marker=m, ls=ls, ms=3.4,
-                label=sh)
+                label=nice(sh))
+    # ⛔ Chu thich hinh noi "gia tri co dinh ke thua (dashed)" nhung hinh KHONG he ve duong
+    # do -- chu thich mo ta mot thu khong ton tai. Duong nay chinh la dieu muc VI-I muon chi
+    # ra, nen ve no chu khong sua chu thich cho khop voi mot hinh thieu.
+    TAU_FIXED = 0.2
+    ax.axvline(TAU_FIXED, color=C["gray"], lw=0.8, ls="--")
+    ax.text(TAU_FIXED * 1.08, ax.get_ylim()[0], r"  inherited $\tau=%.1f$" % TAU_FIXED,
+            fontsize=7, color=C["gray"], ha="left", va="bottom")
     ax.set_xscale("log")
     ax.set_xlabel(r"decoder softmin temperature  $\tau$")
     ax.set_ylabel("recovered fraction")
-    ax.legend(frameon=False, loc="lower left", ncol=1)
+    ax.legend(frameon=False, loc="lower left", ncol=2, fontsize=7)
     save(fig, "fig_tau")
 
 

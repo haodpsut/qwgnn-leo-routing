@@ -167,10 +167,17 @@ def pool_264_fixedtau():
     for f, col, flt in (("r2_7_eps_sweep.csv", "recovered_gnn", lambda r: r["shell"] == "w264_i53"),
                         ("r2_7_fair_tuned_wide.csv", "recovered_gnn_tau0.2",
                          lambda r: r["shell"] == "w264_i53"),
-                        ("r1_1_tau_sweep.csv", "recovered_tau0.2", lambda r: "264" in r["shell"])):
+                        ("r1_1_tau_sweep.csv", "recovered_tau0.2", lambda r: "264" in r["shell"]),
+                        # ⛔ RUN SET THU TU, truoc day bi bo ngoai phep gop. Bang ti le lay so
+                        # tu day, va van bai KE no ra nhu mot trong ba lan do roi khai mot dai
+                        # KHONG chua no. Nguoi doc ngoai bat dung: "lists 0.93 as an entry while
+                        # claiming the maximum is 0.913". Mot dai gop ma bo sot mot nguon thi te
+                        # hon khong gop, vi no trong nhu da bao quat het.
+                        ("p5_router.csv", "recovered",
+                         lambda r: r.get("split") == "ood-largeshell")):
         for r in csv.DictReader(open(os.path.join(RES, f))):
             if flt(r):
-                out.append({"run_set": f, "shell": "w264_i53", "tau": "0.2",
+                out.append({"run_set": f, "shell": "w264_i53", "tau": "0.2", "one": 1,
                             "seed": r.get("seed", ""), "recovered": float(r[col]),
                             "unit_of_analysis": "vo-x-seed(-x-lat-cat)"})
     p = os.path.join(RES, "pooled_w264_fixedtau.csv")
@@ -178,7 +185,9 @@ def pool_264_fixedtau():
         w = csv.DictWriter(f, fieldnames=list(out[0].keys()))
         w.writeheader()
         w.writerows(out)
-    print(f"  + gop {len(out)} don vi tu 3 run set -> pooled_w264_fixedtau.csv")
+    print(f"  + gop {len(out)} don vi tu 4 run set -> pooled_w264_fixedtau.csv")
+    claim_raw("pooled_w264_n", "pooled_w264_fixedtau.csv", "one", {}, "sum", 0,
+              "so don vi gop cho vo 264 o tau=0.2")
     return out
 
 
@@ -399,6 +408,88 @@ def claim_inherited():
     # `abl_heat_ood` (phan gap thu hoi cua toan tu Heat) va bi gan nham vao mot cau noi ve
     # THOI GIAN TUONG DOI. Trung gia tri khong phai trung y nghia, va mot con so khong co
     # claim thi khong co gi ngan no bi gan nham.
+    # So lan thang va co mau tren TUNG vo: neo lai de van bai khong the lech khoi bang.
+    fw = load("r2_7_fair_tuned_wide.csv")
+    for sh in sorted({r["shell"] for r in fw}):
+        tag = sh.replace("_", "-")
+        claim_raw("fairwins_" + sh, "r2_7_fair_tuned_wide.csv", "gnn_wins", {"shell": sh},
+                  "sum", 0, "so instance GNN thang blind (ca hai da chinh), vo %s" % sh)
+        claim_raw("fairn_" + sh, "r2_7_fair_tuned_wide.csv", "unit", {"shell": sh},
+                  "sum", 0, "so instance do tren vo %s" % sh)
+
+    # He so co cua khoang cach toi PoA=1 moi lan gap doi so vong, vo 1584. Van bai tung
+    # go tay "0.55" va lan chuyen macro hang loat gan no vao `rel_onestep_ood` -- cung bang
+    # 0.55 nhung la THOI GIAN TUONG DOI cua bo hieu chinh mot buoc, khong lien quan gi.
+    lad = load("r5_0_msa_ladder_1584.csv")
+    poa = {int(x["iters"]): float(x["poa"]) for x in lad if "1584" in x["shell"]}
+    its = sorted(poa)
+    facs = [(1 - poa[b]) / (1 - poa[a]) for a, b in zip(its, its[1:]) if poa[a] < 1]
+    if facs:
+        # ghi ra CSV dan xuat de claim tai tinh duoc, khong dat mot agg rieng
+        fp = os.path.join(RES, "r5_0_msa_shrink.csv")
+        with open(fp, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=["shell", "from_iters", "to_iters", "shrink"])
+            w.writeheader()
+            for (a, b), v in zip(zip(its, its[1:]), facs):
+                w.writerow({"shell": "w1584_i53", "from_iters": a, "to_iters": b,
+                            "shrink": round(v, 6)})
+        claim_raw("msa_shrink_1584", "r5_0_msa_shrink.csv", "shrink", {}, "median", 2,
+                  "he so co cua khoang cach toi PoA=1 moi lan gap doi so vong, vo 1584")
+        print("  + r5_0_msa_shrink.csv: %d ti so" % len(facs))
+
+    # San cua bo giai ma khi SAI SO GIA = 0: day la gia tri Hinh 2 ghi tren duong ke, va
+    # bai tung go tay "3.6%" va "12.7%" trong khi du lieu cho 4.19 va 11.59. Chu thich hinh
+    # va van bai doc cung mot cho thi khong the lech nhau nua.
+    bnd = sorted(load("p9_bound.csv"), key=lambda x: float(x["rel_err"]))
+    claim_raw("bound_floor_mp", "p9_bound.csv", "gap_mp_pct", {"rel_err": bnd[0]["rel_err"]},
+              "median", 1, "san khoang cach toi UE cua giai ma DA DUONG khi sai so gia = 0, %")
+    claim_raw("bound_floor_sp", "p9_bound.csv", "gap_sp_pct", {"rel_err": bnd[0]["rel_err"]},
+              "median", 1, "san tuong ung cua giai ma MOT DUONG, %")
+
+    # Ti so giua cac chang cua duong ong, vo 1584. Chu thich Hinh 3 tung go tay "761x" va
+    # "749x" trong khi so do la 784 va 747: mot ti so go tay khong doi khi tu so va mau so
+    # doi. Ghi cot dan xuat vao CSV de ti so cung tai tinh duoc nhu moi so khac.
+    tm = load("r4_4_stage_timing.csv")
+    if tm and "ratio_dec_fwd" not in tm[0]:
+        for x in tm:
+            fw = float(x["t_forward_s"])
+            x["ratio_dec_fwd"] = round(float(x["t_decode_s"]) / fw, 3) if fw else ""
+            x["ratio_feat_fwd"] = round(float(x["t_features_s"]) / fw, 3) if fw else ""
+        with open(os.path.join(RES, "r4_4_stage_timing.csv"), "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(tm[0].keys()))
+            w.writeheader(); w.writerows(tm)
+        print("  + them cot 'ratio_dec_fwd', 'ratio_feat_fwd' vao r4_4_stage_timing.csv")
+    for cid, col in (("ratio_dec_fwd_w1584", "ratio_dec_fwd"),
+                     ("ratio_feat_fwd_w1584", "ratio_feat_fwd")):
+        claim_raw(cid, "r4_4_stage_timing.csv", col, {"shell": "w1584"}, "median", 0,
+                  "ti so %s tren vo 1584" % col)
+
+    # ⛔ Phai dung DUNG phep gop ma Bang ti le in ra (mean, xem tab_scale), khong dung median.
+    # Cung mot du lieu: mean 0.9251 -> "0.93", median 0.9227 -> "0.92". Neu van bai lay median
+    # con bang in mean thi vua sua xong mot lech da tao ra mot lech khac.
+    claim_raw("scale_recovered_w264", "p5_router.csv", "recovered",
+              {"split": "ood-largeshell"}, "mean", 2,
+              "phan gap thu hoi vo 264 dung nhu Bang ti le in ra (mean, run set p5_router)")
+
+    # ⭐ MSA KHONG PHAI PHUONG PHAP GIAM DON DIEU TREN TTT. Nguoi doc ngoai hoi vi sao
+    # warm T=2 (0.690) te hon warm T=1 (0.761) o vo 264. Dem tren tung don vi cho thay day
+    # khong phai nhieu: 7/9 o vo 264, va nguoc lai 1/9 o vo 132.
+    ma = load("r2_7_matched_all.csv")
+    if ma and "warm_t2_worse" not in ma[0]:
+        for x in ma:
+            x["warm_t2_worse"] = int(float(x["recovered_warm_T2"]) < float(x["recovered_warm_T1"]))
+            x["one"] = 1
+        with open(os.path.join(RES, "r2_7_matched_all.csv"), "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(ma[0].keys()))
+            w.writeheader(); w.writerows(ma)
+        print("  + them cot 'warm_t2_worse' vao r2_7_matched_all.csv")
+    for sh in ("w132", "w264"):
+        claim_raw("warmnonmono_" + sh, "r2_7_matched_all.csv", "warm_t2_worse",
+                  {"shell": sh}, "sum", 0,
+                  "so don vi ma them mot vong MSA am lam TTT XAU DI, vo %s" % sh)
+        claim_raw("warmn_" + sh, "r2_7_matched_all.csv", "one", {"shell": sh}, "sum", 0,
+                  "so don vi do tren vo %s" % sh)
+
     # ⛔ DOI CHUNG HAI MAY. Bai tung khai "moi dai luong khong di qua mang deu khop toi chu
     # so in ra", va bang chung la mot diff hai thu muc ma CA HAI deu la sol1. Nay do co kiem
     # soat: cung bam ma nguon, cung seed, cung tham so, chi khac MAY. Ket qua bac loi khai --
@@ -555,6 +646,11 @@ def add_fair_deltas(name):
                                   - float(r[f"recovered_ecmp_eps{be}"]), 4)
             r["cost_of_fixed_tau"] = round(float(r[f"recovered_gnn_tau{bt}"])
                                            - float(r["recovered_gnn_tau0.2"]), 4)
+            # ⛔ Cot 1/0 de SO LAN THANG tro thanh mot claim tai tinh duoc. Truoc do so nay
+            # chi song trong van bai va trong bang, va khi lan giai lai dua vo 264@53 tu
+            # 6/8 len 8/8 thi bang doi con cau van thi khong.
+            r["gnn_wins"] = 1 if r["gap_fair"] > 0 else 0
+            r["unit"] = 1
     with open(p, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
