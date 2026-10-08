@@ -17,7 +17,15 @@ build() {                      # build <thu-muc> <ten-tex>
 }
 
 echo "== 1/5 so lieu va bang/hinh sinh tu CSV"
-( cd code/experiments && python3 make_claims.py >/dev/null )
+# ⛔ 08/10: dong nay tung tro vao `code/experiments` -- cay lam viec 27/08 DA CHET, ma
+# `PAPER` cua no tro dung vao `paper/` dang song. Dung goi bang no la GHI DE toan bo ban
+# sua cua vong nay bang noi dung thang 8, va goi zip thi KHONG chua thi nghiem r7_1 tra
+# loi Phan bien 1 y 5. Cay song la `repo/`.
+( cd repo/experiments && python3 make_claims.py >/dev/null \
+                      && python3 make_figs_tables.py >/dev/null \
+                      && python3 make_r5_figs.py >/dev/null \
+                      && python3 emit_r7_macros.py >/dev/null )
+cp repo/results/r7_macros.tex repo/results/tab-imperfect.tex paper/
 
 echo "== 2/5 ban thao sach"
 build paper main
@@ -63,7 +71,12 @@ def flatten(path):
     t = re.sub(r"\\begin\{tabular\}.*?\\end\{tabular\}", stash, t, flags=re.S)
     return t.replace("\\begin{document}", SHIM + "\\begin{document}", 1), bodies
 new_bodies = []
-for src, dst in ((os.path.join(root, "v1-rejected/main.tex"), "old.tex"),
+# ⛔ MOC SO SANH PHAI LA BAN PHAN BIEN VONG NAY DA DOC, khong phai ban bi reject 16/08.
+# Dung v1-rejected thi ban to sang danh dau ca lan viet lai cua vong 1, va chinh dieu do
+# sinh ra "duplicated abstract/introduction text" ma Phan bien 1 vong 2 bao. Moc dung la
+# nguon GIAI TU goi da nop 28/08, da xac thuc bang hai phat bieu doc lap cua phan bien:
+# abstract 317 tu ("much too long") va KHONG co hinh mo hinh he thong.
+for src, dst in ((os.path.join(root, "v2-submitted-2026-08-28/main.tex"), "old.tex"),
                  (os.path.join(root, "paper/main.tex"), "new.tex")):
     txt, bodies = flatten(src)
     if dst == "new.tex":
@@ -130,7 +143,11 @@ python3 - "$ROOT" "$WORK" <<'PY'
 import re, io, sys, subprocess
 root, work = sys.argv[1], sys.argv[2]
 flat = lambda s: re.sub(r"\s+", " ", s)
-old = flat(subprocess.run(["pdftotext", root+"/v1-rejected/main.pdf","-"],
+# ⛔ MOC THU HAI. Buoc tinh thong ke nay doc mot ban PDF KHAC voi ban latexdiff so, va no
+# van tro vao v1-rejected sau khi moc so sanh da doi: ket qua la "mat 46%, moi 68%" cho
+# mot vong chi them mot muc (so dong that: 291/1400 ~ 21%). Hai nguon mot phep do, va
+# khong cong nao hoi chung co noi giong nhau.
+old = flat(subprocess.run(["pdftotext", root+"/v2-submitted-2026-08-28/main.pdf","-"],
                           capture_output=True, text=True).stdout)
 new = flat(subprocess.run(["pdftotext", root+"/paper/main.pdf","-"],
                           capture_output=True, text=True).stdout)
@@ -165,6 +182,10 @@ PY
 # Dem HINH NHUNG THAT bang pdfimages, khong grep \includegraphics: ban danh dau dinh nghia
 # lai \includegraphics trong phan dau, nen grep tung bao "can 11, duoc 8" tren mot ban hoan
 # toan dung.
+echo "== 3a/5 phu luc (ComSoc: phu luc phai duoc nop kem de phan bien doc)"
+build paper supplementary
+cp paper/supplementary.pdf "$OUT/supplementary.pdf"
+
 echo "== 3b/5 MOI HINH PHAI CO MAT THAT O CA HAI BAN"
 # ⛔ BON CACH DEU SAI, va toi da thu ca bon truoc khi den cach nay:
 #   grep \includegraphics : ban danh dau dinh nghia lai macro do, nen grep tung bao
@@ -190,32 +211,77 @@ def chunks(p, n=3, ln=48):
     body = b[i:]
     step = max(1, len(body) // (n + 1))
     return [c for c in (body[step*(k+1):step*(k+1)+ln] for k in range(n)) if len(c) == ln]
-docs = {"ban sach": out + "/manuscript.pdf", "ban danh dau": out + "/manuscript-highlighted.pdf"}
+docs = {"ban sach": out + "/manuscript.pdf",
+        "ban danh dau": out + "/manuscript-highlighted.pdf",
+        "phu luc": out + "/supplementary.pdf"}
 raw = {k: open(v, "rb").read() for k, v in docs.items() if os.path.exists(v)}
-if len(raw) < 2:
-    print("   ⛔ thieu mot trong hai ban PDF: %s" % sorted(set(docs) - set(raw))); sys.exit(1)
-used = set(re.findall(r"\\input\{(fig-[^}]*)\}", open(root + "/paper/main.tex").read()))
+if not {"ban sach", "ban danh dau"} <= set(raw):
+    print("   ⛔ thieu ban PDF: %s" % sorted({"ban sach","ban danh dau"} - set(raw))); sys.exit(1)
+# ⛔ 08/10: cong nay tung doi MOI tep trong paper/figures/ phai co trong THAN BAI. Sau khi
+# bon tieu muc chuyen sang phu luc, fig_proactive.pdf chi con o phu luc va cong bao FAIL
+# tren mot bai hoan toan dung. Nhung KHONG duoc noi long thanh "co o dau cung duoc": muc
+# dich goc cua cong la bat hinh DUOC SINH ma khong ai \input (no da tung bat
+# fig_denominary_drift dung the). Nen phai DINH TUYEN: moi hinh phai co mat o dung tai lieu
+# \input wrapper cua no, va hinh khong wrapper nao goi thi van la loi.
+def inputs(path):
+    return set(re.findall(r"\\input\{(fig-[^}]*)\}",
+                          re.sub(r"(?<!\\\\)%.*", "", open(path).read())))
+P = root + "/paper/"
+than = inputs(P + "main.tex")
+phu = inputs(P + "supplementary.tex")
+for f in glob.glob(P + "supp-*.tex"):
+    phu |= inputs(f)
+used = than | phu
+
+# wrapper -> tep hinh nó nhung vao (wrapper TikZ khong nhung tep nao)
+def tep_cua(w):
+    q = P + w + ".tex"
+    if not os.path.exists(q):
+        return None
+    m = re.search(r"\\includegraphics\[[^\]]*\]\{(?:figures/)?([^}]+)\}", open(q).read())
+    return m.group(1) if m else None
+
+tai_lieu = {}
+for w in used:
+    t = tep_cua(w)
+    if not t:
+        continue
+    t = t if t.endswith(".pdf") else t + ".pdf"
+    tai_lieu.setdefault(t, set())
+    if w in than:
+        tai_lieu[t] |= {"ban sach", "ban danh dau"}
+    if w in phu:
+        tai_lieu[t] |= {"phu luc"}
+
 figs = sorted(glob.glob(os.path.join(root, "paper", "figures", "*.pdf")))
 if not figs:
     print("   ⛔ khong co tep hinh nao -- khong doc thanh sach"); sys.exit(1)
 bad = 0
 for f in figs:
+    ten = os.path.basename(f)
+    can = tai_lieu.get(ten)
+    if not can:
+        print("   ⛔  %-26s KHONG wrapper nao \\input -- hinh sinh ra ma khong dung" % ten)
+        bad += 1
+        continue
     cs = chunks(f)
     if not cs:
-        print("   -- %-26s khong doc duoc luong byte" % os.path.basename(f)); continue
-    hit = {k: sum(1 for c in cs if c in d) for k, d in raw.items()}
-    ok = all(v > 0 for v in hit.values())
-    print("   %s %-26s %s" % ("ok " if ok else "⛔ ", os.path.basename(f),
-          "  ".join("%s %d/%d" % (k, v, len(cs)) for k, v in sorted(hit.items()))))
+        print("   -- %-26s khong doc duoc luong byte" % ten); continue
+    hit = {k: sum(1 for c in cs if c in raw[k]) for k in sorted(can) if k in raw}
+    thieu = sorted(set(can) - set(raw))
+    ok = bool(hit) and all(v > 0 for v in hit.values()) and not thieu
+    print("   %s %-26s %s%s" % ("ok " if ok else "⛔ ", ten,
+          "  ".join("%s %d/%d" % (k, v, len(cs)) for k, v in hit.items()),
+          ("  [thieu ban: " + ", ".join(thieu) + "]") if thieu else ""))
     if not ok:
         bad += 1
 txt = {k: subprocess.run(["pdftotext", v, "-"], capture_output=True, text=True).stdout
-       for k, v in docs.items()}
+       for k, v in docs.items() if os.path.exists(v)}
 ph = {k: len(re.findall(r"(?i)figure pending|image not found", t)) for k, t in txt.items()}
 if any(ph.values()):
-    print("   ⛔ con khung cho: %s" % ph); bad += 1
-print("   da kiem %d hinh tren 2 ban PDF (%d wrapper duoc \input) => %s"
-      % (len(figs), len(used), "FAIL" if bad else "PASS"))
+    print("   ⛔ con khung cho: %s" % {k: v for k, v in ph.items() if v}); bad += 1
+print("   da kiem %d hinh, dinh tuyen theo %d wrapper (%d than bai, %d phu luc) => %s"
+      % (len(figs), len(used), len(than), len(phu), "FAIL" if bad else "PASS"))
 sys.exit(1 if bad else 0)
 PYEOF
 
@@ -226,12 +292,15 @@ PYEOF
 # hop tran. Cong nay do bien COT, suy tu chinh bai, va da duoc thu bang cach tiem lai
 # dung loi do: 16 tu tren 5 trang khi tran, 0 khi da sua.
 echo "== 3c/5 KHONG GI DUOC VUOT BIEN COT"
-python3 "$ROOT/code/scripts/check_column_bleed.py" --pdf "$ROOT/paper/main.pdf" \
+python3 "$ROOT/repo/scripts/check_column_bleed.py" --pdf "$ROOT/paper/main.pdf" \
         --tex "$ROOT/paper/main.tex" | tail -3
 
 echo "== 4/5 thu tra loi + cover letter"
 build submit response-to-reviewers
 build submit cover-letter
+# ⛔ Don phu pham LaTeX. `check_submit_package.py` bat dung 6 tep .aux/.log/.out o day:
+#    thu muc nop khong duoc lan thu gi ngoai hien vat nop.
+rm -f "$OUT"/*.aux "$OUT"/*.log "$OUT"/*.out "$OUT"/*.fls "$OUT"/*.fdb_latexmk "$OUT"/*.synctex.gz
 
 echo "== 5/5 zip nguon"
 rm -f "$OUT/tnsm-resubmission-source.zip"
@@ -241,8 +310,9 @@ rm -f "$OUT/tnsm-resubmission-source.zip"
 # GIAI NEN RA CHO KHAC roi bat dung lai -- xem buoc 5a ngay duoi.
 zip -qr "$OUT/tnsm-resubmission-source.zip" \
   paper/*.tex paper/*.bib paper/claims.json paper/claim-scope.json paper/authors paper/figures \
-  code/experiments code/results code/sim code/scripts \
-  code/run_all.py code/csv-producers.txt code/check_artifact_claims.py code/README.md \
+  repo/experiments repo/results repo/sim repo/scripts \
+  repo/run_all.py repo/csv-producers.txt repo/check_artifact_claims.py repo/README.md \
+  repo/kiem_bang_sinh.py repo/kiem_phu_luc.py \
   2>/dev/null || true
 
 # ⛔ BUOC 5a CHI THU DICH LAI BAI, KHONG THU CHAY LAI THI NGHIEM. Va vi the no bao PASS
@@ -253,9 +323,18 @@ zip -qr "$OUT/tnsm-resubmission-source.zip" \
 echo "== 5b/5 GOI PHAI CHAY LAI DUOC, khong chi dich lai duoc"
 python3 - "$OUT/tnsm-resubmission-source.zip" <<'PYEOF'
 import sys, zipfile
-NEED = ["code/run_all.py", "code/README.md", "code/csv-producers.txt",
-        "code/check_artifact_claims.py", "code/sim/traffic.py",
-        "code/experiments/make_claims.py", "paper/claims.json", "paper/main.tex"]
+NEED = ["repo/run_all.py", "repo/README.md", "repo/csv-producers.txt",
+        "repo/check_artifact_claims.py", "repo/sim/traffic.py",
+        "repo/experiments/make_claims.py",
+        # ⛔ Hai tep nay LA cau tra loi cho Phan bien 1 y 5. Goi thieu chung thi
+        #    thi nghiem ben vung khong tai lap duoc, va cong cu khong he keu.
+        "repo/experiments/r7_1_imperfect_state.py",
+        "repo/experiments/emit_r7_macros.py",
+        "repo/results/r7_1_imperfect_state.csv",
+        # ⛔ README cua hien vat HUA rang hai cong nay kiem duoc goi. Loi hua phai co
+        #    tep de thuc hien, va phai duoc kiem o day.
+        "repo/kiem_bang_sinh.py", "repo/kiem_phu_luc.py",
+        "paper/claims.json", "paper/main.tex", "paper/supplementary.tex"]
 names = set(zipfile.ZipFile(sys.argv[1]).namelist())
 miss = [f for f in NEED if f not in names]
 for f in NEED:

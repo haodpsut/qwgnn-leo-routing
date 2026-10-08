@@ -87,7 +87,8 @@ def main():
     print("ghi %s (%d macro)" % (os.path.relpath(OUT_M, ROOT), len(L) - 1))
 
     # ---- bang mot cot ----
-    T = [r"\begin{table}[t]", r"\centering", r"\footnotesize",
+    T = [r"% SINH TU repo/experiments/emit_r7_macros.py -- DUNG SUA TAY.",
+     r"\begin{table}[t]", r"\centering", r"\footnotesize",
          r"\caption{Sensitivity to imperfect network state information, the four degradations"
          r" named by Reviewer~1. Entries are the change in recovered fraction from the clean"
          r" case (learned $\rImpCleanLearned$, blind multipath $\rImpCleanBlind$), median over"

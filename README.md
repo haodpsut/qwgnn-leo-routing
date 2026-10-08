@@ -11,7 +11,24 @@ traffic-engineering solve that does not scale to mega-constellations.
 > benefit once load features exist). Quantum-walk is kept only as a negative
 > ablation. See FORMULATION.md sec 6 for the full honest record.
 
-## Status (18/08/2026)
+## Status (08/10/2026)
+
+**Where the manuscript sources live.** The table and macro generators in `experiments/`
+write to a sibling `paper/` directory, which is how the submission package is laid out
+(`paper/` and `repo/` side by side). Unpack `tnsm-resubmission-source.zip` and the
+generators reproduce every table byte for byte from the shipped CSVs; this is checked by
+`kiem_bang_sinh.py`. A bare clone of this repository has code and results but not the
+manuscript, so place the paper sources alongside it before running the generators.
+
+
+Revision round 2 (TNSM-2026-12059, major revision of 07/10/2026) adds one experiment:
+`experiments/r7_1_imperfect_state.py` measures both the learned price field and the blind
+multipath split under four degradations of network state (demand-estimation error, stale
+telemetry, ephemeris or capacity mismatch, link failures). In every sweep the policy routes on
+the state the operator believes while travel time is measured on the state that actually holds.
+`experiments/emit_r7_macros.py` turns the resulting CSV into the macros and the table the paper
+uses, and refuses to emit them if the blind baseline moves on the demand axis, which it must not
+since it does not read demand.
 
 The numbers below are the ones in the manuscript, and every one of them is an entry in
 `paper/claims.json` with the CSV, column, filter and aggregation that produce it. An earlier

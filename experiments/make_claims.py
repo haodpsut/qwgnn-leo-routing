@@ -161,7 +161,9 @@ def pool_264_fixedtau():
     biet cai nao la cai nao.
 
     Cach chua khong phai chon lay mot con, ma la GOP roi bao ca do rong. Sau khi gop:
-    17 don vi, trung vi 0.889, khoang [0.838, 0.923].
+    cac macro pooled_w264_* (hien 29 don vi). ⛔ KHONG ghi lai con so vao day:
+    ban v1 bi reject de lai '17 don vi, 0.889, [0.838,0.923]' trong caption va
+    no song sot qua mot lan nop.
     """
     out, rows = [], None
     for f, col, flt in (("r2_7_eps_sweep.csv", "recovered_gnn", lambda r: r["shell"] == "w264_i53"),
@@ -244,7 +246,7 @@ def emit_macros():
     Dung: $\clm{gap-fair-w198-i53}$ thay cho $0.008$. Gach duoi doi thanh gach ngang vi
     gach duoi la ky tu dac biet trong LaTeX.
     """
-    lines = [r"% SINH TU make_claims.py -- DUNG SUA TAY.",
+    lines = [r"% SINH TU repo/experiments/make_claims.py -- DUNG SUA TAY.",
              r"% Dinh nghia mot lan; bai goi bang \clm{ten-claim}.",
              r"\makeatletter",
              r"\newcommand{\defclaim}[2]{\expandafter\gdef\csname cl@#1\endcsname{#2}}",
@@ -694,7 +696,7 @@ def emit_tables_and_figure():
         rows.append(f"{lbl} & {len(f)} & {m(f,'gain_bpr_pct'):.1f} & {m(l,'gain_product_pct'):.1f} & "
                     f"{m(l,'gain_bottleneck_pct'):.1f} & {m(l,'gain_maxmin_pct'):.1f} \\\\")
     open(os.path.join(PAPER, "tab-feasibility.tex"), "w").write(
-        "% SINH TU make_claims.py -- DUNG SUA TAY\n"
+        "% SINH TU repo/experiments/make_claims.py -- DUNG SUA TAY\n"
         "\\begin{table}[t]\n\\centering\\small\n"
         "\\caption{The congestion-aware advantage measured two ways on the same configurations. "
         "The delay column is the BPR travel-time reduction; the three loss columns are the increase "
@@ -728,13 +730,14 @@ def emit_tables_and_figure():
                       + " ".join(f"({float(t):g},{mt[t]:.4f})" for t in TAUS)
                       + "};\n\\addlegendentry{" + NICE[sh] + "}")
     open(os.path.join(PAPER, "tab-fair.tex"), "w").write(
-        "% SINH TU make_claims.py -- DUNG SUA TAY\n"
+        "% SINH TU repo/experiments/make_claims.py -- DUNG SUA TAY\n"
         "\\begin{table}[t]\n\\centering\\small\n"
         "\\caption{Learned price field against blind multipath spreading, both tuned "
         "per shell over fixed grids, eight instances each. Recovered fraction of the "
         "blind-to-equilibrium gap. The gap column is the median of the per-instance difference, "
         "not the difference of the medians. $\\tau$ is the decoder temperature and "
-        "$\\varepsilon$ the path-cost tolerance. The $p$ column is a two-sided sign test on the win count: with eight instances, $8/8$ is evidence and $6/8$ is not, and printing the ratio alone invites the reader to treat them alike.}\n"
+        "$\\varepsilon$ the path-cost tolerance. The $p$ column is a two-sided sign test on the win count: with eight instances, $8/8$ is evidence and $6/8$ is not, and printing the ratio alone invites the reader to treat them alike."
+        " \\emph{Pooled:} the $264$ row here is one of the $\\clm{pooled-w264-n}$ units pooled in Sec.~\\ref{sec:pooled}, whose median $\\clm{pooled-w264-fixedtau}$ (range $\\clm{pooled-w264-lo}$--$\\clm{pooled-w264-hi}$) is the summary for that shell rather than this cell.}\n"
         "\\label{tab:fair}\n\\begin{tabular}{@{}lrrrrrrrr@{}}\n\\toprule\n"
         "shell & \\multicolumn{3}{c}{learned} & \\multicolumn{2}{c}{blind} & gap & wins & $p$ \\\\\n"
         "\\cmidrule(lr){2-4}\\cmidrule(lr){5-6}\n"
@@ -865,7 +868,7 @@ def main():
     sync_claim_scope()
     emit_macros()
     g = lambda cid: next(c["paper_value"] for c in C if c["id"] == cid)
-    open(OUT_TEX, "w").write(r"""% SINH TU code/experiments/make_claims.py -- DUNG SUA TAY.
+    open(OUT_TEX, "w").write(r"""% SINH TU repo/experiments/make_claims.py -- DUNG SUA TAY.
 \begin{table}[t]
 \centering\small
 \caption{Every headline number in this study and where it is derived. Recovered fraction is
@@ -891,20 +894,16 @@ question & quantity & value \\
 & \quad max-min fair sharing & """ + g("goodput_gain_maxmin") + r"""\% \\
 \midrule
 \multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does it beat a blind baseline at matched budget?}}\\
-\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_\allowbreak 7\_\allowbreak fair\_\allowbreak tuned\_\allowbreak wide}}\\
-& learned / blind, training shell & """ + g("fair_gnn_w132_i53") + " / " + g("fair_ecmp_w132_i53") + r""" \\
-& learned / blind, unseen 264 & """ + g("fair_gnn_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
-\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape at the fixed decoder setting $\tau=0.2$; same run set}\\
-& learned / blind, unseen 264 & """ + g("fair_gnn_fixedtau_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
+& learned / blind, training shell$^{a}$ & """ + g("fair_gnn_w132_i53") + " / " + g("fair_ecmp_w132_i53") + r""" \\
+& learned / blind, unseen 264$^{a}$ & """ + g("fair_gnn_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
+& learned / blind, unseen 264$^{b}$ & """ + g("fair_gnn_fixedtau_w264_i53") + " / " + g("fair_ecmp_w264_i53") + r""" \\
 \midrule
 \multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{How far does it transfer, at the fixed $\tau=0.2$?}}\\
-\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape a DIFFERENT run set (\texttt{r2\_\allowbreak 7\_\allowbreak eps\_\allowbreak sweep}); see Section~\ref{sec:pooled}}\\
-& GNN / blind multipath, 132 sat (trained) & """ + g("sweep_gnn_w132_i53") + " / " + g("sweep_ecmp_w132_i53") + r""" \\
-& GNN / blind multipath, 198 sat & """ + g("sweep_gnn_w198_i53") + " / " + g("sweep_ecmp_w198_i53") + r""" \\
-& GNN / blind multipath, 264 sat & """ + g("sweep_gnn_w264_i53") + " / " + g("sweep_ecmp_w264_i53") + r""" \\
-\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\quad\scriptsize\itshape 396 sat has no admissible equilibrium (Table~\ref{tab:msa}), so it is read against blind travel time instead}\\
+& GNN / blind multipath, 132 sat (trained)$^{c}$ & """ + g("sweep_gnn_w132_i53") + " / " + g("sweep_ecmp_w132_i53") + r""" \\
+& GNN / blind multipath, 198 sat$^{c}$ & """ + g("sweep_gnn_w198_i53") + " / " + g("sweep_ecmp_w198_i53") + r""" \\
+& GNN / blind multipath, 264 sat$^{c}$ & """ + g("sweep_gnn_w264_i53") + " / " + g("sweep_ecmp_w264_i53") + r""" \\
 & GNN / blind multipath, 396 sat$^{\ddagger}$ & """ + g("s396_relblind_gnn") + " / " + g("s396_relblind_ecmp") + r""" \\
-& GNN / blind multipath, 264 sat at $70^\circ$ & """ + g("sweep_gnn_w264_i70") + " / " + g("sweep_ecmp_w264_i70") + r""" \\
+& GNN / blind multipath, 264 sat at $70^{\circ,c}$ & """ + g("sweep_gnn_w264_i70") + " / " + g("sweep_ecmp_w264_i70") + r""" \\
 \midrule
 \multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does diverse training restore it? (same instance budget)}}\\
 & single-shell training, unseen 264 & """ + g("mix_single_w264_i53") + r""" \\
@@ -913,6 +912,8 @@ question & quantity & value \\
 \multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\emph{Does proactivity reach an axis blind multipath cannot?}}\\
 & proactive / blind multipath, trained shell & """ + g("proact_w132_drift15") + " / " + g("proact_ecmp_w132_drift15") + r""" \\
 & proactive / blind multipath, unseen shell & """ + g("proact_w264_drift15") + " / " + g("proact_ecmp_w264_drift15") + r""" \\
+\midrule
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2\tabcolsep\relax}@{}}{\scriptsize $^{a}$both sides tuned per shell (Table~\ref{tab:fair}); run set \texttt{r2\_\allowbreak 7\_\allowbreak fair\_\allowbreak tuned\_\allowbreak wide}. $^{b}$same run set, at the fixed decoder setting $\tau=0.2$. $^{c}$a different run set (\texttt{r2\_\allowbreak 7\_\allowbreak eps\_\allowbreak sweep}); see Section~\ref{sec:pooled}. $^{\ddagger}$$396$ sat has no admissible equilibrium (Table~\ref{tab:msa}), so it is read against blind travel time instead.}\\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -349,7 +349,7 @@ def emit_wrappers():
         wid = "\\textwidth" if star else "\\columnwidth"
         p = os.path.abspath(os.path.join(OUT, "..", "%s.tex" % stem))
         with open(p, "w", encoding="utf-8") as f:
-            f.write("%% SINH TU make_r5_figs.py -- KHONG sua tay.\n"
+            f.write("%% SINH TU repo/experiments/make_r5_figs.py -- KHONG sua tay.\n"
                     "\\begin{%s}\n  \\centering\n"
                     "  \\includegraphics[width=%s]{figures/%s}\n"
                     "  \\caption{%s}\n  \\label{%s}\n\\end{%s}\n"

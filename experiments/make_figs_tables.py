@@ -27,18 +27,31 @@ ROOT = os.path.dirname(HERE)
 RES = os.path.join(ROOT, "results")
 PAPER = os.path.abspath(os.path.join(ROOT, "..", "paper"))
 
-HDR = ("%% SINH TU make_figs_tables.py -- DUNG SUA TAY.\n"
+HDR = ("%% SINH TU repo/experiments/make_figs_tables.py -- DUNG SUA TAY.\n"
        "%% Sua o day se bi ghi de o lan chay ke tiep; sua trong script hoac trong CSV.\n")
 
 
 # ⛔ Chu thich va lenh dinh dang boc NGUYEN VAN tu ban goc. Viet lai ngan hon
 # lam mat doan "Run set" cua tab:decode (noi dung, khong phai trinh bay) va lam
 # tab:baselines mat \\footnotesize nen tran 17,7pt.
-CAP_BASELINES = r"""\caption{Total travel time relative to blind (lower is better; blind $=1.00$), mean over $n{=}9$ instance-seed units per split. SO and UE are references; the rest are deployable. Bold marks the best deployable policy in each row, and it changes: the learned field in distribution, the one-pass blind multipath split out of it.}"""
+# ⛔ Dai GOP o Sec.~\ref{sec:pooled} chi phu BON run set: r2_7_eps_sweep,
+#    r2_7_fair_tuned_wide, r1_1_tau_sweep, p5_router. Bang nao lay so 264 tu run set
+#    KHAC thi dung POOLED_NGOAI, khong duoc tro vao dai do. Mot dai gop bo sot nguon
+#    con te hon khong gop, vi no trong nhu da bao quat het -- xem docstring cua ham gop
+#    trong make_claims.py va ca nhan xet doc ngoai "lists 0.93 while claiming max 0.913".
+POOLED_TRONG = (r" \emph{Pooled:} the $264$ entry here is one of the $\clm{pooled-w264-n}$ "
+                r"units pooled in Sec.~\ref{sec:pooled}, whose median "
+                r"$\clm{pooled-w264-fixedtau}$ (range $\clm{pooled-w264-lo}$--"
+                r"$\clm{pooled-w264-hi}$) is the summary for that shell rather than this cell.")
+POOLED_NGOAI = (r" \emph{Run set:} this table is computed from its own independent set of "
+                r"seeds, which is not among the run sets pooled in Sec.~\ref{sec:pooled}; its "
+                r"$264$ entries are therefore not comparable cell by cell with those.")
+
+CAP_BASELINES = r"""\caption{Total travel time relative to blind (lower is better; blind $=1.00$), mean over $n{=}9$ instance-seed units per split; run set \texttt{p6\_baselines}. SO and UE are references; the rest are deployable. Bold marks the best deployable policy in each row, and it changes: the learned field in distribution, the one-pass blind multipath split out of it.}"""
 PRE_BASELINES = r"""\setlength{\tabcolsep}{3pt}\footnotesize"""
 CAP_DECODE = r"""\caption{Decoder comparison: TTT relative to blind and recovered fraction of the
 blind-to-UE gain, mean $\pm$ std over $n{=}9$ units per split. The multipath decode \eqref{eq:split} closes most of the single-path
-decoding gap. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}"""
+decoding gap.""" + POOLED_NGOAI + r"}"
 
 
 def rd(n):
@@ -60,11 +73,16 @@ def w(name, body):
 
 CAP_ABLATION = r"""\caption{Operator ablation: recovered fraction of the blind-to-UE gain (mean $\pm$ std,
 $n{=}12$). The plain GCN is best out of distribution; the global quantum-walk operator
-does not help and is the most variable. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}).}"""
+does not help and is the most variable.""" + POOLED_NGOAI + r"}"
 PRE_ABLATION = r""""""
-CAP_COST = r"""\caption{Per-slot routing cost in all-or-nothing ($\AoN$) shortest-path passes ($T$ is
-the MSA iteration count, $\approx 20$). The GNN adds one forward to two passes; UE/SO
-need $T$ passes.}"""
+CAP_COST = r"""\caption{Per-slot routing cost in all-or-nothing ($\AoN$) shortest-path passes. The GNN adds
+one forward to two passes; UE/SO need $T$ passes. \textbf{How to read $T$:} the entry
+here is the \emph{measured cold-start} iteration count, median $14$ and $22$ on the two
+shells with range $9$--$40$ (Sec.~\ref{sec:warmstart}), which is why it is written
+$\approx 20$. It is \emph{not} the reference budget. Every UE/SO reference in this paper
+is solved at the admissibility floor $T{=}40$, and the shells differ: the training shells
+clear the test at $T{=}20$ and the $264$-shell needs $T{=}40$
+(Sec.~\ref{sec:supervision}, Table~\ref{tab:msa}).}"""
 PRE_COST = r""""""
 
 
@@ -191,7 +209,11 @@ def tab_matched():
         cells = []
         for sh in shells:
             v, at = best_tuned(pre, TSHELL[sh])
-            cells.append("--" if v is None else "%.3f {\\scriptsize$(%s)$}" % (v, at))
+            # ⛔ In cai dat bang %g de KHOP Bang~\ref{tab:fair}, noi cung con so do in la "5".
+            #    "5.0" vs "5" la dung mot phep do ma hai cach in, va Phan bien 1 vong 2
+            #    doi dung viec nay: "Table VII caption and rows should be checked for
+            #    consistency".
+            cells.append("--" if v is None else "%.3f {\\scriptsize$(%g)$}" % (v, float(at)))
         tune.append("    %s & %s & %s \\\\" % (lbl, budget, " & ".join(cells)))
 
     # Dong cuoi KHONG phai mot doi thu o ngan sach khop: no la cai gia cua chinh tham chieu.
@@ -214,7 +236,8 @@ def tab_matched():
            r"cold iteration counts the equilibrium reference itself needs to pass the "
            r"admissibility test of Section~\ref{sec:s1584}. The $1584$-shell is absent by "
            r"construction, since that test never passes there and no recovered fraction is "
-           r"defined.}")
+           r"defined. A negative entry means the policy is worse than blind shortest path, not "
+           r"merely short of equilibrium.}")
 
     return w("tab-matched.tex",
              # ⛔ tabcolsep 4pt lam bang TRAN COT 14pt (do duoc: chu toi x=577, bien 563), va
@@ -233,8 +256,6 @@ def tab_matched():
              + "\n    \\bottomrule\n  \\end{tabular}\n\\end{table}")
 
 
-CAP_SCALE_OLD = r"""\caption{Inductive transfer (train on $132$) and inference cost. Recovered fraction of
-the blind-to-UE gain (mean $\pm$ std), and one-shot GNN routing versus the MSA solve. All rows use the fixed decoder temperature $\tau=0.2$; Section~\ref{sec:two-causes} shows this setting is near-optimal only on the training shell and depresses every transfer number here. \emph{Run set:} this table is computed from its own independent set of seeds. Pooling every unit we have measured for the $264$-shell at $\tau=0.2$, across all three run sets, gives a median of $0.908$ spanning $0.863$ to $0.928$; the entries here and in the other tables are points inside that range, not corrections of one another (Section~\ref{sec:pooled}). $^{\dagger}$No entry: the equilibrium reference on this shell never satisfies $\mathrm{PoA}\ge 1$ within the largest iteration budget we could afford (Table~\ref{tab:msa}), so the recovered fraction has no denominator here and is not merely imprecise. Section~\ref{sec:s1584} reports this shell against blind travel time instead, which is measured directly.}"""
 PRE_SCALE = r""""""
 
 
@@ -288,7 +309,7 @@ def tab_scale():
            r"against the equilibrium solve: at $1584$ that denominator does not exist, and "
            r"at the smaller shells it would be taken against a cold-started solver that "
            r"Section~\ref{sec:warmstart} shows needs only $1$--$11$ iterations when warm "
-           r"started.}" % (slot, g, e))
+           r"started." + POOLED_TRONG + r"}") % (slot, g, e)
     return w("tab-scale.tex",
              "\\begin{table}[t]\n  \\centering\\footnotesize\\setlength{\\tabcolsep}{3pt}\n  "
              + cap + "\n  \\label{tab:scale}\n  " + PRE_SCALE
