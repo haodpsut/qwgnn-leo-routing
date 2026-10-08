@@ -1,0 +1,27 @@
+%% SINH TU make_figs_tables.py -- DUNG SUA TAY.
+%% Sua o day se bi ghi de o lan chay ke tiep; sua trong script hoac trong CSV.
+\begin{table}[t]
+  \centering\footnotesize\setlength{\tabcolsep}{3pt}
+  \caption{Per-slot routing cost in all-or-nothing ($\AoN$) shortest-path passes. The GNN adds
+one forward to two passes; UE/SO need $T$ passes. \textbf{How to read $T$:} the entry
+here is the \emph{measured cold-start} iteration count, median $14$ and $22$ on the two
+shells with range $9$--$40$ (Sec.~\ref{sec:warmstart}), which is why it is written
+$\approx 20$. It is \emph{not} the reference budget. Every UE/SO reference in this paper
+is solved at the admissibility floor $T{=}40$, and the shells differ: the training shells
+clear the test at $T{=}20$ and the $264$-shell needs $T{=}40$
+(Sec.~\ref{sec:supervision}, Table~\ref{tab:msa}).}
+  \label{tab:cost}
+  
+  \begin{tabular}{lc}
+    \toprule
+    policy & cost (\AoN{} passes) \\
+    \midrule
+    blind, geographic & $1$ \\
+    blind multipath ($\varepsilon$-tolerant) & $1$ \\
+    one-step correction & $2$ \\
+    \textbf{GNN (ours)} & $2 + \text{1 forward}$ \\
+    UE, SO (MSA), cold start & $T\approx 20$ (range $9$--$40$) \\
+    UE, SO (MSA), warm start (Section~\ref{sec:warmstart}) & $T\approx 4$ (range $1$--$11$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}

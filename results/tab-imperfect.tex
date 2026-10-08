@@ -1,0 +1,32 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Sensitivity to imperfect network state information, the four degradations named by Reviewer~1. Entries are the change in recovered fraction from the clean case (learned $\rImpCleanLearned$, blind multipath $\rImpCleanBlind$), median over $\rImpUnits$ (shell, seed) units, $\rImpShells$ shells $\times$ $\rImpSeeds$ seeds. Each policy routes on the state the operator \emph{believes}; travel time is measured on the state that actually holds. Negative is worse.}
+\label{tab:imperfect}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+degradation & level & learned & blind \\
+\midrule
+\multicolumn{4}{@{}l@{}}{\emph{demand-estimation errors ($\sigma$)}}\\
+& 0.05 & $+0.000$ & $+0.000$ \\
+& 0.1 & $+0.000$ & $+0.000$ \\
+& 0.2 & $-0.001$ & $+0.000$ \\
+& 0.4 & $+0.003$ & $+0.000$ \\
+\multicolumn{4}{@{}l@{}}{\emph{stale telemetry (slots, $60$\,s each)}}\\
+& 1 & $-0.009$ & $+0.004$ \\
+& 2 & $-0.032$ & $-0.006$ \\
+& 4 & $-0.117$ & $-0.035$ \\
+& 8 & $-0.297$ & $-0.038$ \\
+\multicolumn{4}{@{}l@{}}{\emph{ephemeris error ($\sigma$)}}\\
+& 0.05 & $-0.007$ & $-0.005$ \\
+& 0.1 & $-0.040$ & $-0.054$ \\
+& 0.2 & $-0.263$ & $-0.173$ \\
+& 0.4 & $-1.254$ & $-1.041$ \\
+\multicolumn{4}{@{}l@{}}{\emph{link failures (fraction of ISLs)}}\\
+& 0.01 & $-0.003$ & $-0.015$ \\
+& 0.02 & $-0.012$ & $-0.046$ \\
+& 0.05 & $-0.080$ & $-0.143$ \\
+& 0.1 & $-0.124$ & $-0.231$ \\
+\bottomrule
+\end{tabular}
+\end{table}
