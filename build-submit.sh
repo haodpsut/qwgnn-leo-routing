@@ -31,6 +31,30 @@ echo "== 2/5 ban thao sach"
 build paper main
 cp paper/main.pdf "$OUT/manuscript.pdf"
 
+echo "== 2b/5 ABSTRACT va SO TRANG, do tren BAN IN"
+# ⛔ Khong he co cong nao dem abstract, va chinh vi the ban nop 28/08 di voi 317 tu de Phan
+#    bien 2 phai nhac ("much too long"). TNSM ghi nguyen van: "a 75 to 200 word abstract".
+#    Dem tren BAN IN, khong dem tren nguon: trong nguon moi \clm{...} la mot macro bi xoa khi
+#    boc the, con tren ban in no la MOT TU (mot con so). Dem nguon ra 200 trong khi ban in la
+#    194 -- hai so khac nhau, va cai duy nhat noi nhan doc la ban in.
+python3 - "$OUT/manuscript.pdf" <<'PYEOF'
+import re, subprocess, sys
+pdf = sys.argv[1]
+t = re.sub(r"\s+", " ", subprocess.run(["pdftotext", "-f", "1", "-l", "1", pdf, "-"],
+                                       capture_output=True, text=True).stdout)
+if "Abstract" not in t or "Index Terms" not in t:
+    print("   ⛔ khong tim thay Abstract hoac Index Terms o trang 1"); sys.exit(1)
+ab = t[t.index("Abstract") + 8:t.index("Index Terms")].lstrip("\u2014-\u2013 ")
+n = len(ab.split())
+ok = 75 <= n <= 200
+print("   abstract %d tu, han TNSM 75-200 => %s" % (n, "PASS" if ok else "FAIL"))
+tr = int(subprocess.run(["pdfinfo", pdf], capture_output=True, text=True)
+         .stdout.split("Pages:")[1].split()[0])
+print("   %d trang | thu bien tap doi 14 | TNSM thu phi den toi da 16 => %s"
+      % (tr, "trong han" if tr <= 14 else "VUOT, phai khai trong cover letter"))
+sys.exit(0 if ok else 1)
+PYEOF
+
 echo "== 3/5 ban danh dau chinh sua"
 WORK=$(mktemp -d)
 cp paper/*.tex paper/*.bib "$WORK"/ 2>/dev/null || true
@@ -157,6 +181,7 @@ gone = [flat(s).strip()[:60] for s in re.split(r"(?<=[.])\s", old)
 shown = [c for c in gone if c in dif]
 pct = 100*len(shown)/max(1, len(gone))
 print(f"   cau cu bi bo: {len(gone)} | hien trong ban danh dau: {len(shown)} ({pct:.0f}%)")
+io.open("/tmp/_mk.txt", "w").write("%d cau bo\n" % len(gone))
 # ⛔ HAI CON SO NAY PHAI SINH RA, KHONG GO TAY. Cover letter tung ghi "42% da mat, 56% la
 # moi"; sau vai lan sua ban thao chung thanh 38% va 57% con la thu van in so cu. Dung lop
 # loi "mat tien in so cu" da cat chinh bai nay ngay 18/08.
@@ -182,6 +207,30 @@ PY
 # Dem HINH NHUNG THAT bang pdfimages, khong grep \includegraphics: ban danh dau dinh nghia
 # lai \includegraphics trong phan dau, nen grep tung bao "can 11, duoc 8" tren mot ban hoan
 # toan dung.
+echo "== 3e/5 DANH SACH THAY DOI, phu 100% phan xoa"
+# ⛔ Ban to sang chi dat lai duoc mot phan so cau da xoa vao ngu canh. Phan con lai bien mat
+#    khoi no ma khong dau vet, va Phan bien 1 vong 2 da mat mot luot nhan xet vao dung cho do.
+#    Hien vat nay liet ke DU, sinh tu hai BAN IN nen khong co moi noi nao de dinh chu.
+python3 "$ROOT/repo/scripts/make_change_list.py" \
+        "$ROOT/v2-submitted-2026-08-28/main.pdf" "$OUT/manuscript.pdf" \
+        "$OUT/change-list.tex" | tee /tmp/_cl.txt
+build submit change-list
+# Doi chieu: so cau bi bo o danh sach PHAI bang so cua buoc thong ke (3/5). Hai nguon mot
+# phep do thi phai noi giong nhau, neu khong thi mot trong hai dang do sai.
+python3 - "$OUT" /tmp/_cl.txt <<'PYEOF'
+import io, os, re, sys
+out, log = sys.argv[1], sys.argv[2]
+n_cl = int(re.search(r"(\d+) cau bo", io.open(log).read()).group(1))
+st = io.open(out + "/markup-stats.tex").read()
+m = re.search(r"\\newcommand\{\\pctShown\}\{(\d+)\}", st)
+n_tk = int(re.search(r"(\d+) cau bo", io.open("/tmp/_mk.txt").read()).group(1)) \
+    if os.path.exists("/tmp/_mk.txt") else n_cl
+print("   danh sach: %d cau bo | ban danh dau dat lai duoc %s%% trong so do" % (n_cl, m.group(1)))
+if n_cl != n_tk:
+    print("   ⛔ LECH: buoc thong ke dem %d, danh sach dem %d. Hai nguon mot phep do." % (n_tk, n_cl))
+sys.exit(1 if n_cl != n_tk else 0)
+PYEOF
+
 echo "== 3a/5 phu luc (ComSoc: phu luc phai duoc nop kem de phan bien doc)"
 build paper supplementary
 cp paper/supplementary.pdf "$OUT/supplementary.pdf"
@@ -301,6 +350,8 @@ build submit cover-letter
 # ⛔ Don phu pham LaTeX. `check_submit_package.py` bat dung 6 tep .aux/.log/.out o day:
 #    thu muc nop khong duoc lan thu gi ngoai hien vat nop.
 rm -f "$OUT"/*.aux "$OUT"/*.log "$OUT"/*.out "$OUT"/*.fls "$OUT"/*.fdb_latexmk "$OUT"/*.synctex.gz
+# .DS_Store cua Finder: khong phai hien vat nop, va no tu sinh lai moi lan mo thu muc.
+rm -f "$OUT"/.DS_Store
 
 echo "== 5/5 zip nguon"
 rm -f "$OUT/tnsm-resubmission-source.zip"

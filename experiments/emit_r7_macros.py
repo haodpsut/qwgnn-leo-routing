@@ -20,6 +20,30 @@ ROOT = os.path.dirname(HERE)
 CSV = os.path.join(ROOT, "results", "r7_1_imperfect_state.csv")
 OUT_M = os.path.join(ROOT, "results", "r7_macros.tex")
 OUT_T = os.path.join(ROOT, "results", "tab-imperfect.tex")
+OUT_T2 = os.path.join(ROOT, "results", "tab-stale-shell.tex")
+TEN_STALE = "stale telemetry"
+
+
+def _slot_s():
+    """Đọc SLOT_S TỪ chính script thí nghiệm, không gõ lại.
+
+    ⛔ Gõ lại một hằng số ở hai tệp là hệ tham chiếu thứ hai: đổi khe thời gian ở bộ đo mà
+    quên ở bộ sinh macro thì bài in ra số giây sai mà không cổng nào kêu.
+    """
+    import re
+    q = os.path.join(HERE, "r7_1_imperfect_state.py")
+    m = re.search(r"^SLOT_S\s*=\s*([0-9.]+)", io.open(q, encoding="utf-8").read(), re.M)
+    if not m:
+        sys.exit("⛔ khong doc duoc SLOT_S tu %s" % os.path.basename(q))
+    return float(m.group(1))
+
+
+SLOT_S = _slot_s()
+VO_HUAN, VO_MOI = "w132_i53", "w264_i53"
+# Muc staleness in trong bang CHINH; duong cong day du o bang phu luc.
+# Chi giu vung QUANH diem dao trong bang chinh (duong cong day du o phu luc):
+# mot muc truoc diem dao, diem dao, va muc nang nhat. Them nua thi bai qua trang.
+STALE_BANG_CHINH = [1.0, 2.0, 8.0]
 
 # (ten truc trong CSV, tien to macro, nhan in ra bang)
 TRUC = [
@@ -75,6 +99,94 @@ def main():
     if abs(dh_f) > 1e-9:
         L.append(r"\newcommand{\rImpFailRatio}{%.1f}" % (abs(du_f) / abs(dh_f)))
 
+    # ---- MUC (khong phai delta) va DIEM DAO theo TUNG VO ----------------------
+    # ⛔ VI SAO PHAI TACH THEO VO. Nguoi doc ngoai doi chieu bang delta thanh muc bang cach
+    #    CONG delta vao moc sach GOP, roi ket luan "mu vuot len giua 4 va 8 slot". Phep cong
+    #    gan dung (0,634 so voi trung vi that 0,636) nhung KET LUAN sai: gop hai vo che mat
+    #    viec chung nguoc nhau. Tren vo HUAN LUYEN khong co diem dao nao tan 8 slot (mu thang
+    #    0/5 hat o MOI muc); tren vo CHUA THAY diem dao nam giua 1,5 va 2 slot. Dung lop loi
+    #    ma chinh bai canh bao: "read down a block, not across blocks".
+    def muc_cua(ten, sh=None):
+        o = []
+        for m in sorted({x["muc"] for x in r if x["truc"] == ten}, key=f):
+            sel = [x for x in r if x["truc"] == ten and x["muc"] == m
+                   and (sh is None or x["shell"] == sh)]
+            if not sel:
+                continue
+            o.append((f(m),
+                      st.median(f(x["rec_hoc"]) for x in sel),
+                      st.median(f(x["rec_mu"]) for x in sel),
+                      sum(1 for x in sel if f(x["rec_mu"]) > f(x["rec_hoc"])),
+                      len(sel)))
+        return o
+
+    stale_huan, stale_moi = muc_cua(TEN_STALE, VO_HUAN), muc_cua(TEN_STALE, VO_MOI)
+
+    def diem_dao(o):
+        """Mức đầu tiên mà TRUNG VỊ của mù vượt học, và mức ngay trước nó."""
+        for i, (m, h, u, w, n) in enumerate(o):
+            if u > h:
+                return (o[i - 1][0] if i else None), m
+        return None, None
+
+    lo, hi = diem_dao(stale_moi)
+    _, hi_h = diem_dao(stale_huan)
+    # ⛔ Hai cong nay giu van xuoi va so khong the phan ky: van bai khai "vo huan luyen khong
+    #    co diem dao" va "vo chua thay co", nen neu du lieu noi khac thi DUNG, dung sinh macro.
+    if hi_h is not None:
+        sys.exit("⛔ vo huan luyen %s CO diem dao o muc %g, trong khi van bai khai KHONG co. "
+                 "Sua van truoc, dung sinh macro." % (VO_HUAN, hi_h))
+    if hi is None:
+        sys.exit("⛔ khong co diem dao tren vo %s, trong khi van bai khai CO." % VO_MOI)
+    moi_het = next((m for m, h, u, w, n in stale_moi if u > h and w == n), None)
+
+    L += [r"\newcommand{\rImpCrossShell}{%s}" % VO_MOI.split("_")[0].lstrip("w"),
+          r"\newcommand{\rImpNoCrossShell}{%s}" % VO_HUAN.split("_")[0].lstrip("w"),
+          r"\newcommand{\rImpCrossLo}{%g}" % lo,
+          r"\newcommand{\rImpCrossHi}{%g}" % hi,
+          r"\newcommand{\rImpCrossLoSec}{%.0f}" % (lo * SLOT_S),
+          r"\newcommand{\rImpCrossHiSec}{%.0f}" % (hi * SLOT_S),
+          r"\newcommand{\rImpCrossAllSeeds}{%g}" % (moi_het if moi_het else hi),
+          r"\newcommand{\rImpNoCrossUpto}{%g}" % stale_huan[-1][0],
+          r"\newcommand{\rImpNoCrossUptoMin}{%.0f}" % (stale_huan[-1][0] * SLOT_S / 60.0),
+          r"\newcommand{\rImpStaleWorstLearnedL}{%.3f}" % stale_moi[-1][1],
+          r"\newcommand{\rImpStaleWorstBlindL}{%.3f}" % stale_moi[-1][2],
+          r"\newcommand{\rImpNoCrossLearnedL}{%.3f}" % stale_huan[-1][1],
+          r"\newcommand{\rImpNoCrossBlindL}{%.3f}" % stale_huan[-1][2]]
+    for m, h, u, w, n in stale_moi:
+        if m == hi:
+            L += [r"\newcommand{\rImpCrossLearnedL}{%.3f}" % h,
+                  r"\newcommand{\rImpCrossBlindL}{%.3f}" % u,
+                  r"\newcommand{\rImpCrossWins}{%d/%d}" % (w, n)]
+
+    # ---- bang PHU LUC: duong cong day du, theo tung vo, dang MUC ----
+    T2 = [r"% SINH TU repo/experiments/emit_r7_macros.py -- DUNG SUA TAY.",
+          r"\begin{table}[t]", r"\centering", r"\footnotesize",
+          r"\caption{Stale telemetry, by shell, as recovered fraction rather than as a change"
+          r" from the clean case, over all ten staleness levels measured. The two shells run in"
+          r" opposite directions, which is why the pooled rows of a single table must not be"
+          r" read as one curve. On the training shell the learned field leads at every level"
+          r" tested, out to $\rImpNoCrossUpto$ slots. On the unseen shell the blind multipath"
+          r" split overtakes it between $\rImpCrossLo$ and $\rImpCrossHi$ slots, and leads on"
+          r" every unit from $\rImpCrossAllSeeds$ slots on. Bold marks the policy ahead."
+          r" \emph{wins} counts the units on which the blind split is ahead.}",
+          r"\label{supp:staleshell}",
+          r"\begin{tabular}{@{}lrrrc@{}}", r"\toprule",
+          r"shell & slots & learned & blind & blind wins \\", r"\midrule"]
+    for ten_vo, o, nhan in ((VO_HUAN, stale_huan, "trained"), (VO_MOI, stale_moi, "unseen")):
+        T2.append(r"\multicolumn{5}{@{}l@{}}{\emph{$%s$-satellite shell, %s}}\\"
+                  % (ten_vo.split("_")[0].lstrip("w"), nhan))
+        for m, h, u, w, n in o:
+            ch, cu_ = "%.3f" % h, "%.3f" % u
+            if u > h:
+                cu_ = r"\textbf{%s}" % cu_
+            else:
+                ch = r"\textbf{%s}" % ch
+            T2.append(r"& %g & %s & %s & %d/%d \\" % (m, ch, cu_, w, n))
+    T2 += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+    io.open(OUT_T2, "w", encoding="utf-8").write("\n".join(T2))
+    print("ghi %s (%d muc x 2 vo)" % (os.path.relpath(OUT_T2, ROOT), len(stale_moi)))
+
     # ⛔ CONG: moc mu PHAI bang 0 tuyet doi tren truc nhu cau. Neu khong thi bo do sai.
     dem = [x for x in r if x["truc"] == "demand-estimation errors"]
     lech = max(abs(f(x["rec_mu"]) - f(x["rec_mu_sach"])) for x in dem)
@@ -86,25 +198,55 @@ def main():
     io.open(OUT_M, "w", encoding="utf-8").write("\n".join(L) + "\n")
     print("ghi %s (%d macro)" % (os.path.relpath(OUT_M, ROOT), len(L) - 1))
 
-    # ---- bang mot cot ----
-    T = [r"% SINH TU repo/experiments/emit_r7_macros.py -- DUNG SUA TAY.",
-     r"\begin{table}[t]", r"\centering", r"\footnotesize",
+    # ---- bang mot cot, dang MUC ----
+    # ⛔ Ban dau bang nay in DELTA. Hai van de do duoc: (a) tren truc ephemeris delta
+    #    -1,254 LON HON ca gia tri sach, nen doc nhu mot loi cho tan khi nguoi doc tu cong;
+    #    (b) quyet dinh cua nha dieu hanh can MUC chu khong can delta. Nay in muc, va hang
+    #    "clean" dat ngay dau de moi muc doc duoc tu mot goc. Truc staleness tach theo VO,
+    #    vi hai vo nguoc nhau; duong cong day du o bang phu luc.
+    T = [r"\begin{table}[t]", r"\centering", r"\footnotesize",
          r"\caption{Sensitivity to imperfect network state information, the four degradations"
-         r" named by Reviewer~1. Entries are the change in recovered fraction from the clean"
-         r" case (learned $\rImpCleanLearned$, blind multipath $\rImpCleanBlind$), median over"
-         r" $\rImpUnits$ (shell, seed) units, $\rImpShells$ shells $\times$ $\rImpSeeds$ seeds."
-         r" Each policy routes on the state the operator \emph{believes}; travel time is"
-         r" measured on the state that actually holds. Negative is worse.}",
+         r" named by Reviewer~1. Entries are the recovered fraction itself, not a change from"
+         r" the clean case, so each row can be read on its own; the clean row is the"
+         r" reference. Median over $\rImpUnits$ (shell, seed) units for the pooled blocks,"
+         r" over the $\rImpSeeds$ seeds of one shell for the stale-telemetry block. Each"
+         r" policy routes on the state the operator \emph{believes}; travel time is measured"
+         r" on the state that actually holds. On the demand axis the blind column is constant"
+         r" by construction, since that policy does not read demand. Stale telemetry is split"
+         r" by shell because the two run in opposite directions: the learned field leads at"
+         r" every level on the training shell, and the blind split overtakes it between"
+         r" $\rImpCrossLo$ and $\rImpCrossHi$ slots on the unseen one. Bold marks the policy"
+         r" ahead.}",
          r"\label{tab:imperfect}",
          r"\begin{tabular}{@{}lrrr@{}}", r"\toprule",
-         r"degradation & level & learned & blind \\", r"\midrule"]
-    for nhan, o in hang:
+         r"degradation & level & learned & blind \\", r"\midrule",
+         r"\emph{clean state} & -- & $%.3f$ & $%.3f$ \\" % (sach_h, sach_u),
+         r"\midrule"]
+
+    def hang(m, h, u):
+        ch, cu2 = "%.3f" % h, "%.3f" % u
+        if u > h:
+            cu2 = r"\mathbf{%s}" % cu2
+        else:
+            ch = r"\mathbf{%s}" % ch
+        return r"& %g & $%s$ & $%s$ \\" % (m, ch, cu2)
+
+    for ten, tt, nhan in TRUC:
+        if ten == TEN_STALE:
+            continue
         T.append(r"\multicolumn{4}{@{}l@{}}{\emph{%s}}\\" % nhan)
-        for m, dh, du in o:
-            T.append(r"& %s & $%+.3f$ & $%+.3f$ \\" % (m, dh, du))
+        for m, h, u, w, n in muc_cua(ten):
+            T.append(hang(m, h, u))
+    for ten_vo, o, nhan in ((VO_HUAN, stale_huan, "training shell"),
+                            (VO_MOI, stale_moi, "unseen shell")):
+        T.append(r"\multicolumn{4}{@{}l@{}}{\emph{stale telemetry, %s "
+                 r"($60$\,s slots)}}\\" % nhan)
+        for m, h, u, w, n in o:
+            if m in STALE_BANG_CHINH:
+                T.append(hang(m, h, u))
     T += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
     io.open(OUT_T, "w", encoding="utf-8").write("\n".join(T))
-    print("ghi %s (%d dong)" % (os.path.relpath(OUT_T, ROOT), len(hang)))
+    print("ghi %s (dang MUC)" % os.path.relpath(OUT_T, ROOT))
     for x in L[1:]:
         print("   " + x)
     return 0
@@ -119,15 +261,25 @@ def tu_kiem():
     os.makedirs(os.path.join(d, "results"))
     cot = ["shell", "seed", "truc", "muc", "rec_hoc_sach", "rec_mu_sach", "rec_hoc", "rec_mu"]
 
-    def ghi(mu_nhieu):
+    def ghi(mu_nhieu, dao_o_vo_huan=False):
+        """CSV giả phải mang ĐÚNG hình dạng thật: hai vỏ có tên thật, và trên trục staleness
+        vỏ huấn luyện KHÔNG đảo còn vỏ chưa thấy thì ĐẢO. Bản đầu của phép tự kiểm dựng một
+        vỏ tên `w1`, nên sau khi bộ sinh tách theo vỏ thì cả hai ca thử đều hỏng vì CSV giả
+        chứ không vì bộ sinh: một phép tự kiểm hỏng trên dữ liệu của chính nó không nói gì."""
         rows = []
-        for ten in [t[0] for t in TRUC]:
-            for m in ("0.1", "0.4"):
-                rows.append(dict(shell="w1", seed="0", truc=ten, muc=m,
-                                 rec_hoc_sach="0.900", rec_mu_sach="0.700",
-                                 rec_hoc="0.880",
-                                 rec_mu=mu_nhieu if ten == "demand-estimation errors"
-                                 else "0.690"))
+        for vo, dao in ((VO_HUAN, dao_o_vo_huan), (VO_MOI, True)):
+            for ten in [t[0] for t in TRUC]:
+                for m in ("0.1", "0.4"):
+                    if ten == TEN_STALE:
+                        # muc 0.4 la muc NANG hon: cho mu vuot len o do neu dao=True
+                        hoc = "0.880" if m == "0.1" else ("0.600" if dao else "0.870")
+                        mu = "0.690" if m == "0.1" else ("0.700" if dao else "0.680")
+                    else:
+                        hoc = "0.880"
+                        mu = mu_nhieu if ten == "demand-estimation errors" else "0.690"
+                    rows.append(dict(shell=vo, seed="0", truc=ten, muc=m,
+                                     rec_hoc_sach="0.900", rec_mu_sach="0.700",
+                                     rec_hoc=hoc, rec_mu=mu))
         with io.open(os.path.join(d, "results", "r7_1_imperfect_state.csv"), "w",
                      newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=cot)
@@ -138,6 +290,10 @@ def tu_kiem():
         me = os.path.join(d, "experiments")
         os.makedirs(me, exist_ok=True)
         shutil.copy(os.path.abspath(__file__), me)
+        # ⛔ Phai sao CA r7_1_imperfect_state.py: `_slot_s()` doc SLOT_S tu do. Thieu no
+        #    thi bo sinh chet ngay luc nap, va ca ba ca thu bao HONG vi mot ly do khong
+        #    lien quan gi den dieu chung dang kiem.
+        shutil.copy(os.path.join(HERE, "r7_1_imperfect_state.py"), me)
         return subprocess.run([sys.executable, os.path.join(me, os.path.basename(__file__))],
                               capture_output=True, text=True)
 
@@ -151,7 +307,12 @@ def tu_kiem():
     d2 = r2.returncode != 0 and "khong doc nhu cau" in (r2.stdout + r2.stderr)
     print("  %-52s %s" % ("moc mu DOI tren truc nhu cau: phai CHAN", "DAT" if d2 else "HONG"))
 
-    ok = d1 and d2
+    ghi("0.700", dao_o_vo_huan=True)   # vo HUAN LUYEN cung dao -> phai CHAN
+    r3 = chay()
+    d3 = r3.returncode != 0 and "vo huan luyen" in (r3.stdout + r3.stderr)
+    print("  %-52s %s" % ("vo HUAN LUYEN cung dao: phai CHAN", "DAT" if d3 else "HONG"))
+
+    ok = d1 and d2 and d3
     print("\n  => %s" % ("TAT CA DAT" if ok else "CO CA HONG"))
     return 0 if ok else 1
 

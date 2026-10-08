@@ -90,6 +90,12 @@ def main():
     ap.add_argument("--chi-vo", help="chi chay mot vo, theo ten")
     ap.add_argument("--chi-hat", type=int, help="chi chay mot hat giong")
     ap.add_argument("--gop", action="store_true", help="gop cac CSV rieng thanh mot")
+    # ⛔ Them 08/10 cho vong doc ngoai: chay LAI MOT TRUC o cac muc KHAC, ghi ra tep RIENG.
+    #    Khong chay lai ca bon truc, vi ba truc kia da co so trong bai: chay lai la mo cua
+    #    cho so trong bai doi ma khong ai doi. Phep gop co cong doi chieu MOC SACH.
+    ap.add_argument("--chi-truc", help="chi chay mot truc, dung TEN trong TRUC")
+    ap.add_argument("--muc", help="danh sach muc thay cho mac dinh, cach nhau bang dau phay")
+    ap.add_argument("--ra", help="duong dan CSV ra, thay cho mac dinh")
     a = ap.parse_args()
     if a.tu_kiem:
         return tu_kiem()
@@ -140,7 +146,17 @@ def main():
             sach_hoc = multipath_route(A, W, rc0, dem, CAP, tau=TAU)["total_ttt"]
             sach_mu = multipath_route(A, W, W, dem, CAP, tau=TAU)["total_ttt"]
 
-            for truc, muc in TRUC.items():
+            truc_chay = dict(TRUC)
+            if a.chi_truc:
+                if a.chi_truc not in truc_chay:
+                    sys.exit("⛔ khong co truc %r. Co: %s" % (a.chi_truc, list(truc_chay)))
+                truc_chay = {a.chi_truc: truc_chay[a.chi_truc]}
+            if a.muc:
+                if not a.chi_truc:
+                    sys.exit("⛔ --muc phai di kem --chi-truc, khong thi mot danh sach muc "
+                             "dung cho ca bon truc co don vi khac nhau.")
+                truc_chay[a.chi_truc] = [float(x) for x in a.muc.split(",")]
+            for truc, muc in truc_chay.items():
                 for m in muc:
                     # ---- dung CAI NHIN HONG cua nha dieu hanh ----
                     ins_v = dict(ins)
@@ -219,7 +235,8 @@ def main():
             print("  %s seed %d xong (%d dong)" % (ten, sd, len(rows)), flush=True)
 
     hau = ("_%s_s%d" % (a.chi_vo, a.chi_hat)) if (a.chi_vo and a.chi_hat is not None) else ""
-    out = os.path.join(ROOT, "results", "r7_1_imperfect_state%s.csv" % hau)
+    out = (a.ra if a.ra else
+           os.path.join(ROOT, "results", "r7_1_imperfect_state%s.csv" % hau))
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", newline="") as f:
         wr = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
