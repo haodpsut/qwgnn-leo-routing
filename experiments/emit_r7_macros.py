@@ -113,18 +113,18 @@ def main():
                    and (sh is None or x["shell"] == sh)]
             if not sel:
                 continue
-            o.append((f(m),
-                      st.median(f(x["rec_hoc"]) for x in sel),
-                      st.median(f(x["rec_mu"]) for x in sel),
+            h = [f(x["rec_hoc"]) for x in sel]
+            u = [f(x["rec_mu"]) for x in sel]
+            o.append((f(m), st.median(h), st.median(u),
                       sum(1 for x in sel if f(x["rec_mu"]) > f(x["rec_hoc"])),
-                      len(sel)))
+                      len(sel), min(h), max(h), min(u), max(u)))
         return o
 
     stale_huan, stale_moi = muc_cua(TEN_STALE, VO_HUAN), muc_cua(TEN_STALE, VO_MOI)
 
     def diem_dao(o):
         """Mức đầu tiên mà TRUNG VỊ của mù vượt học, và mức ngay trước nó."""
-        for i, (m, h, u, w, n) in enumerate(o):
+        for i, (m, h, u, w, n, *_) in enumerate(o):
             if u > h:
                 return (o[i - 1][0] if i else None), m
         return None, None
@@ -138,9 +138,19 @@ def main():
                  "Sua van truoc, dung sinh macro." % (VO_HUAN, hi_h))
     if hi is None:
         sys.exit("⛔ khong co diem dao tren vo %s, trong khi van bai khai CO." % VO_MOI)
-    moi_het = next((m for m, h, u, w, n in stale_moi if u > h and w == n), None)
+    moi_het = next((m for m, h, u, w, n, *_ in stale_moi if u > h and w == n), None)
 
-    L += [r"\newcommand{\rImpCrossShell}{%s}" % VO_MOI.split("_")[0].lstrip("w"),
+    # ⛔ DIEM TACH: muc dau tien ma hai DAI khong con chong nhau. Diem dao TRUNG VI den som
+    #    hon diem tach, va o diem dao hai dai con chong nhieu (do duoc: 0,761-0,889 so voi
+    #    0,846-0,869 o muc 2). Khai mot con so ma khong khai con kia la noi qua ve do manh.
+    tach = next((m for m, h, u, w, n, hl, hh, ul, uh in stale_moi
+                 if u > h and hh < ul), None)
+    if tach is None:
+        sys.exit("⛔ khong co muc nao hai dai tach hoan toan tren vo %s; van bai dang khai CO."
+                 % VO_MOI)
+    L += [r"\newcommand{\rImpSepSlots}{%g}" % tach,
+          r"\newcommand{\rImpSepMin}{%.0f}" % (tach * SLOT_S / 60.0),
+          r"\newcommand{\rImpCrossShell}{%s}" % VO_MOI.split("_")[0].lstrip("w"),
           r"\newcommand{\rImpNoCrossShell}{%s}" % VO_HUAN.split("_")[0].lstrip("w"),
           r"\newcommand{\rImpCrossLo}{%g}" % lo,
           r"\newcommand{\rImpCrossHi}{%g}" % hi,
@@ -153,7 +163,7 @@ def main():
           r"\newcommand{\rImpStaleWorstBlindL}{%.3f}" % stale_moi[-1][2],
           r"\newcommand{\rImpNoCrossLearnedL}{%.3f}" % stale_huan[-1][1],
           r"\newcommand{\rImpNoCrossBlindL}{%.3f}" % stale_huan[-1][2]]
-    for m, h, u, w, n in stale_moi:
+    for m, h, u, w, n, *_ in stale_moi:
         if m == hi:
             L += [r"\newcommand{\rImpCrossLearnedL}{%.3f}" % h,
                   r"\newcommand{\rImpCrossBlindL}{%.3f}" % u,
@@ -169,20 +179,27 @@ def main():
           r" tested, out to $\rImpNoCrossUpto$ slots. On the unseen shell the blind multipath"
           r" split overtakes it between $\rImpCrossLo$ and $\rImpCrossHi$ slots, and leads on"
           r" every unit from $\rImpCrossAllSeeds$ slots on. Bold marks the policy ahead."
-          r" \emph{wins} counts the units on which the blind split is ahead.}",
+          r" \emph{range} is the minimum to maximum over the $\rImpSeeds$ units of that shell, so"
+          r" the spread behind each median is visible rather than implied; the crossover on the"
+          r" unseen shell is a reversal of medians whose ranges still overlap, which is why we"
+          r" give the per-unit win count beside it. \emph{wins} counts the units on which the"
+          r" blind split is ahead.}",
           r"\label{supp:staleshell}",
-          r"\begin{tabular}{@{}lrrrc@{}}", r"\toprule",
-          r"shell & slots & learned & blind & blind wins \\", r"\midrule"]
+          r"\begin{tabular}{@{}lrrrrrc@{}}", r"\toprule",
+          r"shell & slots & \multicolumn{2}{c}{learned} & \multicolumn{2}{c}{blind}"
+          r" & blind \\",
+          r" & & median & range & median & range & wins \\", r"\midrule"]
     for ten_vo, o, nhan in ((VO_HUAN, stale_huan, "trained"), (VO_MOI, stale_moi, "unseen")):
         T2.append(r"\multicolumn{5}{@{}l@{}}{\emph{$%s$-satellite shell, %s}}\\"
                   % (ten_vo.split("_")[0].lstrip("w"), nhan))
-        for m, h, u, w, n in o:
+        for m, h, u, w, n, hl, hh, ul, uh in o:
             ch, cu_ = "%.3f" % h, "%.3f" % u
             if u > h:
                 cu_ = r"\textbf{%s}" % cu_
             else:
                 ch = r"\textbf{%s}" % ch
-            T2.append(r"& %g & %s & %s & %d/%d \\" % (m, ch, cu_, w, n))
+            T2.append(r"& %g & %s & %.3f--%.3f & %s & %.3f--%.3f & %d/%d \\"
+                      % (m, ch, hl, hh, cu_, ul, uh, w, n))
     T2 += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
     io.open(OUT_T2, "w", encoding="utf-8").write("\n".join(T2))
     print("ghi %s (%d muc x 2 vo)" % (os.path.relpath(OUT_T2, ROOT), len(stale_moi)))
@@ -235,13 +252,13 @@ def main():
         if ten == TEN_STALE:
             continue
         T.append(r"\multicolumn{4}{@{}l@{}}{\emph{%s}}\\" % nhan)
-        for m, h, u, w, n in muc_cua(ten):
+        for m, h, u, w, n, *_ in muc_cua(ten):
             T.append(hang(m, h, u))
     for ten_vo, o, nhan in ((VO_HUAN, stale_huan, "training shell"),
                             (VO_MOI, stale_moi, "unseen shell")):
         T.append(r"\multicolumn{4}{@{}l@{}}{\emph{stale telemetry, %s "
                  r"($60$\,s slots)}}\\" % nhan)
-        for m, h, u, w, n in o:
+        for m, h, u, w, n, *_ in o:
             if m in STALE_BANG_CHINH:
                 T.append(hang(m, h, u))
     T += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
