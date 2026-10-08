@@ -364,6 +364,7 @@ zip -qr "$OUT/tnsm-resubmission-source.zip" \
   repo/experiments repo/results repo/sim repo/scripts \
   repo/run_all.py repo/csv-producers.txt repo/check_artifact_claims.py repo/README.md \
   repo/kiem_bang_sinh.py repo/kiem_phu_luc.py \
+  repo/environment.yml repo/RESULTS-PROVENANCE.md \
   2>/dev/null || true
 
 # ⛔ BUOC 5a CHI THU DICH LAI BAI, KHONG THU CHAY LAI THI NGHIEM. Va vi the no bao PASS
@@ -385,6 +386,9 @@ NEED = ["repo/run_all.py", "repo/README.md", "repo/csv-producers.txt",
         # ⛔ README cua hien vat HUA rang hai cong nay kiem duoc goi. Loi hua phai co
         #    tep de thuc hien, va phai duoc kiem o day.
         "repo/kiem_bang_sinh.py", "repo/kiem_phu_luc.py",
+        # ⛔ Thieu hai tep nay thi goi KHONG tai lap duoc: mot la cong thuc moi truong,
+        #    mot la ban khai may do va phien ban goi. Ca hai tung bi bo ngoai zip.
+        "repo/environment.yml", "repo/RESULTS-PROVENANCE.md",
         "paper/claims.json", "paper/main.tex", "paper/supplementary.tex"]
 names = set(zipfile.ZipFile(sys.argv[1]).namelist())
 miss = [f for f in NEED if f not in names]
@@ -411,6 +415,40 @@ else
   grep -m3 '^!' "$TMPX"/paper/x1.log 2>/dev/null | sed 's/^/      /'
 fi
 rm -rf "$TMPX"
+
+echo "== 6/6 THU MUC NOP DAY DU + mot zip duy nhat"
+# ⛔ MOT goi duy nhat de Hao tai len cong, khong de Hao phai tu chon tep. Thu muc nay chi
+#    chua hien vat NOP: khong ghi chu noi bo, khong so nhan xet, khong tep trang thai.
+FULL="$OUT/TNSM-2026-12059-R1-full"
+rm -rf "$FULL" "$OUT/TNSM-2026-12059-R1-full.zip"
+mkdir -p "$FULL"
+for f in 00-README-SUBMISSION.txt manuscript.pdf manuscript-highlighted.pdf \
+         response-to-reviewers.pdf cover-letter.pdf supplementary.pdf change-list.pdf \
+         tnsm-resubmission-source.zip; do
+  [ -f "$OUT/$f" ] || { echo "   ⛔ THIEU $f"; exit 1; }
+  cp "$OUT/$f" "$FULL/"
+done
+( cd "$OUT" && zip -qr TNSM-2026-12059-R1-full.zip TNSM-2026-12059-R1-full )
+# Kiem tren CHINH tep zip vua tao, khong tin lenh zip
+python3 - "$OUT/TNSM-2026-12059-R1-full.zip" <<'PYEOF'
+import sys, zipfile
+CAN = ["00-README-SUBMISSION.txt", "manuscript.pdf", "manuscript-highlighted.pdf",
+       "response-to-reviewers.pdf", "cover-letter.pdf", "supplementary.pdf",
+       "change-list.pdf", "tnsm-resubmission-source.zip"]
+z = zipfile.ZipFile(sys.argv[1])
+co = {n.split("/")[-1] for n in z.namelist() if not n.endswith("/")}
+thieu = [x for x in CAN if x not in co]
+la = sorted(co - set(CAN))
+bad = z.testzip()
+for x in CAN:
+    print("   %s %s" % ("ok " if x in co else "⛔ ", x))
+if la:
+    print("   ⛔ tep LA trong goi: %s" % ", ".join(la))
+if bad:
+    print("   ⛔ tep hong trong zip: %s" % bad)
+print("   => %s" % ("FAIL" if (thieu or la or bad) else "PASS: %d/%d hien vat, 0 tep la" % (len(CAN), len(CAN))))
+sys.exit(1 if (thieu or la or bad) else 0)
+PYEOF
 
 echo
 for f in "$OUT"/*.pdf "$OUT"/*.zip; do

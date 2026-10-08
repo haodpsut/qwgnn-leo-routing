@@ -1,7 +1,11 @@
 # Conda environment for the QW-GNN LEO routing experiments.
 #   conda env create -f environment.yml
 #   conda activate qwgnn
-# CUDA (RTX 4090) torch is installed via pip from the cu121 wheel index.
+# torch is installed CPU-only, from the cpu wheel index, because that is what produced
+# every number in results/: see RESULTS-PROVENANCE.md, which records torch 2.13.0+cpu with
+# cuda.is_available() == False. A CUDA build is not wrong to use, but it is not what we
+# measured, and the GNN forward is 0.05% of a slot here (Fig. on inference cost), so the
+# device makes no difference to the cost argument.
 name: qwgnn
 channels:
   - conda-forge
@@ -15,7 +19,7 @@ dependencies:
   - tqdm
   - pip
   - pip:
-      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - --extra-index-url https://download.pytorch.org/whl/cpu
       - torch
       - skyfield
       - sgp4

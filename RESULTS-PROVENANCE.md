@@ -3,6 +3,25 @@
 **Máy đo: `sol1.swin.edu.vn`, Xeon Gold 6148, 80 nhân, Linux-x86_64.**
 Ngày chạy lại toàn bộ: **27/08/2026**.
 
+## Môi trường đã sinh ra các con số
+
+Đo trực tiếp trên máy đo ngày 08/10/2026, env conda **`paperlab`**:
+
+| | |
+|---|---|
+| Linux | `7.0.0-30-generic x86_64` |
+| python | `3.11.15` |
+| numpy | `2.4.6` |
+| scipy | `1.17.1` |
+| networkx | `3.6.1` |
+| torch | `2.13.0+cpu`, **`cuda.is_available() == False`** |
+
+⛔ **torch là bản CPU.** Máy có 2x RTX 4090 nhưng không dùng tới, và điều đó là có chủ ý:
+`fig_inference_cost.pdf` đo lượt truyền thẳng của GNN chiếm 0,05% thời gian một khe ở vỏ
+1584, phần còn lại là Dijkstra trên CPU; mô hình lại là `float64`, đúng chỗ card game yếu
+nhất. Ghi ra đây vì `environment.yml` từng cài bánh xe CUDA `cu121`, tức công thức trong gói
+sẽ dựng một môi trường KHÁC với môi trường đã sinh số, và không cổng nào so hai thứ đó.
+
 ## Vì sao ghi rõ máy
 
 Cùng script, cùng seed, lời giải MSA ở vỏ 1584 cho `UE = 11391,6` trên máy này và
